@@ -1,15 +1,16 @@
 import type {
-  Badge, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
-  UserProfile, XpEvent,
+  Badge, ChatThread, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus, Program, Quest,
+  QuestProgress, SignUpInput, Track, UserProfile, XpEvent,
 } from "@/types";
 import {
-  BADGES, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, OWNERS, OWNER_SETTINGS, PROGRAMS, PROGRESS, QUESTS, QUEST_PROGRESS, USERS, XP_EVENTS,
+  BADGES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, OWNERS, OWNER_SETTINGS, PROGRAMS, PROGRESS, QUESTS, QUEST_PROGRESS, USERS, XP_EVENTS,
 } from "@/data/seed";
+import { canAccessLesson } from "@/lib/access";
 import {
   DEFAULT_AGE_RULES, WATCH_COMPLETE_PCT, ageRuleFor, dayKey, levelFor, lessonComplete, nextStreak, periodKeyFor, quizPassed, quizXp, streakBonus, weekKey,
 } from "@/lib/gamification";
 import { newId, nowIso } from "@/lib/format";
-import type { ActivityResult, AdminStats, EllpApi, LeaderboardPeriod } from "./api";
+import type { ActivityResult, AdminStats, EllpApi, LeaderboardPeriod, PublicProgram } from "./api";
 
 /**
  * The demo back end: every collection in one object, saved to localStorage after each change, so a visitor can click
@@ -29,18 +30,21 @@ interface State {
   messages: InboxMessage[];
   mail: MailLog[];
   settings: OwnerSettings[];
+  chats: ChatThread[];
+  /** passwords of accounts created on the sign-up page (seeded accounts all use DEMO_PASSWORD) */
+  passwords: Record<string, string>;
   sessionUid: string | null;
 }
 
-// v2: 1.0.1 added age fields; an older saved state is replaced by a fresh seed
-const KEY = "ellp.demo.v2";
+// v3: 1.1 added tracks, plans and chats; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v3";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
   return {
     owners: clone(OWNERS), programs: clone(PROGRAMS), lessons: clone(LESSONS), quests: clone(QUESTS), badges: clone(BADGES), users: clone(USERS),
     progress: clone(PROGRESS), questProgress: clone(QUEST_PROGRESS), xpEvents: clone(XP_EVENTS), messages: clone(MESSAGES), mail: clone(MAIL_LOG),
-    settings: clone(OWNER_SETTINGS), sessionUid: null,
+    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), passwords: {}, sessionUid: null,
   };
 }
 
@@ -76,13 +80,75 @@ class DemoStore implements EllpApi {
   async signIn(email: string, password: string): Promise<UserProfile> {
     await delay(350);
     const u = this.s.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
-    if (!u || password !== DEMO_PASSWORD) throw new Error("INVALID_CREDENTIALS");
+    const expected = u ? (this.s.passwords[u.uid] ?? DEMO_PASSWORD) : DEMO_PASSWORD;
+    if (!u || password !== expected) throw new Error("INVALID_CREDENTIALS");
     if (!u.active) throw new Error("ACCOUNT_DISABLED");
     this.s.sessionUid = u.uid;
     this.save(); this.emit();
     return structuredClone(u);
   }
   async signOut() { this.s.sessionUid = null; this.save(); this.emit(); }
+
+  /** The sign-up page: a learner account under the chosen tenant; a pro/premium wish becomes a pending request for the admin. */
+  async signUp(input: SignUpInput): Promise<UserProfile> {
+    await delay(400);
+    const email = input.email.trim().toLowerCase();
+    if (!email || !input.password || input.password.length < 6) throw new Error("VALIDATION");
+    if (this.s.users.some((x) => x.email.toLowerCase() === email)) throw new Error("EMAIL_TAKEN");
+    if (!this.s.owners.some((o) => o.id === input.ownerId && o.active)) throw new Error("OWNER_NOT_FOUND");
+    const wantsPaid = input.plan !== "free";
+    const u: UserProfile = {
+      uid: newId("u"), displayName: input.displayName.trim() || email, email, role: "learner", ownerId: input.ownerId, enrolledProgramIds: [],
+      birthYear: input.birthYear, track: input.track, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
+      plan: input.plan, planStatus: wantsPaid ? "pending" : "active", planTrack: input.plan === "pro" ? (input.planTrack ?? input.track) : null,
+      planNote: input.note.trim(), planRequestedAt: wantsPaid ? nowIso() : null,
+      xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: ["#066fd1", "#2f7f86", "#b0566f", "#a8612a", "#6b5fb0"][Math.floor(Math.random() * 5)], active: true, createdAt: nowIso(),
+    };
+    // the free programs of the learner's track (and the foundation ones) are joined at once, so the home page has something to show
+    u.enrolledProgramIds = this.s.programs.filter((p) => p.ownerId === u.ownerId && p.published && (p.track === u.track || p.track === "foundation")).map((p) => p.id);
+    this.s.users.push(u);
+    this.s.passwords[u.uid] = input.password;
+    // a chat begun as a visitor follows the person into their account
+    const vk = (() => { try { return localStorage.getItem("ellp.visitor"); } catch { return null; } })();
+    for (const c of this.s.chats) if (vk && c.visitorKey === vk && c.ownerId === u.ownerId && !c.uid) { c.uid = u.uid; c.email = u.email; c.name = u.displayName; }
+    this.s.sessionUid = u.uid;
+    this.save(); this.emit();
+    return structuredClone(u);
+  }
+
+  // ── public (no sign-in) ──
+  async publicOwners() { return structuredClone(this.s.owners.filter((o) => o.active)); }
+  async publicPrograms(): Promise<PublicProgram[]> {
+    const owners = this.s.owners.filter((o) => o.active);
+    return this.s.programs.filter((p) => p.published && owners.some((o) => o.id === p.ownerId)).map((program) => {
+      const ls = this.s.lessons.filter((l) => l.programId === program.id && l.published).sort((a, b) => a.order - b.order);
+      return { program: structuredClone(program), owner: structuredClone(owners.find((o) => o.id === program.ownerId)!), lessonCount: ls.length, preview: ls[0] ? structuredClone(ls[0]) : null };
+    });
+  }
+  async publicProgram(programId: string) {
+    const program = this.s.programs.find((p) => p.id === programId && p.published);
+    const owner = program && this.s.owners.find((o) => o.id === program.ownerId && o.active);
+    if (!program || !owner) return null;
+    return { program: structuredClone(program), owner: structuredClone(owner), lessons: structuredClone(this.s.lessons.filter((l) => l.programId === programId && l.published).sort((a, b) => a.order - b.order)), settings: await this.settings(owner.id) };
+  }
+  private findChat(ownerId: string, visitorKey: string | null): ChatThread | undefined {
+    const uid = this.s.sessionUid;
+    return this.s.chats.find((c) => c.ownerId === ownerId && c.status === "open" && ((uid && c.uid === uid) || (visitorKey && c.visitorKey === visitorKey)));
+  }
+  async chatThread(ownerId: string, visitorKey: string | null) { const c = this.findChat(ownerId, visitorKey); return c ? structuredClone(c) : null; }
+  async chatSend(ownerId: string, visitorKey: string | null, name: string, email: string, text: string): Promise<ChatThread> {
+    await delay(150);
+    const me = this.s.users.find((x) => x.uid === this.s.sessionUid) ?? null;
+    let c = this.findChat(ownerId, visitorKey);
+    if (!c) {
+      c = { id: newId("chat"), ownerId, uid: me?.uid ?? null, visitorKey: me ? null : visitorKey, name: me?.displayName ?? name.trim(), email: me?.email ?? email.trim(), status: "open", linkedUid: null, createdAt: nowIso(), updatedAt: nowIso(), messages: [] };
+      this.s.chats.unshift(c);
+    }
+    c.messages.push({ id: newId("cm"), from: "visitor", byName: c.name, text: text.trim(), at: nowIso() });
+    c.updatedAt = nowIso();
+    this.save();
+    return structuredClone(c);
+  }
   async currentUser() { const u = this.s.users.find((x) => x.uid === this.s.sessionUid); return u ? structuredClone(u) : null; }
   onAuthChange(cb: (u: UserProfile | null) => void) { this.listeners.add(cb); return () => { this.listeners.delete(cb); }; }
 
@@ -99,6 +165,19 @@ class DemoStore implements EllpApi {
   async myProgress() { const me = this.me(); return structuredClone(this.s.progress.filter((p) => p.uid === me.uid)); }
   async myQuests() { const me = this.me(); return structuredClone(this.s.questProgress.filter((p) => p.uid === me.uid)); }
   async myXpEvents() { const me = this.me(); return structuredClone(this.s.xpEvents.filter((e) => e.uid === me.uid).sort((a, b) => b.at.localeCompare(a.at))); }
+
+  /** The learner asks for pro or premium: pending until an admin confirms the payment (1.1, bank transfer + slip). */
+  async requestPlan(plan: Plan, planTrack: Track | null, note: string) {
+    await delay(200);
+    const me = this.me();
+    me.plan = plan;
+    me.planStatus = plan === "free" ? "active" : "pending";
+    me.planTrack = plan === "pro" ? (planTrack ?? me.track) : null;
+    me.planNote = note.trim();
+    me.planRequestedAt = plan === "free" ? null : nowIso();
+    this.save(); this.emit();
+    return structuredClone(me);
+  }
 
   async enroll(programId: string) {
     const me = this.me();
@@ -173,6 +252,13 @@ class DemoStore implements EllpApi {
     this.giveBadge(me, "bdg_first", out);
   }
 
+  /** The plan gate (lib/access.ts): a lesson beyond the preview needs a plan that covers the program. */
+  private assertPlan(me: UserProfile, lesson: Lesson) {
+    const program = this.s.programs.find((p) => p.id === lesson.programId);
+    if (!program) throw new Error("PROGRAM_NOT_FOUND");
+    if (!canAccessLesson(me, program, lesson, this.s.lessons.filter((l) => l.programId === program.id))) throw new Error("PLAN_REQUIRED");
+  }
+
   private newResult(p: LessonProgress, me: UserProfile): ActivityResult {
     return { progress: p, xpGained: 0, events: [], levelBefore: levelFor(me.xp), levelAfter: levelFor(me.xp), newBadges: [], questsCompleted: [], lessonCompleted: false };
   }
@@ -182,6 +268,7 @@ class DemoStore implements EllpApi {
     const me = this.me();
     const lesson = this.s.lessons.find((l) => l.id === lessonId);
     if (!lesson) throw new Error("LESSON_NOT_FOUND");
+    this.assertPlan(me, lesson);
     const p = this.progressOf(me.uid, lessonId);
     const out = this.newResult(p, me);
     const before = p.watchedPct;
@@ -205,6 +292,7 @@ class DemoStore implements EllpApi {
     const me = this.me();
     const lesson = this.s.lessons.find((l) => l.id === lessonId);
     if (!lesson) throw new Error("LESSON_NOT_FOUND");
+    this.assertPlan(me, lesson);
     const p = this.progressOf(me.uid, lessonId);
     const out = this.newResult(p, me);
     const total = lesson.quiz.length;
@@ -267,6 +355,35 @@ class DemoStore implements EllpApi {
     return structuredClone(this.s.users.find((x) => x.uid === u.uid) ?? this.s.users[this.s.users.length - 1]);
   }
   async removeMember(uid: string) { this.s.users = this.s.users.filter((u) => u.uid !== uid); this.save(); }
+  async setMemberPlan(uid: string, plan: Plan, status: PlanStatus, planTrack: Track | null, note: string) {
+    const u = this.s.users.find((x) => x.uid === uid);
+    if (!u) throw new Error("MEMBER_NOT_FOUND");
+    u.plan = plan; u.planStatus = plan === "free" ? "active" : status; u.planTrack = plan === "pro" ? (planTrack ?? u.track) : null; u.planNote = note;
+    if (status === "active" && plan !== "free") {
+      // an approved plan joins the learner to the programs it covers
+      for (const p of this.s.programs) if (p.ownerId === u.ownerId && p.published && (plan === "premium" || (p.plan !== "premium" && p.track === u.planTrack)) && !u.enrolledProgramIds.includes(p.id)) u.enrolledProgramIds.push(p.id);
+    }
+    this.save(); this.emit();
+    return structuredClone(u);
+  }
+  async chatThreads(ownerId: string) { return structuredClone(this.s.chats.filter((c) => c.ownerId === ownerId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))); }
+  async chatReply(threadId: string, text: string) {
+    await delay(150);
+    const me = this.me();
+    const c = this.s.chats.find((x) => x.id === threadId);
+    if (!c) throw new Error("CHAT_NOT_FOUND");
+    c.messages.push({ id: newId("cm"), from: "admin", byName: me.displayName, text: text.trim(), at: nowIso() });
+    c.updatedAt = nowIso();
+    this.save();
+    return structuredClone(c);
+  }
+  async chatSetStatus(threadId: string, status: ChatThread["status"], linkedUid?: string | null) {
+    const c = this.s.chats.find((x) => x.id === threadId);
+    if (!c) throw new Error("CHAT_NOT_FOUND");
+    c.status = status; if (linkedUid !== undefined) c.linkedUid = linkedUid; c.updatedAt = nowIso();
+    this.save();
+    return structuredClone(c);
+  }
 
   async saveProgram(p: Program) {
     const i = this.s.programs.findIndex((x) => x.id === p.id);
@@ -327,7 +444,7 @@ class DemoStore implements EllpApi {
   async mailLog(ownerId: string) { return structuredClone(this.s.mail.filter((m) => m.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at))); }
   async settings(ownerId: string) {
     let s = this.s.settings.find((x) => x.ownerId === ownerId);
-    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } }; this.s.settings.push(s); }
+    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" } }; this.s.settings.push(s); }
     return structuredClone(s);
   }
   async saveSettings(s: OwnerSettings) {
@@ -354,6 +471,8 @@ class DemoStore implements EllpApi {
       programs: programs.length,
       lessons: lessons.length,
       openMessages: inOwner(this.s.messages).filter((m) => m.status === "open").length,
+      pendingPlans: learners.filter((u) => u.planStatus === "pending").length,
+      openChats: inOwner(this.s.chats).filter((c) => c.status === "open").length,
       xpThisWeek: events.filter((e) => weekKey(new Date(e.at)) === wk).reduce((n, e) => n + e.xp, 0),
       completionsThisWeek: completions.filter((p) => p.completedAt && weekKey(new Date(p.completedAt)) === wk).length,
       xpByDay: days,
@@ -377,6 +496,7 @@ class DemoStore implements EllpApi {
     this.s.quests = this.s.quests.filter((q) => q.ownerId !== id);
     this.s.users = this.s.users.filter((u) => u.ownerId !== id);
     this.s.messages = this.s.messages.filter((m) => m.ownerId !== id);
+    this.s.chats = this.s.chats.filter((c) => c.ownerId !== id);
     this.save();
   }
   async resetDemo() { this.s = seed(); this.save(); this.emit(); }

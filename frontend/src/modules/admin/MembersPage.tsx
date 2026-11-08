@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { Avatar, Badge, Button, Card, ErrorBox, Field, Icon, Loading, Modal, PageHeader, Switch } from "@/components/ui/kit";
@@ -9,11 +10,12 @@ import { api } from "@/services";
 import { AGE_BANDS, ageBandOf, ageOf, levelFor } from "@/lib/gamification";
 import { nowIso } from "@/lib/format";
 import { fmtDate } from "@/lib/format";
-import type { Role, UserProfile } from "@/types";
+import { TRACKS, type Role, type Track, type UserProfile } from "@/types";
 
 const COLORS = ["#f59f00", "#4c58c4", "#2fb344", "#0b78a8", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
 const blank = (ownerId: string): UserProfile => ({
-  uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], birthYear: null, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
+  uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], birthYear: null, track: null, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
+  plan: "free", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: null,
   xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)], active: true, createdAt: "",
 });
 
@@ -35,6 +37,16 @@ function Inner() {
   const [filter, setFilter] = useState<Role | "all">("all");
   const [edit, setEdit] = useState<UserProfile | null>(null);
   const [confirm, setConfirm] = useState<UserProfile | null>(null);
+  // ?new=1&name=&email=&chat= (from the chat page): the form opens prefilled, and the chat is linked once saved
+  const [params, setParams] = useSearchParams();
+  const [fromChat, setFromChat] = useState<string | null>(null);
+  useEffect(() => {
+    if (params.get("new") === "1") {
+      setEdit({ ...blank(oid), displayName: params.get("name") ?? "", email: params.get("email") ?? "" });
+      setFromChat(params.get("chat"));
+      setParams({}, { replace: true });
+    }
+  }, [params, setParams, oid]);
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
   const canMakeAdmin = user?.role === "superadmin" || user?.role === "owner";
@@ -43,7 +55,8 @@ function Inner() {
 
   const save = async () => {
     if (!edit || !edit.displayName.trim() || !edit.email.trim()) return;
-    await api.saveMember(edit);
+    const saved = await api.saveMember(edit);
+    if (fromChat) { await api.chatSetStatus(fromChat, "open", saved.uid).catch(() => undefined); setFromChat(null); }
     setEdit(null); toast(t("app.saved")); reload();
   };
   const remove = async () => { if (confirm) { await api.removeMember(confirm.uid); setConfirm(null); toast(t("app.saved")); reload(); } };
@@ -59,7 +72,7 @@ function Inner() {
       <Card pad="0">
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th></th><th>{t("mem.name")}</th><th>{t("mem.role")}</th><th>{t("age.band")}</th><th>{t("mem.programs")}</th><th>{t("mem.xp")}</th><th>{t("app.streak")}</th><th>{t("mem.lastActive")}</th><th>{t("app.active")}</th><th></th></tr></thead>
+            <thead><tr><th></th><th>{t("mem.name")}</th><th>{t("mem.role")}</th><th>{t("age.band")}</th><th>{t("mem.trackCol")}</th><th>{t("mem.planCol")}</th><th>{t("mem.programs")}</th><th>{t("mem.xp")}</th><th>{t("app.streak")}</th><th>{t("mem.lastActive")}</th><th>{t("app.active")}</th><th></th></tr></thead>
             <tbody>
               {rows.map((m) => (
                 <tr key={m.uid}>
@@ -75,6 +88,8 @@ function Inner() {
                       </span>
                     )}
                   </td>
+                  <td className="small">{m.role === "learner" && m.track ? t(`track.${m.track}`) : "—"}</td>
+                  <td className="small">{m.role === "learner" ? <Badge tone={m.planStatus === "pending" ? "warn" : m.plan === "free" ? "ok" : m.plan === "pro" ? "accent" : "warn"}>{t(`plan.${m.plan}`)}{m.planStatus !== "active" && ` · ${t(`plan.status.${m.planStatus}`)}`}</Badge> : "—"}</td>
                   <td className="small">{m.role === "learner" ? m.enrolledProgramIds.map((id) => pick(data.programs.find((p) => p.id === id)?.title)).filter(Boolean).join(", ") || "—" : "—"}</td>
                   <td>{m.role === "learner" ? <>{m.xp} <span className="small muted">L{levelFor(m.xp)}</span></> : "—"}</td>
                   <td>{m.role === "learner" ? m.streakDays : "—"}</td>
@@ -105,6 +120,11 @@ function Inner() {
               <>
                 <Field label={t("mem.programs")} span2>
                   <div className="row">{data.programs.map((p) => <button key={p.id} type="button" className="chip" aria-pressed={edit.enrolledProgramIds.includes(p.id)} onClick={() => toggleProgram(p.id)}>{pick(p.title)}</button>)}</div>
+                </Field>
+                <Field label={t("track")}>
+                  <select className="input" value={edit.track ?? ""} onChange={(e) => setEdit({ ...edit, track: (e.target.value || null) as Track | null })}>
+                    <option value="">—</option>{TRACKS.map((tr) => <option key={tr} value={tr}>{t(`track.${tr}`)}</option>)}
+                  </select>
                 </Field>
                 <Field label={t("age.birthYear")} hint={t("age.birthYearHint")}>
                   <input className="input" type="number" min={1990} max={new Date().getFullYear()} placeholder={String(new Date().getFullYear() - 6)} value={edit.birthYear ?? ""}

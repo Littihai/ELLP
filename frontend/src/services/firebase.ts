@@ -1,5 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type Auth, type User } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type Auth, type User } from "firebase/auth";
 
 /**
  * Firebase Web SDK, used only in live mode (VITE_USE_DEMO=false). Auth is the only Firebase service the browser talks to:
@@ -27,6 +27,11 @@ function ensure(): Auth {
 
 export async function firebaseSignIn(email: string, password: string): Promise<User> {
   const cred = await signInWithEmailAndPassword(ensure(), email, password);
+  return cred.user;
+}
+
+export async function firebaseSignUp(email: string, password: string): Promise<User> {
+  const cred = await createUserWithEmailAndPassword(ensure(), email, password);
   return cred.user;
 }
 

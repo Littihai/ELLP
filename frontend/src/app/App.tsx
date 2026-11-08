@@ -24,6 +24,13 @@ import { MembersPage } from "@/modules/admin/MembersPage";
 import { InboxPage } from "@/modules/admin/InboxPage";
 import { MailLogPage } from "@/modules/admin/MailLogPage";
 import { SettingsPage } from "@/modules/admin/SettingsPage";
+import { ApprovalsPage } from "@/modules/admin/ApprovalsPage";
+import { ChatAdminPage } from "@/modules/admin/ChatAdminPage";
+import { PlanPage } from "@/modules/learn/PlanPage";
+import { PublicShell } from "@/modules/public/PublicShell";
+import { LandingPage } from "@/modules/public/LandingPage";
+import { PublicProgramPage } from "@/modules/public/PublicProgramPage";
+import { SignupPage } from "@/modules/public/SignupPage";
 
 /** Two worlds behind two doors: /login → /app/* (learners) and /admin/login → /admin/* (staff). */
 export function App() {
@@ -35,7 +42,12 @@ export function App() {
           <AuthProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Navigate to="/app" replace />} />
+                <Route element={<PublicShell />}>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/catalog" element={<LandingPage catalogOnly />} />
+                  <Route path="/catalog/:programId" element={<PublicProgramPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                </Route>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/admin/login" element={<LoginPage admin />} />
 
@@ -48,6 +60,7 @@ export function App() {
                     <Route path="quests" element={<QuestsPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                     <Route path="profile" element={<ProfilePage />} />
+                    <Route path="plan" element={<PlanPage />} />
                     <Route path="contact" element={<ContactPage />} />
                   </Route>
                 </Route>
@@ -60,13 +73,15 @@ export function App() {
                     <Route path="lessons" element={<LessonsAdminPage />} />
                     <Route path="quests" element={<QuestsAdminPage />} />
                     <Route path="members" element={<MembersPage />} />
+                    <Route path="approvals" element={<ApprovalsPage />} />
+                    <Route path="chat" element={<ChatAdminPage />} />
                     <Route path="inbox" element={<InboxPage />} />
                     <Route path="mail" element={<MailLogPage />} />
                     <Route path="settings" element={<SettingsPage />} />
                   </Route>
                 </Route>
 
-                <Route path="*" element={<Navigate to="/app" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </BrowserRouter>
           </AuthProvider>

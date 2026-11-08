@@ -11,7 +11,7 @@ public class AgeRulesTests
 
     [Theory]
     [InlineData(2023, 3, "3-5")] [InlineData(2021, 5, "3-5")] [InlineData(2020, 6, "6-8")] [InlineData(2018, 8, "6-8")]
-    [InlineData(2017, 9, "9-12")] [InlineData(2014, 12, "9-12")] [InlineData(2013, 13, "13+")] [InlineData(2000, 26, "13+")]
+    [InlineData(2017, 9, "9-12")] [InlineData(2014, 12, "9-12")] [InlineData(2013, 13, "13-15")] [InlineData(2009, 17, "16-18")] [InlineData(2000, 26, "18+")]
     public void Birth_year_gives_age_and_band(int birthYear, int age, string band)
     {
         Assert.Equal(age, GamificationRules.AgeOf(birthYear, Now));

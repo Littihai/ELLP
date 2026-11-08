@@ -2,6 +2,27 @@
 
 All notable changes to ELLP. The format follows Keep a Changelog; versions follow TMCL-PR's order (1.0.0 … 1.0.9, 1.1.0).
 
+## [1.1.0] — 2026-11-08
+
+Every audience, plans, sign-up and chat (decision 0005).
+
+### Added
+- Tracks: kids, school (university entrance), TOEIC, IELTS, ก.พ., foundations. Programs carry a track, a CEFR level (replacing
+  beginner/elementary/intermediate) and an optional target score. Age bands widened to 13–15, 16–18 and 18+.
+- Plans Free / Pro / Premium with a free first-lesson preview on every program; the plan gate in the pages and in the engine
+  (402 `PLAN_REQUIRED`); a plan page for the learner with the tenant's payment instructions; an Approvals page for admins
+  (approve, decline, end, set by hand; approval joins the learner to the covered programs).
+- Public pages without sign-in: landing with catalog by track, program details with the preview video and lesson list.
+- Self-service sign-up (name, email, password, birth year, provider, track, plan, parent box for under-18s).
+- Chat with the tenant's admins for visitors and learners (chat bubble on public and learner pages), an admin chat page, "create
+  account from chat", and a LINE Official Account button per tenant.
+- Seed: a third tenant (English Pro Academy) with five exam-track programs (no video yet), teen and adult learners, a pending
+  Pro request and two chats. 14 new xUnit tests (72 in all).
+
+### Changed
+- Lessons without a YouTube id show a coloured tile instead of a broken thumbnail.
+- Demo state key moved to `ellp.demo.v3`.
+
 ## [1.0.1] — 2026-11-08
 
 Conditions by age (decision 0004).

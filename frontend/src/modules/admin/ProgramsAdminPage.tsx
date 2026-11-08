@@ -6,11 +6,11 @@ import { useToast } from "@/components/ui/Toast";
 import { useAsync } from "@/hooks/useAsync";
 import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
-import type { AgeBand, Program } from "@/types";
+import { CEFR_LEVELS, PLANS, TRACKS, type AgeBand, type Cefr, type Plan, type Program, type Track } from "@/types";
 import { AGE_BANDS } from "@/lib/gamification";
 
 const COLORS = ["#066fd1", "#f59f00", "#2fb344", "#4c58c4", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
-const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, level: "beginner", ageBands: [], color: COLORS[0], published: false, createdAt: "" });
+const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, track: "foundation", cefr: "A1", targetScore: "", plan: "free", ageBands: [], color: COLORS[0], published: false, createdAt: "" });
 
 /** The owner's teaching media (programs). A program is a container; its videos live on the Lessons page. */
 export function ProgramsAdminPage() {
@@ -51,9 +51,10 @@ function Inner() {
                 <div className="row" style={{ justifyContent: "space-between" }}>
                   <span className="row" style={{ gap: 6 }}>
                     <Badge tone={p.published ? "ok" : "neutral"}>{t(p.published ? "app.published" : "app.draft")}</Badge>
+                    <Badge tone={p.plan === "free" ? "ok" : p.plan === "pro" ? "accent" : "warn"}>{t(`plan.${p.plan}`)}</Badge>
                     <Badge tone="accent">{p.ageBands.length === 0 ? t("age.forAll") : p.ageBands.map((b) => b.replace("-", "–")).join(", ")}</Badge>
                   </span>
-                  <span className="small muted">{t("programs.lessonsN", { n })} · {t(`programs.level.${p.level}`)}</span>
+                  <span className="small muted">{t("programs.lessonsN", { n })} · {t(`track.${p.track}`)} · {p.cefr}</span>
                 </div>
                 <h3 style={{ margin: "8px 0 4px", fontSize: "var(--text-lg)" }}>{pick(p.title)}</h3>
                 <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)", minHeight: 42 }}>{pick(p.description)}</p>
@@ -77,10 +78,15 @@ function Inner() {
             <Field label={t("prg.title.en")}><input className="input" value={edit.title.en} onChange={(e) => setEdit({ ...edit, title: { ...edit.title, en: e.target.value } })} /></Field>
             <Field label={t("prg.desc.th")} span2><textarea className="input" rows={2} value={edit.description.th} onChange={(e) => setEdit({ ...edit, description: { ...edit.description, th: e.target.value } })} /></Field>
             <Field label={t("prg.desc.en")} span2><textarea className="input" rows={2} value={edit.description.en} onChange={(e) => setEdit({ ...edit, description: { ...edit.description, en: e.target.value } })} /></Field>
-            <Field label={t("prg.level")}>
-              <select className="input" value={edit.level} onChange={(e) => setEdit({ ...edit, level: e.target.value as Program["level"] })}>
-                {(["beginner", "elementary", "intermediate"] as const).map((l) => <option key={l} value={l}>{t(`programs.level.${l}`)}</option>)}
-              </select>
+            <Field label={t("prg.track")}>
+              <select className="input" value={edit.track} onChange={(e) => setEdit({ ...edit, track: e.target.value as Track })}>{TRACKS.map((tr) => <option key={tr} value={tr}>{t(`track.${tr}`)}</option>)}</select>
+            </Field>
+            <Field label={t("prg.cefr")}>
+              <select className="input" value={edit.cefr} onChange={(e) => setEdit({ ...edit, cefr: e.target.value as Cefr })}>{CEFR_LEVELS.map((c) => <option key={c} value={c}>{t(`cefr.${c}`)}</option>)}</select>
+            </Field>
+            <Field label={t("prg.target")}><input className="input" value={edit.targetScore} onChange={(e) => setEdit({ ...edit, targetScore: e.target.value })} placeholder="TOEIC 600+" /></Field>
+            <Field label={t("prg.plan")} hint={t("prg.planHint")}>
+              <select className="input" value={edit.plan} onChange={(e) => setEdit({ ...edit, plan: e.target.value as Plan })}>{PLANS.map((pl) => <option key={pl} value={pl}>{t(`plan.${pl}`)}</option>)}</select>
             </Field>
             <Field label={t("prg.color")}>
               <div className="row" style={{ gap: 6 }}>

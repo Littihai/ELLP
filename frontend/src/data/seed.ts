@@ -1,12 +1,13 @@
 import { DEFAULT_AGE_RULES } from "@/lib/gamification";
 import type {
-  Badge, InboxMessage, Lesson, LessonProgress, MailLog, Owner, OwnerSettings, Program, Quest, QuestProgress, UserProfile, XpEvent,
+  Badge, ChatThread, InboxMessage, Lesson, LessonProgress, MailLog, Owner, OwnerSettings, Program, Quest, QuestProgress, UserProfile, XpEvent,
 } from "@/types";
 
 /**
- * Demo data: two owners (tenants), three programs, song-based lessons with quizzes and unlock rules, quests, badges, a few
- * learners with progress and one open message. Everything is fictional. The YouTube ids point at well-known children's songs;
- * an admin replaces them in Admin > Lessons when the owner licenses other media.
+ * Demo data: three owners (a kindergarten, a children's publisher and an exam-prep academy), programs across the tracks
+ * (kids, school, TOEIC, IELTS, ก.พ., foundation), song lessons with quizzes and unlock rules, quests, badges, learners of
+ * every age with progress, open messages and chats. Everything is fictional. The YouTube ids of the song lessons point at
+ * well-known children's songs; the exam-track lessons have no video yet (an admin pastes the id, or 1.2 uploads a file).
  */
 
 const T0 = "2026-10-01T08:00:00.000Z";
@@ -14,23 +15,49 @@ const T0 = "2026-10-01T08:00:00.000Z";
 export const OWNERS: Owner[] = [
   { id: "own_sunshine", code: "SUN", name: { th: "โรงเรียนอนุบาลซันไชน์", en: "Sunshine Kindergarten" }, contactEmail: "admin@sunshine.example.com", plan: "school", active: true, createdAt: T0 },
   { id: "own_bright", code: "BRT", name: { th: "สำนักพิมพ์ไบรท์คิดส์", en: "Bright Kids Publishing" }, contactEmail: "hello@brightkids.example.com", plan: "enterprise", active: true, createdAt: T0 },
+  { id: "own_pro", code: "EPA", name: { th: "สถาบันติวอิงลิชโปร", en: "English Pro Academy" }, contactEmail: "hello@englishpro.example.com", plan: "enterprise", active: true, createdAt: T0 },
 ];
 
 export const PROGRAMS: Program[] = [
   {
-    id: "prg_songs1", ownerId: "own_sunshine", level: "beginner", ageBands: [], color: "#f59f00", published: true, createdAt: T0,
+    id: "prg_songs1", ownerId: "own_sunshine", track: "kids", cefr: "pre-A1", targetScore: "", plan: "free", ageBands: [], color: "#f59f00", published: true, createdAt: T0,
     title: { th: "ร้องเพลงภาษาอังกฤษ ชุดที่ 1", en: "Sing-along English, Set 1" },
     description: { th: "เริ่มจาก Baby Shark แล้วปลดล็อกเพลงถัดไปเมื่อดูจบและตอบคำถามผ่าน", en: "Start with Baby Shark and unlock the next song by finishing each video and passing its quiz." },
   },
   {
-    id: "prg_body", ownerId: "own_sunshine", level: "elementary", ageBands: ["6-8", "9-12"], color: "#2fb344", published: true, createdAt: T0,
+    id: "prg_body", ownerId: "own_sunshine", track: "kids", cefr: "A1", targetScore: "", plan: "pro", ageBands: ["6-8", "9-12"], color: "#2fb344", published: true, createdAt: T0,
     title: { th: "ร่างกายและการเคลื่อนไหว", en: "My Body in Motion" },
-    description: { th: "เพลงและท่าทางเกี่ยวกับร่างกาย สำหรับ 6 ขวบขึ้นไป เปิดได้เมื่อถึงเลเวล 2", en: "Songs and actions about the body, for ages 6 and up. Opens at level 2." },
+    description: { th: "เพลงและท่าทางเกี่ยวกับร่างกาย สำหรับ 6 ขวบขึ้นไป เปิดได้เมื่อถึงเลเวล 2 (แพ็กเกจ Pro)", en: "Songs and actions about the body, for ages 6 and up. Opens at level 2 (Pro plan)." },
   },
   {
-    id: "prg_phonics", ownerId: "own_bright", level: "beginner", ageBands: ["3-5", "6-8"], color: "#4c58c4", published: true, createdAt: T0,
+    id: "prg_phonics", ownerId: "own_bright", track: "kids", cefr: "pre-A1", targetScore: "", plan: "free", ageBands: ["3-5", "6-8"], color: "#4c58c4", published: true, createdAt: T0,
     title: { th: "โฟนิกส์ A–Z", en: "Phonics A to Z" },
     description: { th: "เสียงตัวอักษรผ่านเพลง สำหรับผู้เรียนของไบรท์คิดส์", en: "Letter sounds through song, for Bright Kids learners." },
+  },
+  {
+    id: "prg_tgat", ownerId: "own_pro", track: "school", cefr: "B1", targetScore: "TGAT Eng 70+", plan: "pro", ageBands: ["16-18", "18+"], color: "#0b78a8", published: true, createdAt: T0,
+    title: { th: "ติวอังกฤษสอบเข้ามหาวิทยาลัย (TGAT / A-Level)", en: "University Entrance English (TGAT / A-Level)" },
+    description: { th: "Reading, Vocabulary และ Error Identification ตามแนวข้อสอบจริง 2 บทแรกดูฟรี", en: "Reading, vocabulary and error identification in the exam's style. The first lesson is a free preview." },
+  },
+  {
+    id: "prg_toeic", ownerId: "own_pro", track: "toeic", cefr: "B1", targetScore: "TOEIC 600+", plan: "pro", ageBands: ["16-18", "18+"], color: "#2f7f86", published: true, createdAt: T0,
+    title: { th: "TOEIC Listening & Reading 600+", en: "TOEIC Listening & Reading 600+" },
+    description: { th: "เทคนิคทำข้อสอบทั้ง 7 Part พร้อมแบบฝึกจับเวลา", en: "Technique for all seven parts with timed drills." },
+  },
+  {
+    id: "prg_ielts", ownerId: "own_pro", track: "ielts", cefr: "B2", targetScore: "IELTS 6.5", plan: "premium", ageBands: ["16-18", "18+"], color: "#6b5fb0", published: true, createdAt: T0,
+    title: { th: "IELTS Writing Task 2 สู่ Band 6.5", en: "IELTS Writing Task 2 to Band 6.5" },
+    description: { th: "โครงสร้างเรียงความ คำเชื่อม และการให้คะแนนตามเกณฑ์จริง (Premium)", en: "Essay structure, cohesion and the real band descriptors (Premium)." },
+  },
+  {
+    id: "prg_kpo", ownerId: "own_pro", track: "kpo", cefr: "A2", targetScore: "ก.พ. ภาค ก ผ่าน 60 %", plan: "pro", ageBands: ["18+"], color: "#a8612a", published: true, createdAt: T0,
+    title: { th: "ภาษาอังกฤษ ก.พ. ภาค ก", en: "Civil Service Exam (ก.พ.) English" },
+    description: { th: "Conversation, Vocabulary, Structure และ Reading ตามแนวข้อสอบ ก.พ.", en: "Conversation, vocabulary, structure and reading in the ก.พ. exam's style." },
+  },
+  {
+    id: "prg_found", ownerId: "own_pro", track: "foundation", cefr: "A1", targetScore: "", plan: "free", ageBands: [], color: "#b0566f", published: true, createdAt: T0,
+    title: { th: "ปรับพื้นฐานไวยากรณ์ A1", en: "Grammar Foundations A1" },
+    description: { th: "เริ่มใหม่ตั้งแต่ Parts of speech, Tenses พื้นฐาน และประโยคในชีวิตประจำวัน ฟรีทุกบท", en: "Start over: parts of speech, basic tenses and everyday sentences. Every lesson free." },
   },
 ];
 
@@ -86,7 +113,7 @@ export const LESSONS: Lesson[] = [
   {
     id: "les_head", programId: "prg_body", order: 1, published: true, youtubeId: "h4eueDYPTIg", durationSec: 140, xpReward: 50,
     title: { th: "Head, Shoulders, Knees and Toes", en: "Head, Shoulders, Knees and Toes" },
-    summary: { th: "โปรแกรมนี้เปิดเมื่อถึงเลเวล 2", en: "This program opens at level 2." },
+    summary: { th: "โปรแกรมนี้เปิดเมื่อถึงเลเวล 2 บทแรกดูฟรี", en: "This program opens at level 2. The first lesson is a free preview." },
     vocabulary: ["head", "shoulders", "knees", "toes", "eyes", "ears", "mouth", "nose"],
     quiz: [
       q("q1", "'Knees' คือส่วนไหนของร่างกาย", "'Knees' are …", ["หัวเข่า", "ไหล่", "นิ้วเท้า"], 0),
@@ -110,6 +137,87 @@ export const LESSONS: Lesson[] = [
     quiz: [q("q1", "'A' is for …", "'A' is for …", ["apple", "ball", "cat"], 0), q("q2", "'C' is for …", "'C' is for …", ["dog", "cat", "fish"], 1)],
     unlock: [{ type: "min_age", years: 5 }],
   },
+  // ── exam tracks (no video yet: the admin pastes a YouTube id, or 1.2 uploads a file) ──
+  {
+    id: "les_tgat1", programId: "prg_tgat", order: 1, published: true, youtubeId: "", durationSec: 900, xpReward: 80,
+    title: { th: "Reading: หาใจความสำคัญใน 90 วินาที", en: "Reading: the main idea in 90 seconds" },
+    summary: { th: "บทแรกดูฟรี เทคนิค skim และ scan กับข้อสอบจริง 3 ข้อ", en: "Free preview. Skim and scan with three past-paper items." },
+    vocabulary: ["main idea", "skim", "scan", "inference", "tone"],
+    quiz: [q("q1", "'Skimming' คือการอ่านแบบใด", "'Skimming' means reading …", ["ทุกคำอย่างละเอียด", "เร็ว ๆ เพื่อจับใจความ", "เฉพาะย่อหน้าสุดท้าย"], 1), q("q2", "คำถาม 'The passage is mainly about…' ถามเรื่องใด", "'The passage is mainly about…' asks for the …", ["detail", "main idea", "tone"], 1)],
+    unlock: [],
+  },
+  {
+    id: "les_tgat2", programId: "prg_tgat", order: 2, published: true, youtubeId: "", durationSec: 1200, xpReward: 80,
+    title: { th: "Error Identification: 10 จุดที่ออกบ่อย", en: "Error identification: the ten usual suspects" },
+    summary: { th: "Subject-verb agreement, tense, parallel structure (แพ็กเกจ Pro)", en: "Subject-verb agreement, tense, parallel structure (Pro plan)." },
+    vocabulary: ["agreement", "parallel", "modifier", "pronoun reference"],
+    quiz: [q("q1", "ข้อใดถูกต้อง", "Which is correct?", ["She don't like it", "She doesn't like it", "She not like it"], 1)],
+    unlock: [{ type: "lesson_completed", lessonId: "les_tgat1" }],
+  },
+  {
+    id: "les_toeic1", programId: "prg_toeic", order: 1, published: true, youtubeId: "", durationSec: 1100, xpReward: 80,
+    title: { th: "Part 1–2: Photographs & Question-Response", en: "Parts 1–2: photographs and question-response" },
+    summary: { th: "บทแรกดูฟรี ฟังจับคำสำคัญและตัดตัวเลือกลวง", en: "Free preview. Catch the key word, drop the distractors." },
+    vocabulary: ["distractor", "similar sound", "wh-question", "yes/no"],
+    quiz: [q("q1", "'Where is the meeting?' ตอบข้อใดเหมาะสม", "Best reply to 'Where is the meeting?'", ["At 3 p.m.", "In room 204", "Yes, it is"], 1)],
+    unlock: [],
+  },
+  {
+    id: "les_toeic2", programId: "prg_toeic", order: 2, published: true, youtubeId: "", durationSec: 1300, xpReward: 90,
+    title: { th: "Part 5: Incomplete Sentences ทำให้ทันใน 20 วินาที", en: "Part 5: incomplete sentences in 20 seconds each" },
+    summary: { th: "Word form, preposition, conjunction (แพ็กเกจ Pro)", en: "Word form, preposition, conjunction (Pro plan)." },
+    vocabulary: ["word form", "preposition", "conjunction", "collocation"],
+    quiz: [q("q1", "The report was ___ submitted.", "The report was ___ submitted.", ["success", "successful", "successfully"], 2)],
+    unlock: [{ type: "lesson_completed", lessonId: "les_toeic1" }],
+  },
+  {
+    id: "les_ielts1", programId: "prg_ielts", order: 1, published: true, youtubeId: "", durationSec: 1500, xpReward: 100,
+    title: { th: "Task 2: อ่านโจทย์ให้ออกใน 2 นาที", en: "Task 2: decode the question in two minutes" },
+    summary: { th: "บทแรกดูฟรี แยก opinion / discussion / problem-solution", en: "Free preview. Opinion, discussion and problem-solution questions." },
+    vocabulary: ["thesis", "cohesion", "band descriptor", "task response"],
+    quiz: [q("q1", "'To what extent do you agree?' เป็นโจทย์แบบใด", "'To what extent do you agree?' is a(n) … question", ["discussion", "opinion", "problem-solution"], 1)],
+    unlock: [],
+  },
+  {
+    id: "les_ielts2", programId: "prg_ielts", order: 2, published: true, youtubeId: "", durationSec: 1800, xpReward: 100,
+    title: { th: "โครงสร้าง 4 ย่อหน้าและคำเชื่อมระดับ Band 7", en: "The four-paragraph structure and Band 7 linking" },
+    summary: { th: "แพ็กเกจ Premium", en: "Premium plan." },
+    vocabulary: ["furthermore", "nevertheless", "consequently", "whereas"],
+    quiz: [q("q1", "คำเชื่อมใดแสดงความขัดแย้ง", "Which linker shows contrast?", ["furthermore", "nevertheless", "consequently"], 1)],
+    unlock: [{ type: "lesson_completed", lessonId: "les_ielts1" }],
+  },
+  {
+    id: "les_kpo1", programId: "prg_kpo", order: 1, published: true, youtubeId: "", durationSec: 1000, xpReward: 80,
+    title: { th: "Conversation: สำนวนที่ออกสอบทุกปี", en: "Conversation: the expressions that appear every year" },
+    summary: { th: "บทแรกดูฟรี", en: "Free preview." },
+    vocabulary: ["How about…?", "I'd rather", "Would you mind…?", "No problem"],
+    quiz: [q("q1", "'Would you mind opening the window?' ตอบรับว่าอย่างไร", "To agree to 'Would you mind opening the window?' say …", ["Yes, I would", "Not at all", "No, thanks"], 1)],
+    unlock: [],
+  },
+  {
+    id: "les_kpo2", programId: "prg_kpo", order: 2, published: true, youtubeId: "", durationSec: 1200, xpReward: 80,
+    title: { th: "Structure: Tense และ Passive ที่ต้องแม่น", en: "Structure: the tenses and passives you must know" },
+    summary: { th: "แพ็กเกจ Pro", en: "Pro plan." },
+    vocabulary: ["present perfect", "passive voice", "conditional"],
+    quiz: [q("q1", "The letter ___ yesterday.", "The letter ___ yesterday.", ["is sent", "was sent", "has sent"], 1)],
+    unlock: [{ type: "lesson_completed", lessonId: "les_kpo1" }],
+  },
+  {
+    id: "les_found1", programId: "prg_found", order: 1, published: true, youtubeId: "", durationSec: 800, xpReward: 50,
+    title: { th: "Parts of speech ใน 10 นาที", en: "Parts of speech in ten minutes" },
+    summary: { th: "ฟรี", en: "Free." },
+    vocabulary: ["noun", "verb", "adjective", "adverb"],
+    quiz: [q("q1", "'quickly' เป็นคำชนิดใด", "'quickly' is a(n) …", ["noun", "adjective", "adverb"], 2)],
+    unlock: [],
+  },
+  {
+    id: "les_found2", programId: "prg_found", order: 2, published: true, youtubeId: "", durationSec: 900, xpReward: 50,
+    title: { th: "Present Simple กับชีวิตประจำวัน", en: "Present simple and daily life" },
+    summary: { th: "ฟรี เปิดเมื่อจบบทแรก", en: "Free. Opens after the first lesson." },
+    vocabulary: ["every day", "usually", "always", "never"],
+    quiz: [q("q1", "She ___ to work by bus.", "She ___ to work by bus.", ["go", "goes", "going"], 1)],
+    unlock: [{ type: "lesson_completed", lessonId: "les_found1" }],
+  },
 ];
 
 export const BADGES: Badge[] = [
@@ -130,19 +238,38 @@ export const QUESTS: Quest[] = [
     title: { th: "เรียนต่อเนื่อง 3 วัน", en: "3 days in a row" }, description: { th: "เข้ามาเรียนทุกวันติดกัน 3 วัน", en: "Learn three days running." }, goal: { type: "streak_days", target: 3 } },
   { id: "qst_bright_daily", ownerId: "own_bright", programId: null, scope: "daily", active: true, xpReward: 20, badgeId: null,
     title: { th: "ฝึกโฟนิกส์วันละคลิป", en: "One phonics video a day" }, description: { th: "", en: "" }, goal: { type: "watch_videos", target: 1 } },
+  { id: "qst_pro_daily", ownerId: "own_pro", programId: null, scope: "daily", active: true, xpReward: 30, badgeId: null,
+    title: { th: "ติววันละบท", en: "One lesson a day" }, description: { th: "ดูบทเรียนใดก็ได้ให้จบ", en: "Finish any lesson's video." }, goal: { type: "watch_videos", target: 1 } },
+  { id: "qst_pro_quiz", ownerId: "own_pro", programId: null, scope: "weekly", active: true, xpReward: 80, badgeId: null,
+    title: { th: "ผ่านแบบทดสอบ 3 ครั้งในสัปดาห์นี้", en: "Pass 3 quizzes this week" }, description: { th: "", en: "" }, goal: { type: "pass_quizzes", target: 3 } },
 ];
 
+const NO_PLAN = { plan: "free" as const, planStatus: "active" as const, planTrack: null, planNote: "", planRequestedAt: null };
+const NO_CONSENT = { acknowledged: false, at: null as string | null, note: "" };
+const ACK = { acknowledged: true, at: T0 as string | null, note: "ผู้ปกครองรับทราบตอนสมัคร" };
+const staff = (uid: string, name: string, email: string, role: UserProfile["role"], ownerId: string | null, color: string): UserProfile => ({
+  uid, displayName: name, email, role, ownerId, enrolledProgramIds: [], birthYear: null, track: null, allowAllAges: true, parentConsent: NO_CONSENT, ...NO_PLAN,
+  xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: color, active: true, createdAt: T0,
+});
+
 export const USERS: UserProfile[] = [
-  { uid: "u_super", displayName: "Platform Admin", email: "super@ellp.example.com", role: "superadmin", ownerId: null, enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#182433", active: true, createdAt: T0 },
-  { uid: "u_owner_sun", displayName: "คุณครูใหญ่ สมศรี", email: "principal@sunshine.example.com", role: "owner", ownerId: "own_sunshine", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
-  { uid: "u_admin_ann", displayName: "Teacher Ann", email: "ann@sunshine.example.com", role: "admin", ownerId: "own_sunshine", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#2f7f86", active: true, createdAt: T0 },
-  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2019, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
-  { uid: "u_tee", displayName: "น้องตี๋", email: "tee.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2017, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 320, streakDays: 5, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_streak3"], avatarColor: "#4c58c4", active: true, createdAt: T0 },
-  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2016, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
-  { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2020, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
-  { uid: "u_pukkie", displayName: "น้องปุ๊กกี้", email: "pukkie.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2022, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 40, streakDays: 1, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
-  { uid: "u_admin_bright", displayName: "Khun Bee", email: "bee@brightkids.example.com", role: "admin", ownerId: "own_bright", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#a8612a", active: true, createdAt: T0 },
-  { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], birthYear: 2021, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
+  staff("u_super", "Platform Admin", "super@ellp.example.com", "superadmin", null, "#182433"),
+  staff("u_owner_sun", "คุณครูใหญ่ สมศรี", "principal@sunshine.example.com", "owner", "own_sunshine", "#b0566f"),
+  staff("u_admin_ann", "Teacher Ann", "ann@sunshine.example.com", "admin", "own_sunshine", "#2f7f86"),
+  staff("u_admin_bright", "Khun Bee", "bee@brightkids.example.com", "admin", "own_bright", "#a8612a"),
+  staff("u_admin_pro", "ครูเบนซ์", "benz@englishpro.example.com", "admin", "own_pro", "#0b78a8"),
+  // kids (Sunshine)
+  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2019, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "pro", planStatus: "active", planTrack: "kids", planNote: "โอนแล้ว 1 ต.ค.", planRequestedAt: T0, xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
+  { uid: "u_tee", displayName: "น้องตี๋", email: "tee.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2017, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 320, streakDays: 5, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_streak3"], avatarColor: "#4c58c4", active: true, createdAt: T0 },
+  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2016, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
+  { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2020, track: "kids", allowAllAges: false, parentConsent: NO_CONSENT, ...NO_PLAN, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
+  { uid: "u_pukkie", displayName: "น้องปุ๊กกี้", email: "pukkie.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2022, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 40, streakDays: 1, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
+  // Bright Kids
+  { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], birthYear: 2021, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
+  // English Pro Academy (teens and adults)
+  { uid: "u_ploy", displayName: "น้องพลอย ม.6", email: "ploy@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_tgat", "prg_found"], birthYear: 2009, track: "school", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#0b78a8", active: true, createdAt: T0 },
+  { uid: "u_jay", displayName: "คุณเจ", email: "jay@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_toeic"], birthYear: 1998, track: "toeic", allowAllAges: false, parentConsent: NO_CONSENT, plan: "pro", planStatus: "pending", planTrack: "toeic", planNote: "โอน 1,290 บาท 7 พ.ย. 20:15 สลิปส่งทางแชทแล้ว", planRequestedAt: "2026-11-07T13:20:00.000Z", xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2f7f86", active: true, createdAt: "2026-11-07T13:00:00.000Z" },
+  { uid: "u_ann2", displayName: "คุณแอน", email: "ann.k@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_kpo", "prg_ielts"], birthYear: 1995, track: "kpo", allowAllAges: false, parentConsent: NO_CONSENT, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, xp: 260, streakDays: 3, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#a8612a", active: true, createdAt: T0 },
 ];
 
 const P = (uid: string, lessonId: string, watchedPct: number, quizScore: number | null, quizTotal: number | null, completed: boolean): LessonProgress =>
@@ -159,6 +286,11 @@ export const PROGRESS: LessonProgress[] = [
   P("u_fah", "les_abc", 100, 2, 3, true),
   P("u_fah", "les_head", 100, 2, 2, true),
   P("u_kao", "les_phonicsA", 100, 2, 2, true),
+  P("u_ploy", "les_tgat1", 100, 2, 2, true),
+  P("u_jay", "les_toeic1", 100, 1, 1, true),
+  P("u_ann2", "les_kpo1", 100, 1, 1, true),
+  P("u_ann2", "les_kpo2", 100, 1, 1, true),
+  P("u_ann2", "les_ielts1", 60, null, null, false),
 ];
 
 export const QUEST_PROGRESS: QuestProgress[] = [
@@ -172,6 +304,7 @@ export const XP_EVENTS: XpEvent[] = [
   { id: "xe2", uid: "u_mint", ownerId: "own_sunshine", programId: "prg_songs1", kind: "quiz", xp: 50, note: "Baby Shark quiz 3/3", at: T0 },
   { id: "xe3", uid: "u_mint", ownerId: "own_sunshine", programId: null, kind: "quest", xp: 20, note: "Watch 1 video today", at: T0 },
   { id: "xe4", uid: "u_mint", ownerId: "own_sunshine", programId: null, kind: "streak", xp: 10, note: "Day 2", at: T0 },
+  { id: "xe5", uid: "u_jay", ownerId: "own_pro", programId: "prg_toeic", kind: "video", xp: 80, note: "Parts 1–2", at: "2026-11-07T14:00:00.000Z" },
 ];
 
 export const MESSAGES: InboxMessage[] = [
@@ -190,12 +323,30 @@ export const MAIL_LOG: MailLog[] = [
   { id: "mail_1", ownerId: "own_sunshine", to: "tee.parent@example.com", subject: "Re: ขอเพลงเพิ่ม", body: "ขอบคุณค่ะ ชุดที่ 2 (Animals) จะเปิดเดือนหน้า จะแจ้งทางอีเมลนะคะ", status: "redirected", testMode: true, at: "2026-11-03T15:02:05.000Z" },
 ];
 
-export const OWNER_SETTINGS: OwnerSettings[] = [
-  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } },
-  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } },
+export const CHATS: ChatThread[] = [
+  {
+    id: "chat_1", ownerId: "own_pro", uid: "u_jay", visitorKey: null, name: "คุณเจ", email: "jay@example.com", status: "open", linkedUid: null,
+    createdAt: "2026-11-07T13:10:00.000Z", updatedAt: "2026-11-07T13:25:00.000Z",
+    messages: [
+      { id: "cm1", from: "visitor", byName: "คุณเจ", text: "สวัสดีครับ สนใจคอร์ส TOEIC 600+ สมัคร Pro ต้องทำอย่างไรครับ", at: "2026-11-07T13:10:00.000Z" },
+      { id: "cm2", from: "admin", byName: "ครูเบนซ์", text: "สวัสดีค่ะ สมัครบัญชีฟรีก่อน แล้วกดขอแพ็กเกจ Pro เลือก Track TOEIC โอน 1,290 บาทตามเลขบัญชีในหน้าแพ็กเกจ แล้วส่งสลิปในแชทนี้ได้เลยค่ะ", at: "2026-11-07T13:12:00.000Z" },
+      { id: "cm3", from: "visitor", byName: "คุณเจ", text: "โอนแล้วครับ 20:15 ส่งสลิปแล้วนะครับ", at: "2026-11-07T13:25:00.000Z" },
+    ],
+  },
+  {
+    id: "chat_2", ownerId: "own_pro", uid: null, visitorKey: "v_demo_visitor", name: "คุณนุ่น", email: "noon@example.com", status: "open", linkedUid: null,
+    createdAt: "2026-11-08T08:00:00.000Z", updatedAt: "2026-11-08T08:00:00.000Z",
+    messages: [{ id: "cm4", from: "visitor", byName: "คุณนุ่น", text: "อยากปรับพื้นฐานก่อนสอบ ก.พ. ปีหน้า ควรเริ่มคอร์สไหนดีคะ", at: "2026-11-08T08:00:00.000Z" }],
+  },
 ];
 
-/** The accounts the demo sign-in pages offer. The password is the same for every demo account and is shown on the page. */
+export const OWNER_SETTINGS: OwnerSettings[] = [
+  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@sunshine-demo", paymentInstructions: { th: "โอนเข้าบัญชีโรงเรียน (ตัวอย่าง) 123-4-56789-0 แล้วแนบเลขอ้างอิงในช่องหมายเหตุ", en: "Transfer to the school account (sample) 123-4-56789-0 and put the reference in the note." } },
+  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" } },
+  { ownerId: "own_pro", email: { fromName: "English Pro Academy", fromAddress: "no-reply@englishpro.example.com", replyTo: "benz@englishpro.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 20 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@englishpro-demo", paymentInstructions: { th: "Pro 1,290 บาท/เดือน · Premium 2,490 บาท/เดือน (ตัวอย่าง) โอนเข้า ธ.ตัวอย่าง 987-6-54321-0 แล้วส่งสลิปในแชทหรือใส่เลขอ้างอิงในหมายเหตุ", en: "Pro 1,290 THB/month · Premium 2,490 THB/month (sample). Transfer to Sample Bank 987-6-54321-0 and send the slip in the chat or put the reference in the note." } },
+];
+
+/** The accounts the demo sign-in pages offer. The password is the same for every seeded account and is shown on the page. */
 export const DEMO_PASSWORD = "ellp-demo";
-export const DEMO_LEARNERS = ["u_mint", "u_tee", "u_fah", "u_new", "u_pukkie", "u_kao"];
-export const DEMO_STAFF = ["u_super", "u_owner_sun", "u_admin_ann", "u_admin_bright"];
+export const DEMO_LEARNERS = ["u_mint", "u_pukkie", "u_new", "u_ploy", "u_jay", "u_ann2"];
+export const DEMO_STAFF = ["u_super", "u_owner_sun", "u_admin_ann", "u_admin_pro"];

@@ -5,8 +5,9 @@ import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading } from "@/components/
 import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
 import { checkUnlock, levelInfo, programVisible } from "@/lib/gamification";
-import { fmtDate, fmtDuration } from "@/lib/format";
-import { QUEST_ICON, currentQuestProgress, ytThumb } from "./shared";
+import { fmtDate } from "@/lib/format";
+import { QUEST_ICON, Thumb, currentQuestProgress } from "./shared";
+import { canAccessLesson } from "@/lib/access";
 
 /** The learner's dashboard: level and XP, what to do next, today's quests, badges and the latest XP. */
 export function HomePage() {
@@ -29,7 +30,7 @@ export function HomePage() {
   const openLessons = data.lessons.filter((l) => l.published && myPrograms.some((p) => p.id === l.programId));
   const next = openLessons
     .filter((l) => !data.progress.find((p) => p.lessonId === l.id)?.completed)
-    .map((l) => ({ l, unlocked: checkUnlock(l, u, data.progress, data.questRows).ok, p: data.progress.find((p) => p.lessonId === l.id) }))
+    .map((l) => ({ l, unlocked: canAccessLesson(u, myPrograms.find((p) => p.id === l.programId)!, l, data.lessons) && checkUnlock(l, u, data.progress, data.questRows).ok, p: data.progress.find((p) => p.lessonId === l.id) }))
     .sort((a, b) => Number(b.unlocked) - Number(a.unlocked) || (b.p?.watchedPct ?? 0) - (a.p?.watchedPct ?? 0) || a.l.order - b.l.order)[0];
   const daily = data.quests.filter((q) => q.active && q.scope !== "program").slice(0, 3);
   const myRank = data.board.find((r) => r.isMe);
@@ -61,11 +62,7 @@ export function HomePage() {
         <Card title={t("home.nextUp")} actions={<Link to="/app/programs" className="btn btn-ghost">{t("home.seeAll")}</Link>}>
           {next ? (
             <Link to={`/app/lessons/${next.l.id}`} className="lesson-card" data-locked={!next.unlocked} style={{ border: 0, boxShadow: "none", padding: 0 }}>
-              <div className="thumb">
-                <img src={ytThumb(next.l.youtubeId)} alt="" loading="lazy" />
-                <span className="ov"><Icon name={next.unlocked ? "play" : "lock"} size={26} /></span>
-                <span className="dur">{fmtDuration(next.l.durationSec)}</span>
-              </div>
+              <Thumb youtubeId={next.l.youtubeId} color={myPrograms.find((p) => p.id === next.l.programId)?.color} duration={next.l.durationSec} locked={!next.unlocked} />
               <div>
                 <div className="eyebrow">{pick(myPrograms.find((p) => p.id === next.l.programId)?.title)}</div>
                 <h3>{pick(next.l.title)}</h3>

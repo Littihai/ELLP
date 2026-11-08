@@ -10,6 +10,9 @@ namespace Ellp.Api.Modules.Tenants;
 
 public sealed record ReplyInput(string Body);
 public sealed record StatusInput(string Status);
+public sealed record MemberPlanInput(string Plan, string Status, string? PlanTrack, string Note);
+public sealed record ChatReplyInput(string Text);
+public sealed record ChatStatusInput(string Status, string? LinkedUid);
 
 public sealed class AdminStats
 {
@@ -18,6 +21,8 @@ public sealed class AdminStats
     public int Programs { get; set; }
     public int Lessons { get; set; }
     public int OpenMessages { get; set; }
+    public int PendingPlans { get; set; }
+    public int OpenChats { get; set; }
     public int XpThisWeek { get; set; }
     public int CompletionsThisWeek { get; set; }
     public List<DayXp> XpByDay { get; set; } = new();
@@ -84,6 +89,51 @@ public sealed class AdminController : ControllerBase
         if (me!.Uid == uid) return Conflict(ApiResponse<object>.Fail(ApiCodes.Validation, "cannot remove yourself"));
         await _s.DeleteUserAsync(uid, ct);
         return Ok(ApiResponse<object?>.Ok(null));
+    }
+
+    /// <summary>The admin's plan decision (approve a request, decline, end, or set by hand). An approved paid plan joins the learner to its programs.</summary>
+    [HttpPut("members/{uid}/plan")]
+    public async Task<IActionResult> SetPlan(string uid, [FromBody] MemberPlanInput input, CancellationToken ct)
+    {
+        var target = await _s.UserAsync(uid, ct);
+        if (target is null) return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "member not found"));
+        var (_, err) = await Staff(target.OwnerId, ct); if (err is not null) return err;
+        IEnumerable<LearningProgram> join;
+        try { join = Access.PlanRules.ApplyDecision(target, input.Plan, input.Status, input.PlanTrack, input.Note ?? "", await _s.ProgramsAsync(target.OwnerId, ct)); }
+        catch (ArgumentException ex) { return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, ex.Message)); }
+        foreach (var p in join) if (!target.EnrolledProgramIds.Contains(p.Id)) target.EnrolledProgramIds.Add(p.Id);
+        await _s.UpsertUserAsync(target, ct);
+        return Ok(ApiResponse<UserProfile>.Ok(target));
+    }
+
+    // ── chats ──
+    [HttpGet("chat")]
+    public async Task<IActionResult> Chats([FromQuery] string ownerId, CancellationToken ct)
+    { var (_, err) = await Staff(ownerId, ct); if (err is not null) return err; return Ok(ApiResponse<List<ChatThread>>.Ok(await _s.ChatsAsync(ownerId, ct))); }
+
+    [HttpPost("chat/{id}/reply")]
+    public async Task<IActionResult> ChatReply(string id, [FromBody] ChatReplyInput input, CancellationToken ct)
+    {
+        var c = await _s.ChatAsync(id, ct);
+        if (c is null) return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "chat not found"));
+        var (me, err) = await Staff(c.OwnerId, ct); if (err is not null) return err;
+        if (string.IsNullOrWhiteSpace(input.Text)) return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, "text is required"));
+        c.Messages.Add(new ChatMessage { Id = Clock.NewId("cm"), From = "admin", ByName = me!.DisplayName, Text = input.Text.Trim(), At = Clock.NowIso() });
+        c.UpdatedAt = Clock.NowIso();
+        await _s.UpsertChatAsync(c, ct);
+        return Ok(ApiResponse<ChatThread>.Ok(c));
+    }
+
+    [HttpPut("chat/{id}/status")]
+    public async Task<IActionResult> ChatStatus(string id, [FromBody] ChatStatusInput input, CancellationToken ct)
+    {
+        var c = await _s.ChatAsync(id, ct);
+        if (c is null) return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "chat not found"));
+        var (_, err) = await Staff(c.OwnerId, ct); if (err is not null) return err;
+        if (input.Status is not ("open" or "closed")) return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, "bad status"));
+        c.Status = input.Status; if (input.LinkedUid is not null) c.LinkedUid = input.LinkedUid; c.UpdatedAt = Clock.NowIso();
+        await _s.UpsertChatAsync(c, ct);
+        return Ok(ApiResponse<ChatThread>.Ok(c));
     }
 
     // ── programs ──
@@ -224,6 +274,8 @@ public sealed class AdminController : ControllerBase
             Programs = programs.Count,
             Lessons = lessons.Count,
             OpenMessages = (await _s.MessagesAsync(ownerId, null, ct)).Count(m => m.Status == "open"),
+            PendingPlans = users.Count(u => u.PlanStatus == "pending"),
+            OpenChats = ownerId is null ? 0 : (await _s.ChatsAsync(ownerId, ct)).Count(c => c.Status == "open"),
             XpThisWeek = events.Where(e => GamificationRules.WeekKey(At(e.At)) == wk).Sum(e => e.Xp),
             CompletionsThisWeek = completions.Count(p => p.CompletedAt is not null && GamificationRules.WeekKey(At(p.CompletedAt)) == wk),
             XpByDay = days,

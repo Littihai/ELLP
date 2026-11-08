@@ -11,6 +11,8 @@ public sealed record WatchInput(string LessonId, int WatchedPct);
 public sealed record QuizInput(string LessonId, int[] Answers);
 public sealed record MessageInput(string Subject, string Body);
 public sealed record EnrollInput(string ProgramId);
+public sealed record RegisterInput(string DisplayName, string Email, int? BirthYear, string Track, string OwnerId, string Plan, string? PlanTrack, string Note);
+public sealed record PlanInput(string Plan, string? PlanTrack, string Note);
 
 /// <summary>The signed-in learner's own data and activities. /auth/session is the first call after Firebase sign-in: it returns (and on first visit creates) the profile.</summary>
 [ApiController]
@@ -44,6 +46,34 @@ public sealed class MeController : ControllerBase
         return Ok(ApiResponse<UserProfile>.Ok(profile));
     }
 
+    /// <summary>Sign-up (1.1): Firebase already created the account; this creates the profile under the chosen tenant with the goal and the plan request.</summary>
+    [HttpPost("auth/register")]
+    public async Task<IActionResult> Register([FromBody] RegisterInput input, CancellationToken ct)
+    {
+        var (uid, email, _) = _me.Claims;
+        if (uid is null) return NoUser();
+        if (await _s.UserAsync(uid, ct) is not null) return Conflict(ApiResponse<object>.Fail(ApiCodes.Validation, "ACCOUNT_EXISTS"));
+        var owner = await _s.OwnerAsync(input.OwnerId, ct);
+        if (owner is null || !owner.Active) return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "owner not found"));
+        if (!Access.PlanRules.Tracks.Contains(input.Track) || !Access.PlanRules.Plans.Contains(input.Plan)) return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, "bad track or plan"));
+        var u = new UserProfile { Uid = uid, DisplayName = string.IsNullOrWhiteSpace(input.DisplayName) ? (email ?? uid) : input.DisplayName.Trim(), Email = (email ?? input.Email).ToLowerInvariant(), Role = Role.learner, OwnerId = owner.Id, BirthYear = input.BirthYear, Track = input.Track, AvatarColor = "#066fd1", CreatedAt = Clock.NowIso() };
+        Access.PlanRules.ApplyRequest(u, input.Plan, input.PlanTrack, input.Note ?? "", Clock.NowIso());
+        u.EnrolledProgramIds = (await _s.ProgramsAsync(owner.Id, ct)).Where(p => p.Published && (p.Track == u.Track || p.Track == "foundation")).Select(p => p.Id).ToList();
+        await _s.UpsertUserAsync(u, ct);
+        return Ok(ApiResponse<UserProfile>.Ok(u));
+    }
+
+    /// <summary>The learner asks for a plan: pro/premium become pending until an admin confirms the payment.</summary>
+    [HttpPost("me/plan")]
+    public async Task<IActionResult> RequestPlan([FromBody] PlanInput input, CancellationToken ct)
+    {
+        var me = await _me.GetAsync(ct); if (me is null) return NoUser();
+        try { Access.PlanRules.ApplyRequest(me, input.Plan, input.PlanTrack, input.Note ?? "", Clock.NowIso()); }
+        catch (ArgumentException) { return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, "bad plan")); }
+        await _s.UpsertUserAsync(me, ct);
+        return Ok(ApiResponse<UserProfile>.Ok(me));
+    }
+
     [HttpGet("me/progress")]
     public async Task<IActionResult> Progress(CancellationToken ct) { var me = await _me.GetAsync(ct); return me is null ? NoUser() : Ok(ApiResponse<List<LessonProgress>>.Ok(await _s.ProgressAsync(me.Uid, ct))); }
 
@@ -59,6 +89,7 @@ public sealed class MeController : ControllerBase
         var me = await _me.GetAsync(ct); if (me is null) return NoUser();
         try { return Ok(ApiResponse<ActivityResult>.Ok(await _progress.RecordWatchAsync(me, input.LessonId, input.WatchedPct, ct))); }
         catch (KeyNotFoundException) { return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "lesson not found")); }
+        catch (UnauthorizedAccessException) { return StatusCode(402, ApiResponse<object>.Fail(ApiCodes.PlanRequired, "a plan is needed for this lesson")); }
         catch (InvalidOperationException) { return Conflict(ApiResponse<object>.Fail(ApiCodes.LessonLocked, "the lesson is locked")); }
     }
 
@@ -68,6 +99,7 @@ public sealed class MeController : ControllerBase
         var me = await _me.GetAsync(ct); if (me is null) return NoUser();
         try { return Ok(ApiResponse<ActivityResult>.Ok(await _progress.SubmitQuizAsync(me, input.LessonId, input.Answers, ct))); }
         catch (KeyNotFoundException) { return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "lesson not found")); }
+        catch (UnauthorizedAccessException) { return StatusCode(402, ApiResponse<object>.Fail(ApiCodes.PlanRequired, "a plan is needed for this lesson")); }
         catch (InvalidOperationException) { return Conflict(ApiResponse<object>.Fail(ApiCodes.WatchFirst, "watch the video first")); }
     }
 

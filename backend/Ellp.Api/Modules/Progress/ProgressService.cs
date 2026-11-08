@@ -116,6 +116,14 @@ public sealed class ProgressService : IProgressService
         GiveBadge(c, "bdg_first");
     }
 
+    /// <summary>The plan gate (Modules/Access/PlanRules.cs): a lesson beyond the preview needs a plan that covers the program.</summary>
+    private async Task AssertPlan(UserProfile me, Lesson lesson, CancellationToken ct)
+    {
+        var program = (await _s.ProgramsAsync(null, ct)).FirstOrDefault(p => p.Id == lesson.ProgramId) ?? throw new KeyNotFoundException("PROGRAM_NOT_FOUND");
+        var siblings = await _s.LessonsAsync(program.Id, ct);
+        if (!Access.PlanRules.CanAccessLesson(me, program, lesson, siblings)) throw new UnauthorizedAccessException("PLAN_REQUIRED");
+    }
+
     private async Task<LessonProgress> ProgressOf(string uid, string lessonId, CancellationToken ct)
         => (await _s.ProgressAsync(uid, ct)).FirstOrDefault(p => p.LessonId == lessonId) ?? new LessonProgress { Uid = uid, LessonId = lessonId, UpdatedAt = Clock.NowIso() };
 
@@ -132,6 +140,7 @@ public sealed class ProgressService : IProgressService
         var lesson = await _s.LessonAsync(lessonId, ct) ?? throw new KeyNotFoundException("LESSON_NOT_FOUND");
         var progress = await _s.ProgressAsync(me.Uid, ct);
         var quests = await _s.QuestProgressAsync(me.Uid, ct);
+        await AssertPlan(me, lesson, ct);
         if (!Unlocked(lesson, me, progress, quests)) throw new InvalidOperationException("LESSON_LOCKED");
         var p = progress.FirstOrDefault(x => x.LessonId == lessonId) ?? new LessonProgress { Uid = me.Uid, LessonId = lessonId };
         var c = await Begin(me, p, ct);
@@ -153,6 +162,7 @@ public sealed class ProgressService : IProgressService
     public async Task<ActivityResult> SubmitQuizAsync(UserProfile me, string lessonId, int[] answers, CancellationToken ct)
     {
         var lesson = await _s.LessonAsync(lessonId, ct) ?? throw new KeyNotFoundException("LESSON_NOT_FOUND");
+        await AssertPlan(me, lesson, ct);
         var p = await ProgressOf(me.Uid, lessonId, ct);
         if (p.WatchedPct < WatchCompletePct) throw new InvalidOperationException("WATCH_FIRST");
         var c = await Begin(me, p, ct);

@@ -7,6 +7,32 @@ Numbering follows TMCL-PR's order: 1.0.0, 1.0.1 … 1.0.9, then 1.1.0. A number 
 Birth year and age bands, program filtering with a per-learner override, `min_age` / `age_band` unlock rules, per-band pass mark,
 leaderboard and streak forgiveness, parent acknowledgement as a first PDPA trace.
 
+## 1.1.0 — done: every audience, plans, sign-up, chat (decision 0005)
+
+Tracks (kids, school, TOEIC, IELTS, ก.พ., foundation), CEFR levels, age bands to 18+, public catalog and program pages,
+self-service sign-up, Free / Pro / Premium with admin approval, chat with admins (+ LINE link), create account from chat.
+
+## 1.2 — the player and the learning-integrity rules (the owner's table of conditions)
+
+- **Self-hosted video** for the exam tracks (Firebase Storage first; Cloudflare Stream or Mux when DRM is wanted) with our own
+  player (video.js / plyr): real watch position, signed URLs with expiry, no direct file URL.
+- **Player rules per proctoring profile** (off for kids, standard for foundations, strict for exams): no seeking past the
+  furthest point watched, playback speed locked to 1×, **in-video quiz checkpoints** that pause the video and must be answered
+  (60 s per question by default, 0 when the time runs out), replay limit, forced lesson order (already there), watch time and
+  last position saved every 15 s.
+- **Attention events**: tab / window switch (Page Visibility), minimise / blur, leaving fullscreen, unusual pause frequency;
+  **concurrent-session limit** with a heartbeat (warn, kick the old session, refuse a new one).
+- **Violation log and policy** per tenant, with the owner's table as default: warn, warn, pause the lesson; sessions: warn,
+  end the old one, refuse the new one. Admin page to review and lift a pause.
+- **Deterrents, honestly labelled**: dynamic watermark (email + time) over the video, no context menu / copy on lesson pages,
+  "the web cannot stop screenshots or screen recording" stated in the admin help.
+
+## 1.3 — money and proof
+
+- **Online payment** (Omise or Stripe) replacing transfer + slip; receipts; plan expiry and renewal reminders by email.
+- **Course certificate** (PDF) on completion; **mock tests** for TOEIC / IELTS / ก.พ. with timing and a score report.
+- DRM (Widevine) through the streaming provider for premium content.
+
 ## 1.0.x — make the demo trustworthy
 
 - Real watch progress with the **YouTube IFrame API** (position, play/pause, replay) instead of the timer and the demo button.

@@ -45,6 +45,13 @@ function Inner() {
             </div>
           </div>
         </Card>
+        <Card title={t("chat.title")}>
+          <div className="form-grid">
+            <Field label={t("set.line")} hint={t("set.lineHint")}><input className="input" value={s.lineUrl ?? ""} onChange={(e) => setS({ ...s, lineUrl: e.target.value })} placeholder="https://line.me/R/ti/p/@..." /></Field>
+            <Field label={t("set.payment") + " (ไทย)"} span2><textarea className="input" rows={2} value={s.paymentInstructions?.th ?? ""} onChange={(e) => setS({ ...s, paymentInstructions: { th: e.target.value, en: s.paymentInstructions?.en ?? "" } })} /></Field>
+            <Field label={t("set.payment") + " (EN)"} span2><textarea className="input" rows={2} value={s.paymentInstructions?.en ?? ""} onChange={(e) => setS({ ...s, paymentInstructions: { th: s.paymentInstructions?.th ?? "", en: e.target.value } })} /></Field>
+          </div>
+        </Card>
         <Card title={t("set.leaderboard")}>
           <div className="form-grid">
             <div className="row"><Switch checked={s.leaderboard.visible} onChange={(v) => setS({ ...s, leaderboard: { ...s.leaderboard, visible: v } })} /> {t("set.lbVisible")}</div>

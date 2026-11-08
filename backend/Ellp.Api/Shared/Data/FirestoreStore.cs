@@ -113,4 +113,15 @@ public sealed class FirestoreStore : IEllpStore
 
     public async Task<OwnerSettings> SettingsAsync(string ownerId, CancellationToken ct) => await One<OwnerSettings>("settings", ownerId, ct) ?? new OwnerSettings { OwnerId = ownerId };
     public Task UpsertSettingsAsync(OwnerSettings s, CancellationToken ct) => Set("settings", s.OwnerId, s, ct);
+
+    public async Task<List<ChatThread>> ChatsAsync(string ownerId, CancellationToken ct) => (await All<ChatThread>(Where("chats", "ownerId", ownerId), ct)).OrderByDescending(c => c.UpdatedAt).ToList();
+    public Task<ChatThread?> ChatAsync(string id, CancellationToken ct) => One<ChatThread>("chats", id, ct);
+    public async Task<ChatThread?> FindChatAsync(string ownerId, string? uid, string? visitorKey, CancellationToken ct)
+    {
+        var q = _db.Collection("chats").WhereEqualTo("ownerId", ownerId).WhereEqualTo("status", "open");
+        if (uid is not null) { var byUid = await All<ChatThread>(q.WhereEqualTo("uid", uid).Limit(1), ct); if (byUid.Count > 0) return byUid[0]; }
+        if (visitorKey is not null) { var byKey = await All<ChatThread>(q.WhereEqualTo("visitorKey", visitorKey).Limit(1), ct); if (byKey.Count > 0) return byKey[0]; }
+        return null;
+    }
+    public Task UpsertChatAsync(ChatThread c, CancellationToken ct) => Set("chats", c.Id, c, ct);
 }

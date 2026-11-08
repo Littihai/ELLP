@@ -63,12 +63,12 @@ public static class GamificationRules
 
     // ── age (decision 0004) ──
 
-    public static readonly string[] AgeBands = { "3-5", "6-8", "9-12", "13+" };
+    public static readonly string[] AgeBands = { "3-5", "6-8", "9-12", "13-15", "16-18", "18+" };
 
     /// <summary>Age in whole years from the birth year alone.</summary>
     public static int? AgeOf(int? birthYear, DateTime now) => birthYear is int y && y >= 1900 ? Math.Max(0, now.Year - y) : null;
 
-    public static string? AgeBandFor(int? age) => age switch { null => null, <= 5 => "3-5", <= 8 => "6-8", <= 12 => "9-12", _ => "13+" };
+    public static string? AgeBandFor(int? age) => age switch { null => null, <= 5 => "3-5", <= 8 => "6-8", <= 12 => "9-12", <= 15 => "13-15", <= 18 => "16-18", _ => "18+" };
 
     public static string? AgeBandOf(UserProfile u, DateTime now) => AgeBandFor(AgeOf(u.BirthYear, now));
 
@@ -78,7 +78,9 @@ public static class GamificationRules
         ["3-5"] = new() { QuizPassPct = 50, LeaderboardVisible = false, StreakFreeze = true },
         ["6-8"] = new() { QuizPassPct = 60, LeaderboardVisible = true, StreakFreeze = true },
         ["9-12"] = new() { QuizPassPct = 70, LeaderboardVisible = true, StreakFreeze = false },
-        ["13+"] = new() { QuizPassPct = 70, LeaderboardVisible = true, StreakFreeze = false },
+        ["13-15"] = new() { QuizPassPct = 70, LeaderboardVisible = true, StreakFreeze = false },
+        ["16-18"] = new() { QuizPassPct = 70, LeaderboardVisible = true, StreakFreeze = false },
+        ["18+"] = new() { QuizPassPct = 70, LeaderboardVisible = true, StreakFreeze = false },
     };
     /// <summary>An unknown age gets the standard numbers.</summary>
     public static readonly AgeRule BaseAgeRule = new() { QuizPassPct = QuizPassPct, LeaderboardVisible = true, StreakFreeze = false };
