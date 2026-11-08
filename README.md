@@ -6,6 +6,11 @@ evaluation and handover: every screen works on fictional data, no account or ser
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
 
+## Live demo
+
+https://ellp-littihai.web.app (Firebase Hosting, demo mode: fictional data kept in your browser, no API behind it).
+Learner door `/login`, admin door `/admin/login`; every demo account uses the password shown on the page.
+
 ## Who it is for (1.1)
 
 Six **tracks**: children's songs, upper-secondary / university entrance (TGAT, A-Level), TOEIC, IELTS, the Thai civil-service

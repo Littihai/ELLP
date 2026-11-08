@@ -72,3 +72,13 @@ dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj -c Release
 | Firebase emulators | Auth 9099, Firestore 8080, Hosting 5000 |
 
 (TMCL-PR uses 5173 / 5219, so both projects can run side by side.)
+
+## Deploy the demo (Firebase Hosting)
+
+```bash
+cd frontend && npm run build
+firebase deploy --only hosting --project ellp-littihai
+```
+
+`firebase.json` and `.firebaserc` sit at the repository root (Hosting needs `frontend/dist` inside the project directory).
+The live demo is https://ellp-littihai.web.app, demo mode only: the C# API is not hosted yet, so `/api/**` has no rewrite.

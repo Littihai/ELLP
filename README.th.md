@@ -6,6 +6,11 @@
 
 English version: [README.md](README.md) · บันทึกส่งมอบงานสำหรับนักพัฒนา: [docs/handover.md](docs/handover.md)
 
+## เดโมออนไลน์
+
+https://ellp-littihai.web.app (Firebase Hosting โหมดทดลอง ข้อมูลสมมติเก็บในเบราว์เซอร์ ไม่มี API อยู่เบื้องหลัง)
+ประตูผู้เรียน `/login` ประตูผู้ดูแล `/admin/login` รหัสผ่านบัญชีทดลองแสดงบนหน้า
+
 ## สำหรับใคร (1.1)
 
 **6 เป้าหมาย (Track)**: เด็กเล็กร้องเพลง, ม.ปลาย/สอบเข้ามหาวิทยาลัย (TGAT, A-Level), TOEIC, IELTS, สอบ ก.พ. และปรับพื้นฐาน โปรแกรมระบุระดับ CEFR

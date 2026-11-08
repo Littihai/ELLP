@@ -14,7 +14,7 @@ What Firebase does in ELLP, and what it does not.
 2. Project settings → Your apps → Web app: copy the config into `frontend/.env.local` (`VITE_FIREBASE_*`) and set `VITE_USE_DEMO=false`.
 3. Project settings → Service accounts → Generate new private key: save the JSON **outside the repository** and point the API at it
    (`GOOGLE_APPLICATION_CREDENTIALS` or `Firebase:CredentialFile`). Set `Auth:Mode=Firebase`, `Auth:FirebaseProjectId`, `Store:Mode=Firestore`.
-4. Copy `.firebaserc.example` to `.firebaserc` and put the project id in. Deploy rules and indexes:
+4. Copy `.firebaserc.example` (repository root) to `.firebaserc` and put the project id in. `firebase.json` lives at the root too, because Hosting's public folder (`frontend/dist`) must sit inside the Firebase project directory. Deploy rules and indexes:
 
 ```bash
 firebase deploy --only firestore:rules,firestore:indexes
