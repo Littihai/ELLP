@@ -4,7 +4,7 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
-import { checkUnlock, levelInfo } from "@/lib/gamification";
+import { checkUnlock, levelInfo, programVisible } from "@/lib/gamification";
 import { fmtDate, fmtDuration } from "@/lib/format";
 import { QUEST_ICON, currentQuestProgress, ytThumb } from "./shared";
 
@@ -25,7 +25,7 @@ export function HomePage() {
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
 
   const lv = levelInfo(u.xp);
-  const myPrograms = data.programs.filter((p) => p.published && u.enrolledProgramIds.includes(p.id));
+  const myPrograms = data.programs.filter((p) => p.published && u.enrolledProgramIds.includes(p.id) && programVisible(p, u));
   const openLessons = data.lessons.filter((l) => l.published && myPrograms.some((p) => p.id === l.programId));
   const next = openLessons
     .filter((l) => !data.progress.find((p) => p.lessonId === l.id)?.completed)

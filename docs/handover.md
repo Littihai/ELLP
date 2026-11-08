@@ -12,7 +12,9 @@ What you are getting, what to look at first, and what we would ask you to do nex
    *redirected (test)* because the tenant is in test mode with an allow-list.
 5. Admin › Lessons → edit *Twinkle Twinkle* → look at the unlock-rule and quiz editors. Admin › Settings → test mode.
 6. Sign in as **Platform Admin** → Owners → add an owner → switch the header scope to it → it is empty, as it should be.
-7. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 42 tests on the rules and the engine.
+7. Sign in as **น้องปุ๊กกี้** (`pukkie.parent@example.com`, age 4): the body program is hidden, the leaderboard is off for the band,
+   the quiz passes at 50 %. In Admin › Members tick "open every age band" for her and look again. Admin › Settings has the per-band table.
+8. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 58 tests on the rules and the engine.
 
 ## Read in this order
 

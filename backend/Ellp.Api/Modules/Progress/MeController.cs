@@ -76,7 +76,8 @@ public sealed class MeController : ControllerBase
     {
         var me = await _me.GetAsync(ct); if (me is null) return NoUser();
         var settings = await _s.SettingsAsync(me.OwnerId ?? "", ct);
-        if (!settings.Leaderboard.Visible && me.Role == Role.learner) return Ok(ApiResponse<List<LeaderboardRow>>.Ok(new()));
+        var hidden = !settings.Leaderboard.Visible || !GamificationRules.AgeRuleFor(settings, me, DateTime.UtcNow).LeaderboardVisible;
+        if (hidden && me.Role == Role.learner) return Ok(ApiResponse<List<LeaderboardRow>>.Ok(new()));
         return Ok(ApiResponse<List<LeaderboardRow>>.Ok(await _progress.LeaderboardAsync(me, programId, period, ct)));
     }
 

@@ -3,7 +3,7 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { Avatar, Badge, Bar, Card, ErrorBox, Icon, Loading, PageHeader, StatCard } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
-import { levelInfo, quizPassed } from "@/lib/gamification";
+import { ageBandOf, ageOf, levelInfo, quizPassed } from "@/lib/gamification";
 import { fmtDate } from "@/lib/format";
 
 /** The learner's own page: level, stats, every badge (earned or not) and the full XP history. */
@@ -32,6 +32,8 @@ export function ProfilePage() {
             <div className="row" style={{ marginTop: 8 }}>
               <Badge tone="accent">{t("app.levelN", { n: lv.level })} · {pick(lv.title)}</Badge>
               <Badge tone="warn"><Icon name="flame" size={11} />{t("app.daysN", { n: u.streakDays })}</Badge>
+              <Badge tone="neutral">{t("age.band")}: {ageBandOf(u) ? `${t(`age.band.${ageBandOf(u)!}`)} · ${t("age.years", { n: ageOf(u.birthYear) ?? 0 })}` : t("age.unknown")}</Badge>
+              <Badge tone={u.parentConsent.acknowledged ? "ok" : "stop"}><Icon name={u.parentConsent.acknowledged ? "checkCircle" : "alert"} size={11} />{u.parentConsent.acknowledged ? `${t("age.consent")} · ${fmtDate(u.parentConsent.at, lang)}` : t("age.consentMissing")}</Badge>
             </div>
             <div style={{ marginTop: 10, maxWidth: 420 }}>
               <div className="small muted" style={{ marginBottom: 4 }}>{u.xp} XP {lv.nextLevelXp ? `· ${t("home.toNext", { n: lv.xpToNext, lvl: lv.level + 1 })}` : `· ${t("home.maxLevel")}`}</div>

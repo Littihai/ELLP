@@ -8,7 +8,8 @@ import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
 import { fmtDuration, newId } from "@/lib/format";
 import { ytThumb } from "@/modules/learn/shared";
-import type { Lesson, Program, Quest, QuizQuestion, UnlockRule } from "@/types";
+import type { AgeBand, Lesson, Program, Quest, QuizQuestion, UnlockRule } from "@/types";
+import { AGE_BANDS } from "@/lib/gamification";
 
 const blank = (programId: string, order: number): Lesson => ({
   id: "", programId, order, title: { th: "", en: "" }, summary: { th: "", en: "" }, youtubeId: "", durationSec: 120, xpReward: 50, vocabulary: [], quiz: [], unlock: [], published: false,
@@ -103,7 +104,7 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
   const l = lesson;
   const set = (patch: Partial<Lesson>) => setLesson({ ...l, ...patch });
   const others = lessons.filter((x) => x.id !== l.id);
-  const ruleTypes: UnlockRule["type"][] = ["lesson_completed", "min_level", "min_xp", "quest_completed", "streak_days"];
+  const ruleTypes: UnlockRule["type"][] = ["lesson_completed", "min_level", "min_xp", "quest_completed", "streak_days", "min_age", "age_band"];
   const newRule = (type: UnlockRule["type"]): UnlockRule => {
     switch (type) {
       case "lesson_completed": return { type, lessonId: others[0]?.id ?? "" };
@@ -111,6 +112,8 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
       case "min_xp": return { type, xp: 100 };
       case "quest_completed": return { type, questId: quests[0]?.id ?? "" };
       case "streak_days": return { type, days: 2 };
+      case "min_age": return { type, years: 5 };
+      case "age_band": return { type, bands: ["6-8"] };
     }
   };
   const setRule = (i: number, r: UnlockRule) => set({ unlock: l.unlock.map((x, j) => (j === i ? r : x)) });
@@ -146,13 +149,19 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
         {l.unlock.map((r, i) => (
           <div key={i} className="row" style={{ flexWrap: "nowrap" }}>
             <select className="input" style={{ maxWidth: 220 }} value={r.type} onChange={(e) => setRule(i, newRule(e.target.value as UnlockRule["type"]))}>
-              {ruleTypes.map((rt) => <option key={rt} value={rt}>{t(`rule.${rt}`, { name: "…", n: "N" })}</option>)}
+              {ruleTypes.map((rt) => <option key={rt} value={rt}>{t(`rule.${rt}`, { name: "…", n: "N", bands: "…" })}</option>)}
             </select>
             {r.type === "lesson_completed" && <select className="input" value={r.lessonId} onChange={(e) => setRule(i, { ...r, lessonId: e.target.value })}>{others.map((o) => <option key={o.id} value={o.id}>{o.order}. {pick(o.title)}</option>)}</select>}
             {r.type === "quest_completed" && <select className="input" value={r.questId} onChange={(e) => setRule(i, { ...r, questId: e.target.value })}>{quests.map((q) => <option key={q.id} value={q.id}>{pick(q.title)}</option>)}</select>}
             {r.type === "min_level" && <input className="input" type="number" min={1} max={10} value={r.level} onChange={(e) => setRule(i, { ...r, level: num(e.target.value, 1) })} />}
             {r.type === "min_xp" && <input className="input" type="number" min={0} value={r.xp} onChange={(e) => setRule(i, { ...r, xp: num(e.target.value, 0) })} />}
             {r.type === "streak_days" && <input className="input" type="number" min={1} value={r.days} onChange={(e) => setRule(i, { ...r, days: num(e.target.value, 1) })} />}
+            {r.type === "min_age" && <input className="input" type="number" min={2} max={18} value={r.years} onChange={(e) => setRule(i, { ...r, years: num(e.target.value, 2) })} />}
+            {r.type === "age_band" && (
+              <div className="row" style={{ gap: 4 }}>
+                {AGE_BANDS.map((b: AgeBand) => <button key={b} type="button" className="chip" aria-pressed={r.bands.includes(b)} onClick={() => setRule(i, { ...r, bands: r.bands.includes(b) ? r.bands.filter((x) => x !== b) : [...r.bands, b] })}>{b.replace("-", "–")}</button>)}
+              </div>
+            )}
             <button type="button" className="btn-icon" aria-label={t("app.delete")} onClick={() => set({ unlock: l.unlock.filter((_, j) => j !== i) })}><Icon name="trash" size={16} /></button>
           </div>
         ))}

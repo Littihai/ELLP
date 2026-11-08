@@ -62,6 +62,8 @@ public sealed class AdminController : ControllerBase
     {
         var (me, err) = await Staff(u.OwnerId, ct); if (err is not null) return err;
         if (!RoleRules.CanAssignRole(me!, u.Role)) return Forbidden();
+        if (u.ParentConsent.Acknowledged && string.IsNullOrWhiteSpace(u.ParentConsent.At)) u.ParentConsent.At = Clock.NowIso();
+        if (!u.ParentConsent.Acknowledged) u.ParentConsent.At = null;
         if (string.IsNullOrWhiteSpace(u.Uid)) { u.Uid = Clock.NewId("u"); u.CreatedAt = Clock.NowIso(); }
         else
         {

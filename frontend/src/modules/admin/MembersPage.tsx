@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
-import { Avatar, Badge, Button, Card, ErrorBox, Field, Loading, Modal, PageHeader, Switch } from "@/components/ui/kit";
+import { Avatar, Badge, Button, Card, ErrorBox, Field, Icon, Loading, Modal, PageHeader, Switch } from "@/components/ui/kit";
 import { useToast } from "@/components/ui/Toast";
 import { useAsync } from "@/hooks/useAsync";
 import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
-import { levelFor } from "@/lib/gamification";
+import { AGE_BANDS, ageBandOf, ageOf, levelFor } from "@/lib/gamification";
+import { nowIso } from "@/lib/format";
 import { fmtDate } from "@/lib/format";
 import type { Role, UserProfile } from "@/types";
 
 const COLORS = ["#f59f00", "#4c58c4", "#2fb344", "#0b78a8", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
 const blank = (ownerId: string): UserProfile => ({
-  uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)], active: true, createdAt: "",
+  uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], birthYear: null, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
+  xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)], active: true, createdAt: "",
 });
 
 /** The people of one tenant. An owner may make admins; an admin manages learners. Nobody removes their own account. */
@@ -57,13 +59,22 @@ function Inner() {
       <Card pad="0">
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th></th><th>{t("mem.name")}</th><th>{t("mem.role")}</th><th>{t("mem.programs")}</th><th>{t("mem.xp")}</th><th>{t("app.streak")}</th><th>{t("mem.lastActive")}</th><th>{t("app.active")}</th><th></th></tr></thead>
+            <thead><tr><th></th><th>{t("mem.name")}</th><th>{t("mem.role")}</th><th>{t("age.band")}</th><th>{t("mem.programs")}</th><th>{t("mem.xp")}</th><th>{t("app.streak")}</th><th>{t("mem.lastActive")}</th><th>{t("app.active")}</th><th></th></tr></thead>
             <tbody>
               {rows.map((m) => (
                 <tr key={m.uid}>
                   <td><Avatar name={m.displayName} color={m.avatarColor} size={32} /></td>
                   <td><b>{m.displayName}</b><div className="small muted">{m.email}</div></td>
                   <td><Badge tone={m.role === "learner" ? "accent" : m.role === "owner" ? "warn" : "neutral"}>{t(`role.${m.role}`)}</Badge></td>
+                  <td className="small">
+                    {m.role !== "learner" ? "—" : (
+                      <span className="row" style={{ gap: 4, flexWrap: "nowrap" }}>
+                        {ageBandOf(m) ? <>{ageBandOf(m)!.replace("-", "–")} <span className="muted">({t("age.years", { n: ageOf(m.birthYear) ?? 0 })})</span></> : <span className="muted">{t("age.unknown")}</span>}
+                        {m.allowAllAges && <Icon name="unlock" size={12} />}
+                        <Icon name={m.parentConsent.acknowledged ? "checkCircle" : "alert"} size={12} color={m.parentConsent.acknowledged ? "var(--tone-ok-solid)" : "var(--tone-warn-solid)"} />
+                      </span>
+                    )}
+                  </td>
                   <td className="small">{m.role === "learner" ? m.enrolledProgramIds.map((id) => pick(data.programs.find((p) => p.id === id)?.title)).filter(Boolean).join(", ") || "—" : "—"}</td>
                   <td>{m.role === "learner" ? <>{m.xp} <span className="small muted">L{levelFor(m.xp)}</span></> : "—"}</td>
                   <td>{m.role === "learner" ? m.streakDays : "—"}</td>
@@ -91,9 +102,34 @@ function Inner() {
               <div className="row" style={{ gap: 6 }}>{COLORS.map((c) => <button key={c} type="button" aria-label={c} aria-pressed={edit.avatarColor === c} onClick={() => setEdit({ ...edit, avatarColor: c })} style={{ width: 26, height: 26, borderRadius: "50%", background: c, border: edit.avatarColor === c ? "3px solid var(--color-text)" : "3px solid transparent" }} />)}</div>
             </Field>
             {edit.role === "learner" && (
-              <Field label={t("mem.programs")} span2>
-                <div className="row">{data.programs.map((p) => <button key={p.id} type="button" className="chip" aria-pressed={edit.enrolledProgramIds.includes(p.id)} onClick={() => toggleProgram(p.id)}>{pick(p.title)}</button>)}</div>
-              </Field>
+              <>
+                <Field label={t("mem.programs")} span2>
+                  <div className="row">{data.programs.map((p) => <button key={p.id} type="button" className="chip" aria-pressed={edit.enrolledProgramIds.includes(p.id)} onClick={() => toggleProgram(p.id)}>{pick(p.title)}</button>)}</div>
+                </Field>
+                <Field label={t("age.birthYear")} hint={t("age.birthYearHint")}>
+                  <input className="input" type="number" min={1990} max={new Date().getFullYear()} placeholder={String(new Date().getFullYear() - 6)} value={edit.birthYear ?? ""}
+                    onChange={(e) => setEdit({ ...edit, birthYear: e.target.value ? parseInt(e.target.value, 10) : null })} />
+                </Field>
+                <Field label={t("age.band")}>
+                  <div className="input" style={{ display: "flex", alignItems: "center", background: "var(--color-neutral-50)" }}>
+                    {ageBandOf(edit) ? `${t(`age.band.${ageBandOf(edit)!}`)} · ${t("age.years", { n: ageOf(edit.birthYear) ?? 0 })}` : t("age.unknown")}
+                  </div>
+                </Field>
+                <div className="span-2">
+                  <div className="row"><Switch checked={edit.allowAllAges} onChange={(v) => setEdit({ ...edit, allowAllAges: v })} /> <b>{t("age.override")}</b></div>
+                  <div className="small muted" style={{ marginTop: 4 }}>{t("age.overrideHint")} ({AGE_BANDS.map((b) => b.replace("-", "–")).join(" / ")})</div>
+                </div>
+                <div className="span-2" style={{ padding: "12px 14px", borderRadius: "var(--radius-lg)", background: "var(--color-neutral-50)", border: "1px solid var(--color-neutral-200)" }}>
+                  <label className="row" style={{ cursor: "pointer" }}>
+                    <input type="checkbox" checked={edit.parentConsent.acknowledged}
+                      onChange={(e) => setEdit({ ...edit, parentConsent: { ...edit.parentConsent, acknowledged: e.target.checked, at: e.target.checked ? (edit.parentConsent.at ?? nowIso()) : null } })} />
+                    <b>{t("age.consent")}</b>
+                    {edit.parentConsent.at && <span className="small muted">· {t("age.consentAt")} {fmtDate(edit.parentConsent.at, lang)}</span>}
+                  </label>
+                  <div className="small muted" style={{ margin: "4px 0 8px" }}>{t("age.consentHint")}</div>
+                  <input className="input" placeholder={t("age.consentNote")} value={edit.parentConsent.note} onChange={(e) => setEdit({ ...edit, parentConsent: { ...edit.parentConsent, note: e.target.value } })} />
+                </div>
+              </>
             )}
             <div className="row span-2"><Switch checked={edit.active} disabled={edit.uid === user?.uid} onChange={(v) => setEdit({ ...edit, active: v })} /> {t("app.active")}</div>
           </div>

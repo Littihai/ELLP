@@ -2,6 +2,11 @@
 
 Numbering follows TMCL-PR's order: 1.0.0, 1.0.1 … 1.0.9, then 1.1.0. A number is never reused.
 
+## 1.0.1 — done: conditions by age (decision 0004)
+
+Birth year and age bands, program filtering with a per-learner override, `min_age` / `age_band` unlock rules, per-band pass mark,
+leaderboard and streak forgiveness, parent acknowledgement as a first PDPA trace.
+
 ## 1.0.x — make the demo trustworthy
 
 - Real watch progress with the **YouTube IFrame API** (position, play/pause, replay) instead of the timer and the demo button.
@@ -13,7 +18,11 @@ Numbering follows TMCL-PR's order: 1.0.0, 1.0.1 … 1.0.9, then 1.1.0. A number 
 
 ## 1.1 — classroom features
 
-- **Parent accounts** linked to one or more learners (today a parent uses the child's account).
+- **Parent accounts** linked to one or more learners (today a parent uses the child's account), with the verified consent flow
+  (emailed link, policy version, withdrawal) that completes the 1.0.1 acknowledgement for PDPA s.20 / COPPA.
+- **Screen time** per age band (minutes a day, set by the parent), ending in a gentle "take a break" screen that costs no XP or streak.
+- **Parent mode with a PIN** for settings, contact and data deletion, so a child cannot reach them.
+- **Quiz forms by age**: pictures and read-aloud prompts with two choices for 3–5 (Web Speech API), typed answers for 9+.
 - **Teacher awards**: manual XP and badges with a note (the `manual` XP kind exists).
 - **Badge conditions in data** (today *Shark Friend* is a special case in code).
 - **Reports**: per learner (lessons, quiz scores, time), per program (completion funnel), export CSV.

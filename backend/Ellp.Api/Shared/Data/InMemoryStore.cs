@@ -24,16 +24,20 @@ public sealed class InMemoryStore : IEllpStore
 
     public InMemoryStore()
     {
-        foreach (var x in SeedData.Owners) _owners[x.Id] = x;
-        foreach (var x in SeedData.Programs) _programs[x.Id] = x;
-        foreach (var x in SeedData.Lessons) _lessons[x.Id] = x;
-        foreach (var x in SeedData.Quests) _quests[x.Id] = x;
-        foreach (var x in SeedData.Badges) _badges[x.Id] = x;
-        foreach (var x in SeedData.Users) _users[x.Uid] = x;
-        foreach (var x in SeedData.Progress) _progress[$"{x.Uid}|{x.LessonId}"] = x;
-        foreach (var x in SeedData.Settings) _settings[x.OwnerId] = x;
-        foreach (var x in SeedData.Messages) _messages[x.Id] = x;
+        // every store gets its own copies: the seed lists are static and a service mutates the objects it reads
+        foreach (var x in Copy(SeedData.Owners)) _owners[x.Id] = x;
+        foreach (var x in Copy(SeedData.Programs)) _programs[x.Id] = x;
+        foreach (var x in Copy(SeedData.Lessons)) _lessons[x.Id] = x;
+        foreach (var x in Copy(SeedData.Quests)) _quests[x.Id] = x;
+        foreach (var x in Copy(SeedData.Badges)) _badges[x.Id] = x;
+        foreach (var x in Copy(SeedData.Users)) _users[x.Uid] = x;
+        foreach (var x in Copy(SeedData.Progress)) _progress[$"{x.Uid}|{x.LessonId}"] = x;
+        foreach (var x in Copy(SeedData.Settings)) _settings[x.OwnerId] = x;
+        foreach (var x in Copy(SeedData.Messages)) _messages[x.Id] = x;
     }
+
+    private static readonly System.Text.Json.JsonSerializerOptions CloneJson = new(System.Text.Json.JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+    private static List<T> Copy<T>(List<T> xs) => System.Text.Json.JsonSerializer.Deserialize<List<T>>(System.Text.Json.JsonSerializer.Serialize(xs, CloneJson), CloneJson)!;
 
     private static Task<List<T>> L<T>(IEnumerable<T> xs) => Task.FromResult(xs.ToList());
 

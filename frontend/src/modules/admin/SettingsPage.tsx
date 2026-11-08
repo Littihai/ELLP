@@ -5,7 +5,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useAsync } from "@/hooks/useAsync";
 import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api, USE_DEMO } from "@/services";
-import type { OwnerSettings } from "@/types";
+import type { AgeBand, AgeRule, OwnerSettings } from "@/types";
+import { AGE_BANDS, DEFAULT_AGE_RULES } from "@/lib/gamification";
 
 /** The tenant's outgoing email identity and test-mode guard, the leaderboard, and the build. */
 export function SettingsPage() {
@@ -19,7 +20,8 @@ function Inner() {
   const { data, error, loading, reload } = useAsync(() => api.settings(ownerId!), [ownerId]);
   const [s, setS] = useState<OwnerSettings | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (data) setS(data); }, [data]);
+  // a tenant saved before 1.0.1 has no age rules yet: the defaults fill the gap until the next save
+  useEffect(() => { if (data) setS({ ...data, ageRules: { ...DEFAULT_AGE_RULES, ...(data.ageRules ?? {}) } }); }, [data]);
   if (loading && !s) return <Loading />;
   if (error || !s) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
 
@@ -47,6 +49,28 @@ function Inner() {
           <div className="form-grid">
             <div className="row"><Switch checked={s.leaderboard.visible} onChange={(v) => setS({ ...s, leaderboard: { ...s.leaderboard, visible: v } })} /> {t("set.lbVisible")}</div>
             <Field label={t("set.lbSize")}><input className="input" type="number" min={3} max={50} value={s.leaderboard.size} onChange={(e) => setS({ ...s, leaderboard: { ...s.leaderboard, size: Math.max(3, parseInt(e.target.value || "10", 10) || 10) } })} /></Field>
+          </div>
+        </Card>
+        <Card title={t("age.rules")}>
+          <p className="muted small" style={{ margin: "0 0 12px" }}>{t("age.rulesHint")}</p>
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>{t("age.band")}</th><th>{t("age.quizPass")}</th><th>{t("age.lbVisible")}</th><th>{t("age.streakFreeze")}</th></tr></thead>
+              <tbody>
+                {AGE_BANDS.map((b: AgeBand) => {
+                  const r: AgeRule = s.ageRules[b];
+                  const set = (patch: Partial<AgeRule>) => setS({ ...s, ageRules: { ...s.ageRules, [b]: { ...r, ...patch } } });
+                  return (
+                    <tr key={b}>
+                      <td><b>{t(`age.band.${b}`)}</b></td>
+                      <td style={{ width: 140 }}><input className="input" type="number" min={30} max={100} step={5} value={r.quizPassPct} onChange={(e) => set({ quizPassPct: Math.min(100, Math.max(30, parseInt(e.target.value || "60", 10) || 60)) })} /></td>
+                      <td><Switch checked={r.leaderboardVisible} onChange={(v) => set({ leaderboardVisible: v })} ariaLabel={t("age.lbVisible")} /></td>
+                      <td><Switch checked={r.streakFreeze} onChange={(v) => set({ streakFreeze: v })} ariaLabel={t("age.streakFreeze")} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </Card>
         <Card title={t("set.about")}>

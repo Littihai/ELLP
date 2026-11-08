@@ -4,6 +4,7 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { Avatar, Card, EmptyState, ErrorBox, Icon, Loading, PageHeader } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
 import { api, type LeaderboardPeriod } from "@/services";
+import { ageRuleFor } from "@/lib/gamification";
 
 /** Learners of the same owner ranked by XP, this week or all time, for every program or one. */
 export function LeaderboardPage() {
@@ -14,7 +15,7 @@ export function LeaderboardPage() {
   const [programId, setProgramId] = useState<string | null>(null);
   const { data, error, loading, reload } = useAsync(async () => {
     const [rows, programs, settings] = await Promise.all([api.leaderboard(programId, period), api.programs(u.ownerId), u.ownerId ? api.settings(u.ownerId) : Promise.resolve(null)]);
-    return { rows, programs: programs.filter((p) => p.published), visible: settings?.leaderboard.visible ?? true };
+    return { rows, programs: programs.filter((p) => p.published), visible: settings?.leaderboard.visible ?? true, ageVisible: ageRuleFor(settings, u).leaderboardVisible };
   }, [period, programId, u.uid, u.xp]);
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
@@ -22,7 +23,7 @@ export function LeaderboardPage() {
   return (
     <>
       <PageHeader pretitle={t("nav.leaderboard")} title={t("lb.title")} sub={t("lb.sub")} />
-      {!data.visible ? <EmptyState icon="trophy" title={t("lb.hidden")} /> : (
+      {!data.visible ? <EmptyState icon="trophy" title={t("lb.hidden")} /> : !data.ageVisible ? <EmptyState icon="trophy" title={t("lb.hiddenAge")} /> : (
         <Card>
           <div className="row" style={{ justifyContent: "space-between", marginBottom: 14 }}>
             <div className="row" style={{ gap: 6 }}>

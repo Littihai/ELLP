@@ -28,6 +28,8 @@ public sealed class LearningProgram
     public Text2 Title { get; set; } = new("", "");
     public Text2 Description { get; set; } = new("", "");
     public string Level { get; set; } = "beginner";
+    /// <summary>Who the program is for ("3-5", "6-8", "9-12", "13+"); empty = every age (decision 0004).</summary>
+    public List<string> AgeBands { get; set; } = new();
     public string Color { get; set; } = "#066fd1";
     public bool Published { get; set; }
     public string CreatedAt { get; set; } = "";
@@ -42,6 +44,10 @@ public sealed class UnlockRule
     public int? Xp { get; set; }
     public string? QuestId { get; set; }
     public int? Days { get; set; }
+    /// <summary>min_age: the age in whole years.</summary>
+    public int? Years { get; set; }
+    /// <summary>age_band: the bands the learner must be in.</summary>
+    public List<string>? Bands { get; set; }
 }
 
 public sealed class QuizQuestion
@@ -104,6 +110,11 @@ public sealed class UserProfile
     public Role Role { get; set; } = Role.learner;
     public string? OwnerId { get; set; }
     public List<string> EnrolledProgramIds { get; set; } = new();
+    /// <summary>The birth year only (the least data that gives an age band); null = not given.</summary>
+    public int? BirthYear { get; set; }
+    /// <summary>A teacher or parent opened every age band to this learner.</summary>
+    public bool AllowAllAges { get; set; }
+    public ParentConsent ParentConsent { get; set; } = new();
     public int Xp { get; set; }
     public int StreakDays { get; set; }
     public string? LastActiveDate { get; set; }
@@ -111,6 +122,14 @@ public sealed class UserProfile
     public string AvatarColor { get; set; } = "#066fd1";
     public bool Active { get; set; } = true;
     public string CreatedAt { get; set; } = "";
+}
+
+/// <summary>A parent's or guardian's acknowledgement (a first trace for PDPA s.20; the full consent flow comes with parent accounts).</summary>
+public sealed class ParentConsent
+{
+    public bool Acknowledged { get; set; }
+    public string? At { get; set; }
+    public string Note { get; set; } = "";
 }
 
 public sealed class LessonProgress
@@ -198,11 +217,21 @@ public sealed class LeaderboardSettings
     public int Size { get; set; } = 10;
 }
 
+/// <summary>What changes per age band (decision 0004).</summary>
+public sealed class AgeRule
+{
+    public int QuizPassPct { get; set; } = 60;
+    public bool LeaderboardVisible { get; set; } = true;
+    public bool StreakFreeze { get; set; }
+}
+
 public sealed class OwnerSettings
 {
     public string OwnerId { get; set; } = "";
     public EmailSettings Email { get; set; } = new();
     public LeaderboardSettings Leaderboard { get; set; } = new();
+    /// <summary>Keyed by band ("3-5" ...); a missing band falls back to the defaults in GamificationRules.</summary>
+    public Dictionary<string, AgeRule> AgeRules { get; set; } = new();
 }
 
 public sealed record LeaderboardRow(int Rank, string Uid, string DisplayName, string AvatarColor, int Xp, int Level, bool IsMe);

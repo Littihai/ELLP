@@ -6,10 +6,11 @@ import { useToast } from "@/components/ui/Toast";
 import { useAsync } from "@/hooks/useAsync";
 import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
-import type { Program } from "@/types";
+import type { AgeBand, Program } from "@/types";
+import { AGE_BANDS } from "@/lib/gamification";
 
 const COLORS = ["#066fd1", "#f59f00", "#2fb344", "#4c58c4", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
-const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, level: "beginner", color: COLORS[0], published: false, createdAt: "" });
+const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, level: "beginner", ageBands: [], color: COLORS[0], published: false, createdAt: "" });
 
 /** The owner's teaching media (programs). A program is a container; its videos live on the Lessons page. */
 export function ProgramsAdminPage() {
@@ -48,7 +49,10 @@ function Inner() {
               <div style={{ height: 8, background: p.color }} />
               <div style={{ padding: "14px 16px" }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
-                  <Badge tone={p.published ? "ok" : "neutral"}>{t(p.published ? "app.published" : "app.draft")}</Badge>
+                  <span className="row" style={{ gap: 6 }}>
+                    <Badge tone={p.published ? "ok" : "neutral"}>{t(p.published ? "app.published" : "app.draft")}</Badge>
+                    <Badge tone="accent">{p.ageBands.length === 0 ? t("age.forAll") : p.ageBands.map((b) => b.replace("-", "–")).join(", ")}</Badge>
+                  </span>
                   <span className="small muted">{t("programs.lessonsN", { n })} · {t(`programs.level.${p.level}`)}</span>
                 </div>
                 <h3 style={{ margin: "8px 0 4px", fontSize: "var(--text-lg)" }}>{pick(p.title)}</h3>
@@ -81,6 +85,12 @@ function Inner() {
             <Field label={t("prg.color")}>
               <div className="row" style={{ gap: 6 }}>
                 {COLORS.map((c) => <button key={c} type="button" aria-label={c} aria-pressed={edit.color === c} onClick={() => setEdit({ ...edit, color: c })} style={{ width: 28, height: 28, borderRadius: "50%", background: c, border: edit.color === c ? "3px solid var(--color-text)" : "3px solid transparent" }} />)}
+              </div>
+            </Field>
+            <Field label={t("age.band")} span2>
+              <div className="row">
+                <button type="button" className="chip" aria-pressed={edit.ageBands.length === 0} onClick={() => setEdit({ ...edit, ageBands: [] })}>{t("age.forAll")}</button>
+                {AGE_BANDS.map((b: AgeBand) => <button key={b} type="button" className="chip" aria-pressed={edit.ageBands.includes(b)} onClick={() => setEdit({ ...edit, ageBands: edit.ageBands.includes(b) ? edit.ageBands.filter((x) => x !== b) : [...edit.ageBands, b] })}>{t(`age.band.${b}`)}</button>)}
               </div>
             </Field>
             <div className="row span-2"><Switch checked={edit.published} onChange={(v) => setEdit({ ...edit, published: v })} /> {t("app.published")}</div>

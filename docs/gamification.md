@@ -52,6 +52,20 @@ Per tenant, learners only, active only. "All time, all programs" ranks by `users
 week and/or program (quest and streak events, which have no program, count in every program view). The tenant's settings decide
 whether learners see it and how many rows.
 
+## Age bands (1.0.1, decision 0004)
+
+| Band | Ages | Default pass mark | Leaderboard | Streak |
+|---|---|---|---|---|
+| `3-5` | up to 5 | 50 % | hidden | forgiven (a broken chain carries on) |
+| `6-8` | 6–8 | 60 % | shown | forgiven |
+| `9-12` | 9–12 | 70 % | shown | strict |
+| `13+` | 13 and up | 70 % | shown | strict |
+| unknown | no birth year | 60 % | shown | strict |
+
+The age is `now.year − birthYear`. A tenant changes the three numbers per band in Settings. Programs list the bands they are for
+(empty = all); the learner sees only matching programs unless `allowAllAges` is set on them. Two unlock rules use the age:
+`min_age` (years) and `age_band` (bands); both fail when the age is unknown and pass when the learner has the override.
+
 ## Demo-only shortcut
 
 In demo mode the lesson page has "Mark as watched (demo)", which sends `watchedPct = 100`. A timer also credits watch time while

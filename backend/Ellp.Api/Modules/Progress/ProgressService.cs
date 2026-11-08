@@ -41,7 +41,8 @@ public sealed class ProgressService : IProgressService
         public required List<Quest> Quests;
         public required List<QuestProgress> QuestRows;
         public required List<Badge> Badges;
-        public readonly List<object> Dirty = new();
+        /// <summary>The learner's age-band rule under their tenant's settings (pass mark, streak freeze).</summary>
+        public required AgeRule Age;
     }
 
     private async Task<Ctx> Begin(UserProfile me, LessonProgress p, CancellationToken ct)
@@ -54,6 +55,7 @@ public sealed class ProgressService : IProgressService
             Quests = quests,
             QuestRows = await _s.QuestProgressAsync(me.Uid, ct),
             Badges = await _s.BadgesAsync(ct),
+            Age = AgeRuleFor(me.OwnerId is null ? null : await _s.SettingsAsync(me.OwnerId, ct), me, DateTime.UtcNow),
         };
     }
 
@@ -78,7 +80,7 @@ public sealed class ProgressService : IProgressService
     private async Task TouchDay(Ctx c, CancellationToken ct)
     {
         var today = DayKey(DateTime.UtcNow);
-        var (streak, first) = NextStreak(c.Me.StreakDays, c.Me.LastActiveDate, today);
+        var (streak, first) = NextStreak(c.Me.StreakDays, c.Me.LastActiveDate, today, c.Age.StreakFreeze);
         if (!first) return;
         c.Me.StreakDays = streak;
         c.Me.LastActiveDate = today;
@@ -108,7 +110,7 @@ public sealed class ProgressService : IProgressService
 
     private void FinishIfDue(Ctx c, Lesson lesson, LessonProgress p)
     {
-        if (p.Completed || !LessonComplete(lesson, p)) return;
+        if (p.Completed || !LessonComplete(lesson, p, c.Age.QuizPassPct)) return;
         p.Completed = true; p.CompletedAt = Clock.NowIso();
         c.Out.LessonCompleted = true;
         GiveBadge(c, "bdg_first");
@@ -163,8 +165,8 @@ public sealed class ProgressService : IProgressService
         await TouchDay(c, ct);
         var gain = QuizGain(correct, bestBefore, total);
         if (gain > 0) await AddXp(c, lesson.ProgramId, "quiz", gain, $"{lesson.Title.En} quiz {correct}/{total}", ct);
-        var passedBefore = bestBefore >= 0 && QuizPassed(bestBefore, total);
-        if (QuizPassed(correct, total) && !passedBefore) await AdvanceQuests(c, "pass_quizzes", 1, false, lesson.ProgramId, ct);
+        var passedBefore = bestBefore >= 0 && QuizPassed(bestBefore, total, c.Age.QuizPassPct);
+        if (QuizPassed(correct, total, c.Age.QuizPassPct) && !passedBefore) await AdvanceQuests(c, "pass_quizzes", 1, false, lesson.ProgramId, ct);
         if (gain > 0) await AdvanceQuests(c, "earn_xp", gain, false, lesson.ProgramId, ct);
         if (lesson.Id == "les_babyshark" && correct == total) GiveBadge(c, "bdg_shark");
         FinishIfDue(c, lesson, p);
