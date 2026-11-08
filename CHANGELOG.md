@@ -2,7 +2,17 @@
 
 All notable changes to ELLP. The format follows Keep a Changelog; versions follow TMCL-PR's order (1.0.0 … 1.0.9, 1.1.0).
 
-## [1.4.0] — 2026-11-08
+## [1.0.0] — 2026-11-08 — first public release
+
+The owner's decision at launch: everything built during the day (the development milestones 1.0.1 → 1.4.0 below) ships as
+**public version 1.0.0**. The app and the API report 1.0.0; the git tag `v1.0.0` points at this release. The milestone
+headings below are kept as history of what was added in which step; their tags were retired. Development versions from
+here on continue 1.0.1, 1.0.2 … (TMCL-PR's order).
+
+### Deployed
+- Demo mode (fictional data, no API) on Firebase Hosting; `/api/**` is served by nothing yet (the C# API is not hosted).
+
+## Development milestone 1.4.0 — 2026-11-08
 
 Placement test, skill profile, parent accounts and the weekly report (decision 0008).
 
@@ -24,7 +34,7 @@ Placement test, skill profile, parent accounts and the weekly report (decision 0
 - Demo state key moved to `ellp.demo.v7`. `package.json` and the csproj version now read 1.4.0 (they had stayed at 1.0.1).
 - Sign-up sends the browser key so a chat or a placement result made before the account is linked to it (live API too).
 
-## [1.3.0] — 2026-11-08
+## Development milestone 1.3.0 — 2026-11-08
 
 Online payment, certificates, mock tests, HLS (decision 0007).
 
@@ -43,7 +53,7 @@ Online payment, certificates, mock tests, HLS (decision 0007).
 ### Changed
 - Demo state key moved to `ellp.demo.v6`.
 
-## [1.2.0] — 2026-11-08
+## Development milestone 1.2.0 — 2026-11-08
 
 The platform's own player and the learning-integrity rules (decision 0006).
 
@@ -65,7 +75,7 @@ The platform's own player and the learning-integrity rules (decision 0006).
 - The engine refuses a paused lesson (`LESSON_PAUSED`) and recomputes the watched percentage from the reported position.
 - Demo state key moved to `ellp.demo.v5`.
 
-## [1.1.0] — 2026-11-08
+## Development milestone 1.1.0 — 2026-11-08
 
 Every audience, plans, sign-up and chat (decision 0005).
 
@@ -86,7 +96,7 @@ Every audience, plans, sign-up and chat (decision 0005).
 - Lessons without a YouTube id show a coloured tile instead of a broken thumbnail.
 - Demo state key moved to `ellp.demo.v3`.
 
-## [1.0.1] — 2026-11-08
+## Development milestone 1.0.1 — 2026-11-08
 
 Conditions by age (decision 0004).
 
@@ -102,7 +112,7 @@ Conditions by age (decision 0004).
 - The in-memory store now copies the seed objects, so one test (or one request) can no longer change another's data.
 - The header tagline no longer wraps on narrow screens.
 
-## [1.0.0] — 2026-11-08
+## Development milestone 1.0.0 — 2026-11-08
 
 First release: a complete click-through demo of the platform on fictional data.
 
