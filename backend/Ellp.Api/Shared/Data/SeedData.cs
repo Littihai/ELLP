@@ -19,8 +19,8 @@ public static class SeedData
     public static readonly List<LearningProgram> Programs = new()
     {
         new() { Id = "prg_songs1", OwnerId = "own_sunshine", Level = "beginner", Color = "#f59f00", Published = true, CreatedAt = T0, Title = new("ร้องเพลงภาษาอังกฤษ ชุดที่ 1", "Sing-along English, Set 1"), Description = new("เริ่มจาก Baby Shark แล้วปลดล็อกเพลงถัดไปเมื่อดูจบและตอบคำถามผ่าน", "Start with Baby Shark and unlock the next song by finishing each video and passing its quiz.") },
-        new() { Id = "prg_body", OwnerId = "own_sunshine", Level = "elementary", Color = "#2fb344", Published = true, CreatedAt = T0, Title = new("ร่างกายและการเคลื่อนไหว", "My Body in Motion"), Description = new("เพลงและท่าทางเกี่ยวกับร่างกาย เปิดได้เมื่อถึงเลเวล 2", "Songs and actions about the body. Opens at level 2.") },
-        new() { Id = "prg_phonics", OwnerId = "own_bright", Level = "beginner", Color = "#4c58c4", Published = true, CreatedAt = T0, Title = new("โฟนิกส์ A–Z", "Phonics A to Z"), Description = new("เสียงตัวอักษรผ่านเพลง", "Letter sounds through song.") },
+        new() { Id = "prg_body", OwnerId = "own_sunshine", Level = "elementary", AgeBands = new() { "6-8", "9-12" }, Color = "#2fb344", Published = true, CreatedAt = T0, Title = new("ร่างกายและการเคลื่อนไหว", "My Body in Motion"), Description = new("เพลงและท่าทางเกี่ยวกับร่างกาย เปิดได้เมื่อถึงเลเวล 2", "Songs and actions about the body. Opens at level 2.") },
+        new() { Id = "prg_phonics", OwnerId = "own_bright", Level = "beginner", AgeBands = new() { "3-5", "6-8" }, Color = "#4c58c4", Published = true, CreatedAt = T0, Title = new("โฟนิกส์ A–Z", "Phonics A to Z"), Description = new("เสียงตัวอักษรผ่านเพลง", "Letter sounds through song.") },
     };
 
     private static QuizQuestion Q(string id, string th, string en, string[] choices, int answer) => new() { Id = id, Prompt = new(th, en), Choices = choices.ToList(), Answer = answer };
@@ -48,7 +48,8 @@ public static class SeedData
             Unlock = new() { new() { Type = "min_level", Level = 2 } } },
         new() { Id = "les_phonicsA", ProgramId = "prg_phonics", Order = 1, Published = true, YoutubeId = "BELlZKpi1Zs", DurationSec = 200, XpReward = 50, Title = new("Phonics Song A–Z", "Phonics Song A to Z"), Summary = new("เสียงของตัวอักษร", "The sound of each letter."),
             Vocabulary = new() { "apple", "ball", "cat" },
-            Quiz = new() { Q("q1", "'A' is for …", "'A' is for …", new[] { "apple", "ball", "cat" }, 0) } },
+            Quiz = new() { Q("q1", "'A' is for …", "'A' is for …", new[] { "apple", "ball", "cat" }, 0) },
+            Unlock = new() { new() { Type = "min_age", Years = 5 } } },
     };
 
     public static readonly List<Badge> Badges = new()
@@ -68,16 +69,19 @@ public static class SeedData
         new() { Id = "qst_bright_daily", OwnerId = "own_bright", Scope = "daily", XpReward = 20, Title = new("ฝึกโฟนิกส์วันละคลิป", "One phonics video a day"), Description = new("", ""), Goal = new() { Type = "watch_videos", Target = 1 } },
     };
 
+    private static ParentConsent Ack => new() { Acknowledged = true, At = T0, Note = "ผู้ปกครองรับทราบตอนสมัคร" };
+
     public static readonly List<UserProfile> Users = new()
     {
-        new() { Uid = "u_super", DisplayName = "Platform Admin", Email = "super@ellp.example.com", Role = Role.superadmin, AvatarColor = "#182433", CreatedAt = T0 },
-        new() { Uid = "u_owner_sun", DisplayName = "คุณครูใหญ่ สมศรี", Email = "principal@sunshine.example.com", Role = Role.owner, OwnerId = "own_sunshine", AvatarColor = "#b0566f", CreatedAt = T0 },
-        new() { Uid = "u_admin_ann", DisplayName = "Teacher Ann", Email = "ann@sunshine.example.com", Role = Role.admin, OwnerId = "own_sunshine", AvatarColor = "#2f7f86", CreatedAt = T0 },
-        new() { Uid = "u_mint", DisplayName = "น้องมิ้นท์", Email = "mint.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1", "prg_body" }, Xp = 130, StreakDays = 2, BadgeIds = new() { "bdg_first", "bdg_shark" }, AvatarColor = "#f59f00", CreatedAt = T0 },
-        new() { Uid = "u_tee", DisplayName = "น้องตี๋", Email = "tee.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1" }, Xp = 320, StreakDays = 5, BadgeIds = new() { "bdg_first", "bdg_streak3" }, AvatarColor = "#4c58c4", CreatedAt = T0 },
-        new() { Uid = "u_fah", DisplayName = "น้องฟ้า", Email = "fah.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1", "prg_body" }, Xp = 560, StreakDays = 1, BadgeIds = new() { "bdg_first" }, AvatarColor = "#2fb344", CreatedAt = T0 },
-        new() { Uid = "u_admin_bright", DisplayName = "Khun Bee", Email = "bee@brightkids.example.com", Role = Role.admin, OwnerId = "own_bright", AvatarColor = "#a8612a", CreatedAt = T0 },
-        new() { Uid = "u_kao", DisplayName = "น้องข้าว", Email = "kao.parent@example.com", Role = Role.learner, OwnerId = "own_bright", EnrolledProgramIds = new() { "prg_phonics" }, Xp = 80, StreakDays = 1, BadgeIds = new() { "bdg_first" }, AvatarColor = "#6b5fb0", CreatedAt = T0 },
+        new() { Uid = "u_super", DisplayName = "Platform Admin", Email = "super@ellp.example.com", Role = Role.superadmin, AllowAllAges = true, AvatarColor = "#182433", CreatedAt = T0 },
+        new() { Uid = "u_owner_sun", DisplayName = "คุณครูใหญ่ สมศรี", Email = "principal@sunshine.example.com", Role = Role.owner, AllowAllAges = true, OwnerId = "own_sunshine", AvatarColor = "#b0566f", CreatedAt = T0 },
+        new() { Uid = "u_admin_ann", DisplayName = "Teacher Ann", Email = "ann@sunshine.example.com", Role = Role.admin, AllowAllAges = true, OwnerId = "own_sunshine", AvatarColor = "#2f7f86", CreatedAt = T0 },
+        new() { Uid = "u_mint", DisplayName = "น้องมิ้นท์", Email = "mint.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1", "prg_body" }, BirthYear = 2019, ParentConsent = Ack, Xp = 130, StreakDays = 2, BadgeIds = new() { "bdg_first", "bdg_shark" }, AvatarColor = "#f59f00", CreatedAt = T0 },
+        new() { Uid = "u_tee", DisplayName = "น้องตี๋", Email = "tee.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1" }, BirthYear = 2017, ParentConsent = Ack, Xp = 320, StreakDays = 5, BadgeIds = new() { "bdg_first", "bdg_streak3" }, AvatarColor = "#4c58c4", CreatedAt = T0 },
+        new() { Uid = "u_fah", DisplayName = "น้องฟ้า", Email = "fah.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1", "prg_body" }, BirthYear = 2016, ParentConsent = Ack, Xp = 560, StreakDays = 1, BadgeIds = new() { "bdg_first" }, AvatarColor = "#2fb344", CreatedAt = T0 },
+        new() { Uid = "u_admin_bright", DisplayName = "Khun Bee", Email = "bee@brightkids.example.com", Role = Role.admin, AllowAllAges = true, OwnerId = "own_bright", AvatarColor = "#a8612a", CreatedAt = T0 },
+        new() { Uid = "u_pukkie", DisplayName = "น้องปุ๊กกี้", Email = "pukkie.parent@example.com", Role = Role.learner, OwnerId = "own_sunshine", EnrolledProgramIds = new() { "prg_songs1" }, BirthYear = 2022, ParentConsent = Ack, Xp = 40, StreakDays = 1, AvatarColor = "#b0566f", CreatedAt = T0 },
+        new() { Uid = "u_kao", DisplayName = "น้องข้าว", Email = "kao.parent@example.com", Role = Role.learner, OwnerId = "own_bright", EnrolledProgramIds = new() { "prg_phonics" }, BirthYear = 2021, ParentConsent = Ack, Xp = 80, StreakDays = 1, BadgeIds = new() { "bdg_first" }, AvatarColor = "#6b5fb0", CreatedAt = T0 },
     };
 
     private static LessonProgress P(string uid, string lesson, int pct, int? score, int? total, bool done) => new() { Uid = uid, LessonId = lesson, WatchedPct = pct, QuizScore = score, QuizTotal = total, Completed = done, CompletedAt = done ? T0 : null, UpdatedAt = T0 };
@@ -97,7 +101,7 @@ public static class SeedData
 
     public static readonly List<OwnerSettings> Settings = new()
     {
-        new() { OwnerId = "own_sunshine", Email = new() { FromName = "Sunshine Kindergarten", FromAddress = "no-reply@sunshine.example.com", ReplyTo = "ann@sunshine.example.com", TestMode = true, AllowedRecipients = new() { "qa@sunshine.example.com" } } },
-        new() { OwnerId = "own_bright", Email = new() { FromName = "Bright Kids", FromAddress = "no-reply@brightkids.example.com", ReplyTo = "bee@brightkids.example.com", TestMode = true } },
+        new() { OwnerId = "own_sunshine", Email = new() { FromName = "Sunshine Kindergarten", FromAddress = "no-reply@sunshine.example.com", ReplyTo = "ann@sunshine.example.com", TestMode = true, AllowedRecipients = new() { "qa@sunshine.example.com" } }, AgeRules = Modules.Progress.GamificationRules.DefaultAgeRules.ToDictionary(k => k.Key, k => k.Value) },
+        new() { OwnerId = "own_bright", Email = new() { FromName = "Bright Kids", FromAddress = "no-reply@brightkids.example.com", ReplyTo = "bee@brightkids.example.com", TestMode = true }, AgeRules = Modules.Progress.GamificationRules.DefaultAgeRules.ToDictionary(k => k.Key, k => k.Value) },
     };
 }

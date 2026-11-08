@@ -10,7 +10,7 @@ import type { IconName } from "@/constants/icons";
 export const ytThumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
 /** One unlock rule in words, with its state. */
-export function RuleRow({ rule, ok, lessons, quests }: { rule: UnlockRule; ok: boolean; lessons: Lesson[]; quests: Quest[] }) {
+export function RuleRow({ rule, ok, lessons, quests, noAge = false }: { rule: UnlockRule; ok: boolean; lessons: Lesson[]; quests: Quest[]; noAge?: boolean }) {
   const { t, pick } = useI18n();
   const text = (() => {
     switch (rule.type) {
@@ -19,12 +19,15 @@ export function RuleRow({ rule, ok, lessons, quests }: { rule: UnlockRule; ok: b
       case "min_xp": return t("rule.min_xp", { n: rule.xp });
       case "quest_completed": return t("rule.quest_completed", { name: pick(quests.find((q) => q.id === rule.questId)?.title) || rule.questId });
       case "streak_days": return t("rule.streak_days", { n: rule.days });
+      case "min_age": return t("rule.min_age", { n: rule.years });
+      case "age_band": return t("rule.age_band", { bands: rule.bands.map((b) => t(`age.band.${b}`)).join(", ") });
     }
   })();
+  const needsAge = !ok && noAge && (rule.type === "min_age" || rule.type === "age_band");
   return (
     <div className="rule" data-ok={ok}>
       <Icon name={ok ? "checkCircleFill" : "lock"} size={16} color={ok ? "var(--tone-ok-solid)" : "var(--color-neutral-500)"} />
-      <span>{text}</span>
+      <span>{text}{needsAge && <span className="small muted" style={{ display: "block" }}>{t("rule.noAge")}</span>}</span>
       <span className="st" style={{ color: ok ? "var(--tone-ok-fg)" : "var(--color-neutral-600)" }}>{t(ok ? "rule.met" : "rule.notMet")}</span>
     </div>
   );

@@ -5,7 +5,7 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading, PageHeader } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
 import { api, USE_DEMO, type ActivityResult } from "@/services";
-import { WATCH_COMPLETE_PCT, lessonComplete, quizPassed } from "@/lib/gamification";
+import { WATCH_COMPLETE_PCT, ageBandOf, ageRuleFor, lessonComplete, quizPassed } from "@/lib/gamification";
 import type { Lesson, LessonProgress } from "@/types";
 import { CheerModal, RuleRow, useUnlock } from "./shared";
 
@@ -21,9 +21,9 @@ export function LessonPage() {
   const { t, pick } = useI18n();
   const u = user!;
   const { data, error, loading, reload, setData } = useAsync(async () => {
-    const [lessons, progress, questRows, quests] = await Promise.all([api.lessons(), api.myProgress(), api.myQuests(), u.ownerId ? api.quests(u.ownerId) : Promise.resolve([])]);
+    const [lessons, progress, questRows, quests, settings] = await Promise.all([api.lessons(), api.myProgress(), api.myQuests(), u.ownerId ? api.quests(u.ownerId) : Promise.resolve([]), u.ownerId ? api.settings(u.ownerId) : Promise.resolve(null)]);
     const lesson = lessons.find((l) => l.id === lessonId) ?? null;
-    return { lesson, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests };
+    return { lesson, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests, passPct: ageRuleFor(settings, u).quizPassPct };
   }, [lessonId, u.uid]);
   const [cheer, setCheer] = useState<ActivityResult | null>(null);
   const unlock = useUnlock(data?.lesson ?? undefined, u, data?.progress ?? [], data?.questRows ?? []);
@@ -44,7 +44,8 @@ export function LessonPage() {
   const canQuiz = watched >= WATCH_COMPLETE_PCT;
   const idx = data.siblings.findIndex((l) => l.id === lesson.id);
   const next = data.siblings[idx + 1];
-  const done = lessonComplete(lesson, progress);
+  const done = lessonComplete(lesson, progress, data.passPct);
+  const noAge = ageBandOf(u) === null;
 
   return (
     <>
@@ -70,12 +71,12 @@ export function LessonPage() {
           {lesson.vocabulary.length > 0 && (
             <Card title={t("lesson.vocab")}><div className="vocab">{lesson.vocabulary.map((w) => <span key={w}>{w}</span>)}</div></Card>
           )}
-          {unlock.ok && lesson.quiz.length > 0 && <Quiz lesson={lesson} progress={progress} enabled={canQuiz} onResult={applyResult} />}
+          {unlock.ok && lesson.quiz.length > 0 && <Quiz lesson={lesson} progress={progress} enabled={canQuiz} passPct={data.passPct} onResult={applyResult} />}
         </div>
         <div className="stack">
           {lesson.unlock.length > 0 && (
             <Card title={t("lesson.unlockRules")}>
-              <div className="stack" style={{ gap: 8 }}>{unlock.rows.map((r, i) => <RuleRow key={i} rule={r.rule} ok={r.ok} lessons={data.lessons} quests={data.quests} />)}</div>
+              <div className="stack" style={{ gap: 8 }}>{unlock.rows.map((r, i) => <RuleRow key={i} rule={r.rule} ok={r.ok} lessons={data.lessons} quests={data.quests} noAge={noAge} />)}</div>
             </Card>
           )}
           {next && (
@@ -150,14 +151,14 @@ function Player({ lesson, unlocked, progress, onResult }: { lesson: Lesson; unlo
   );
 }
 
-function Quiz({ lesson, progress, enabled, onResult }: { lesson: Lesson; progress?: LessonProgress; enabled: boolean; onResult: (r: ActivityResult) => void }) {
+function Quiz({ lesson, progress, enabled, passPct, onResult }: { lesson: Lesson; progress?: LessonProgress; enabled: boolean; passPct: number; onResult: (r: ActivityResult) => void }) {
   const { t, pick } = useI18n();
   const [answers, setAnswers] = useState<(number | null)[]>(() => lesson.quiz.map(() => null));
   const [result, setResult] = useState<number[] | null>(null);
   const [busy, setBusy] = useState(false);
   const total = lesson.quiz.length;
   const best = progress?.quizScore ?? null;
-  const passed = best !== null && quizPassed(best, total);
+  const passed = best !== null && quizPassed(best, total, passPct);
 
   const submit = async () => {
     if (answers.some((a) => a === null)) return;
@@ -173,7 +174,7 @@ function Quiz({ lesson, progress, enabled, onResult }: { lesson: Lesson; progres
 
   return (
     <Card title={t("lesson.quiz")} actions={best !== null && <Badge tone={passed ? "ok" : "warn"}>{t("lesson.best")}: {best}/{total} · {t(passed ? "lesson.passed" : "lesson.notPassed")}</Badge>}>
-      <p className="muted small" style={{ margin: "0 0 12px" }}>{enabled ? t("lesson.quizSub") : t("lesson.quizLocked")}</p>
+      <p className="muted small" style={{ margin: "0 0 12px" }}>{enabled ? t("lesson.quizSub", { pct: passPct }) : t("lesson.quizLocked")}</p>
       <div className="stack" style={{ gap: 12, opacity: enabled ? 1 : 0.55, pointerEvents: enabled ? "auto" : "none" }}>
         {lesson.quiz.map((q, qi) => (
           <div className="quiz-q" key={q.id}>
@@ -195,7 +196,7 @@ function Quiz({ lesson, progress, enabled, onResult }: { lesson: Lesson; progres
           </div>
         ))}
         <div className="row" style={{ justifyContent: "space-between" }}>
-          {score !== null ? <Badge tone={quizPassed(score, total) ? "ok" : "stop"}>{t("lesson.score", { score, total })} · {t(quizPassed(score, total) ? "lesson.passed" : "lesson.notPassed")}</Badge> : <span />}
+          {score !== null ? <Badge tone={quizPassed(score, total, passPct) ? "ok" : "stop"}>{t("lesson.score", { score, total })} · {t(quizPassed(score, total, passPct) ? "lesson.passed" : "lesson.notPassed")}</Badge> : <span />}
           {result ? <Button variant="secondary" icon="sync" onClick={retake}>{t("lesson.retake")}</Button>
             : <Button icon="paperAirplane" busy={busy} disabled={answers.some((a) => a === null)} onClick={submit}>{t("lesson.submit")}</Button>}
         </div>

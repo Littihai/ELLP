@@ -6,17 +6,17 @@ TypeScript types (`src/types/index.ts`) are the same shapes; JSON is camelCase. 
 | Collection | Document id | Key fields | Notes |
 |---|---|---|---|
 | `owners` | `own_*` | code, name{th,en}, contactEmail, plan (free/school/enterprise), active | A tenant |
-| `programs` | `prg_*` | ownerId, title, description, level, color, published | A teaching medium |
+| `programs` | `prg_*` | ownerId, title, description, level, ageBands[], color, published | `ageBands` empty = every age |
 | `lessons` | `les_*` | programId, order, title, summary, youtubeId, durationSec, xpReward, vocabulary[], quiz[], unlock[], published | `unlock[]` is a list of rules, all must pass |
 | `quests` | `qst_*` | ownerId, programId (null = all), scope (daily/weekly/program), goal{type,target}, xpReward, badgeId, active | |
 | `badges` | `bdg_*` | name, description, icon (Octicon name) | Global for V1 |
-| `users` | Firebase uid | displayName, email, role, ownerId (null for superadmin), enrolledProgramIds[], xp, streakDays, lastActiveDate, badgeIds[], avatarColor, active | The profile; the Auth user is the identity |
+| `users` | Firebase uid | displayName, email, role, ownerId (null for superadmin), enrolledProgramIds[], birthYear, allowAllAges, parentConsent{acknowledged, at, note}, xp, streakDays, lastActiveDate, badgeIds[], avatarColor, active | The profile; the Auth user is the identity. The year only, never a birth date |
 | `progress` | `<uid>_<lessonId>` | uid, lessonId, watchedPct, completed, quizScore, quizTotal, completedAt | One per learner per lesson |
 | `questProgress` | `<uid>_<questId>_<periodKey>` | uid, questId, periodKey (YYYY-MM-DD / YYYY-Www / all), progress, completed | One per learner per quest per period |
 | `xpEvents` | `xe_*` | uid, ownerId, programId, kind (video/quiz/quest/streak/manual), xp, note, at | The ledger; the leaderboard adds it up |
 | `messages` | `msg_*` | ownerId, fromUid, fromName, fromEmail, subject, body, status (open/answered/closed), replies[] | Learner → admins |
 | `mailLog` | `mail_*` | ownerId, to, subject, body, status (sent/redirected/suppressed/failed), testMode, at | What left (or did not) |
-| `settings` | ownerId | email{fromName, fromAddress, replyTo, testMode, allowedRecipients[]}, leaderboard{visible, size} | Per tenant |
+| `settings` | ownerId | email{fromName, fromAddress, replyTo, testMode, allowedRecipients[]}, leaderboard{visible, size}, ageRules{band → {quizPassPct, leaderboardVisible, streakFreeze}} | Per tenant |
 
 ## Unlock rule shapes
 
@@ -26,6 +26,8 @@ TypeScript types (`src/types/index.ts`) are the same shapes; JSON is camelCase. 
 { "type": "min_xp", "xp": 100 }
 { "type": "quest_completed", "questId": "qst_watch3" }
 { "type": "streak_days", "days": 2 }
+{ "type": "min_age", "years": 5 }
+{ "type": "age_band", "bands": ["6-8", "9-12"] }
 ```
 
 ## Indexes

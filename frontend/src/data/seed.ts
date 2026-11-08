@@ -1,3 +1,4 @@
+import { DEFAULT_AGE_RULES } from "@/lib/gamification";
 import type {
   Badge, InboxMessage, Lesson, LessonProgress, MailLog, Owner, OwnerSettings, Program, Quest, QuestProgress, UserProfile, XpEvent,
 } from "@/types";
@@ -17,17 +18,17 @@ export const OWNERS: Owner[] = [
 
 export const PROGRAMS: Program[] = [
   {
-    id: "prg_songs1", ownerId: "own_sunshine", level: "beginner", color: "#f59f00", published: true, createdAt: T0,
+    id: "prg_songs1", ownerId: "own_sunshine", level: "beginner", ageBands: [], color: "#f59f00", published: true, createdAt: T0,
     title: { th: "ร้องเพลงภาษาอังกฤษ ชุดที่ 1", en: "Sing-along English, Set 1" },
     description: { th: "เริ่มจาก Baby Shark แล้วปลดล็อกเพลงถัดไปเมื่อดูจบและตอบคำถามผ่าน", en: "Start with Baby Shark and unlock the next song by finishing each video and passing its quiz." },
   },
   {
-    id: "prg_body", ownerId: "own_sunshine", level: "elementary", color: "#2fb344", published: true, createdAt: T0,
+    id: "prg_body", ownerId: "own_sunshine", level: "elementary", ageBands: ["6-8", "9-12"], color: "#2fb344", published: true, createdAt: T0,
     title: { th: "ร่างกายและการเคลื่อนไหว", en: "My Body in Motion" },
-    description: { th: "เพลงและท่าทางเกี่ยวกับร่างกาย เปิดได้เมื่อถึงเลเวล 2", en: "Songs and actions about the body. Opens at level 2." },
+    description: { th: "เพลงและท่าทางเกี่ยวกับร่างกาย สำหรับ 6 ขวบขึ้นไป เปิดได้เมื่อถึงเลเวล 2", en: "Songs and actions about the body, for ages 6 and up. Opens at level 2." },
   },
   {
-    id: "prg_phonics", ownerId: "own_bright", level: "beginner", color: "#4c58c4", published: true, createdAt: T0,
+    id: "prg_phonics", ownerId: "own_bright", level: "beginner", ageBands: ["3-5", "6-8"], color: "#4c58c4", published: true, createdAt: T0,
     title: { th: "โฟนิกส์ A–Z", en: "Phonics A to Z" },
     description: { th: "เสียงตัวอักษรผ่านเพลง สำหรับผู้เรียนของไบรท์คิดส์", en: "Letter sounds through song, for Bright Kids learners." },
   },
@@ -104,10 +105,10 @@ export const LESSONS: Lesson[] = [
   {
     id: "les_phonicsA", programId: "prg_phonics", order: 1, published: true, youtubeId: "BELlZKpi1Zs", durationSec: 200, xpReward: 50,
     title: { th: "Phonics Song A–Z", en: "Phonics Song A to Z" },
-    summary: { th: "เสียงของตัวอักษรแต่ละตัว", en: "The sound of each letter." },
+    summary: { th: "เสียงของตัวอักษรแต่ละตัว สำหรับอายุ 5 ขวบขึ้นไป", en: "The sound of each letter, for ages 5 and up." },
     vocabulary: ["apple", "ball", "cat", "dog", "elephant", "fish"],
     quiz: [q("q1", "'A' is for …", "'A' is for …", ["apple", "ball", "cat"], 0), q("q2", "'C' is for …", "'C' is for …", ["dog", "cat", "fish"], 1)],
-    unlock: [],
+    unlock: [{ type: "min_age", years: 5 }],
   },
 ];
 
@@ -132,15 +133,16 @@ export const QUESTS: Quest[] = [
 ];
 
 export const USERS: UserProfile[] = [
-  { uid: "u_super", displayName: "Platform Admin", email: "super@ellp.example.com", role: "superadmin", ownerId: null, enrolledProgramIds: [], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#182433", active: true, createdAt: T0 },
-  { uid: "u_owner_sun", displayName: "คุณครูใหญ่ สมศรี", email: "principal@sunshine.example.com", role: "owner", ownerId: "own_sunshine", enrolledProgramIds: [], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
-  { uid: "u_admin_ann", displayName: "Teacher Ann", email: "ann@sunshine.example.com", role: "admin", ownerId: "own_sunshine", enrolledProgramIds: [], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#2f7f86", active: true, createdAt: T0 },
-  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
-  { uid: "u_tee", displayName: "น้องตี๋", email: "tee.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], xp: 320, streakDays: 5, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_streak3"], avatarColor: "#4c58c4", active: true, createdAt: T0 },
-  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
-  { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
-  { uid: "u_admin_bright", displayName: "Khun Bee", email: "bee@brightkids.example.com", role: "admin", ownerId: "own_bright", enrolledProgramIds: [], xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#a8612a", active: true, createdAt: T0 },
-  { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
+  { uid: "u_super", displayName: "Platform Admin", email: "super@ellp.example.com", role: "superadmin", ownerId: null, enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#182433", active: true, createdAt: T0 },
+  { uid: "u_owner_sun", displayName: "คุณครูใหญ่ สมศรี", email: "principal@sunshine.example.com", role: "owner", ownerId: "own_sunshine", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
+  { uid: "u_admin_ann", displayName: "Teacher Ann", email: "ann@sunshine.example.com", role: "admin", ownerId: "own_sunshine", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#2f7f86", active: true, createdAt: T0 },
+  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2019, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
+  { uid: "u_tee", displayName: "น้องตี๋", email: "tee.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2017, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 320, streakDays: 5, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_streak3"], avatarColor: "#4c58c4", active: true, createdAt: T0 },
+  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2016, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
+  { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2020, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
+  { uid: "u_pukkie", displayName: "น้องปุ๊กกี้", email: "pukkie.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2022, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 40, streakDays: 1, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
+  { uid: "u_admin_bright", displayName: "Khun Bee", email: "bee@brightkids.example.com", role: "admin", ownerId: "own_bright", enrolledProgramIds: [], birthYear: null, allowAllAges: true, parentConsent: { acknowledged: false, at: null, note: "" }, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#a8612a", active: true, createdAt: T0 },
+  { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], birthYear: 2021, allowAllAges: false, parentConsent: { acknowledged: true, at: T0, note: "ผู้ปกครองรับทราบตอนสมัคร" }, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
 ];
 
 const P = (uid: string, lessonId: string, watchedPct: number, quizScore: number | null, quizTotal: number | null, completed: boolean): LessonProgress =>
@@ -189,11 +191,11 @@ export const MAIL_LOG: MailLog[] = [
 ];
 
 export const OWNER_SETTINGS: OwnerSettings[] = [
-  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 } },
-  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 } },
+  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } },
+  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } },
 ];
 
 /** The accounts the demo sign-in pages offer. The password is the same for every demo account and is shown on the page. */
 export const DEMO_PASSWORD = "ellp-demo";
-export const DEMO_LEARNERS = ["u_mint", "u_tee", "u_fah", "u_new", "u_kao"];
+export const DEMO_LEARNERS = ["u_mint", "u_tee", "u_fah", "u_new", "u_pukkie", "u_kao"];
 export const DEMO_STAFF = ["u_super", "u_owner_sun", "u_admin_ann", "u_admin_bright"];

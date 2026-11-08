@@ -6,7 +6,7 @@ import {
   BADGES, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, OWNERS, OWNER_SETTINGS, PROGRAMS, PROGRESS, QUESTS, QUEST_PROGRESS, USERS, XP_EVENTS,
 } from "@/data/seed";
 import {
-  WATCH_COMPLETE_PCT, dayKey, levelFor, lessonComplete, nextStreak, periodKeyFor, quizPassed, quizXp, streakBonus, weekKey,
+  DEFAULT_AGE_RULES, WATCH_COMPLETE_PCT, ageRuleFor, dayKey, levelFor, lessonComplete, nextStreak, periodKeyFor, quizPassed, quizXp, streakBonus, weekKey,
 } from "@/lib/gamification";
 import { newId, nowIso } from "@/lib/format";
 import type { ActivityResult, AdminStats, EllpApi, LeaderboardPeriod } from "./api";
@@ -32,7 +32,8 @@ interface State {
   sessionUid: string | null;
 }
 
-const KEY = "ellp.demo.v1";
+// v2: 1.0.1 added age fields; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v2";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -131,10 +132,15 @@ class DemoStore implements EllpApi {
     out.newBadges.push(structuredClone(b));
   }
 
+  /** The age-band rule of this learner under their tenant's settings (pass mark, streak freeze). */
+  private ageRule(me: UserProfile) {
+    return ageRuleFor(this.s.settings.find((x) => x.ownerId === me.ownerId) ?? null, me);
+  }
+
   /** First activity of the day: the streak moves and pays its bonus; the streak quests advance. */
   private touchDay(me: UserProfile, out: ActivityResult) {
     const today = dayKey();
-    const n = nextStreak(me.streakDays, me.lastActiveDate, today);
+    const n = nextStreak(me.streakDays, me.lastActiveDate, today, this.ageRule(me).streakFreeze);
     if (!n.firstToday) return;
     me.streakDays = n.streakDays;
     me.lastActiveDate = today;
@@ -161,7 +167,7 @@ class DemoStore implements EllpApi {
   }
 
   private finishLessonIfDue(me: UserProfile, lesson: Lesson, p: LessonProgress, out: ActivityResult) {
-    if (p.completed || !lessonComplete(lesson, p)) return;
+    if (p.completed || !lessonComplete(lesson, p, this.ageRule(me).quizPassPct)) return;
     p.completed = true; p.completedAt = nowIso();
     out.lessonCompleted = true;
     this.giveBadge(me, "bdg_first", out);
@@ -211,8 +217,9 @@ class DemoStore implements EllpApi {
     // XP is paid for the improvement over the best score so far, so a retake cannot farm points
     const gain = quizXp(correct, total) - (bestBefore >= 0 ? quizXp(bestBefore, total) : 0);
     if (gain > 0) this.addXp(me, lesson.programId, "quiz", gain, `${lesson.title.en} quiz ${correct}/${total}`, out);
-    const passedBefore = bestBefore >= 0 && quizPassed(bestBefore, total);
-    if (quizPassed(correct, total) && !passedBefore) this.advanceQuests(me, "pass_quizzes", 1, false, lesson.programId, out);
+    const passPct = this.ageRule(me).quizPassPct;
+    const passedBefore = bestBefore >= 0 && quizPassed(bestBefore, total, passPct);
+    if (quizPassed(correct, total, passPct) && !passedBefore) this.advanceQuests(me, "pass_quizzes", 1, false, lesson.programId, out);
     if (gain > 0) this.advanceQuests(me, "earn_xp", gain, false, lesson.programId, out);
     if (lesson.id === "les_babyshark" && correct === total) this.giveBadge(me, "bdg_shark", out);
     this.finishLessonIfDue(me, lesson, p, out);
@@ -320,7 +327,7 @@ class DemoStore implements EllpApi {
   async mailLog(ownerId: string) { return structuredClone(this.s.mail.filter((m) => m.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at))); }
   async settings(ownerId: string) {
     let s = this.s.settings.find((x) => x.ownerId === ownerId);
-    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 } }; this.s.settings.push(s); }
+    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES } }; this.s.settings.push(s); }
     return structuredClone(s);
   }
   async saveSettings(s: OwnerSettings) {

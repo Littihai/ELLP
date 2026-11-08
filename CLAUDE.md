@@ -24,6 +24,7 @@ Docs: `docs/architecture.md`, `docs/data-model.md`, `docs/gamification.md`, `doc
   from a development machine.
 - No emoji as icons: Octicons via `constants/icons.ts`. No hex colours in components: tokens in `styles/tokens.css`.
 - No text a person reads in code: `{ th, en }` in `frontend/src/i18n/dict.ts` or in the data.
+- Children's data: the birth year only (never a date), fictional seed only; the parent acknowledgement is a record, not yet verified consent (decision 0004).
 - The gamification rules live twice (`frontend/src/lib/gamification.ts`, `backend/.../GamificationRules.cs`): change both and
   the tests in the same commit.
 

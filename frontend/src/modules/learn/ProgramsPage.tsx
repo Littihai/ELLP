@@ -4,7 +4,7 @@ import { useI18n } from "@/app/providers/I18nProvider";
 import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading, PageHeader } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
-import { checkUnlock } from "@/lib/gamification";
+import { ageBandOf, checkUnlock, programVisible } from "@/lib/gamification";
 import { fmtDuration } from "@/lib/format";
 import { ytThumb } from "./shared";
 
@@ -19,12 +19,17 @@ export function ProgramsPage() {
   }, [u.uid, u.enrolledProgramIds.length]);
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
+  // the programs for this learner's age (decision 0004); the others are counted so the hint can say a teacher may open them
+  const visible = data.programs.filter((p) => programVisible(p, u));
+  const hidden = data.programs.length - visible.length;
+  const band = ageBandOf(u);
 
   return (
     <>
-      <PageHeader pretitle={t("nav.programs")} title={t("programs.title")} sub={t("programs.sub")} />
+      <PageHeader pretitle={t("nav.programs")} title={t("programs.title")} sub={<>{t("programs.sub")}{band && <> · {t("age.band")}: {t(`age.band.${band}`)}</>}</>} />
+      {hidden > 0 && <div className="small muted" style={{ marginBottom: 12 }}><Icon name="info" size={13} /> {t("age.hidden", { n: hidden })}</div>}
       <div className="grid-cards">
-        {data.programs.map((p) => {
+        {visible.map((p) => {
           const ls = data.lessons.filter((l) => l.programId === p.id);
           const done = ls.filter((l) => data.progress.find((x) => x.lessonId === l.id)?.completed).length;
           const enrolled = u.enrolledProgramIds.includes(p.id);
@@ -33,7 +38,10 @@ export function ProgramsPage() {
               <div style={{ height: 8, background: p.color }} />
               <div style={{ padding: "14px 16px" }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
-                  <Badge tone="neutral">{t(`programs.level.${p.level}`)}</Badge>
+                  <span className="row" style={{ gap: 6 }}>
+                    <Badge tone="neutral">{t(`programs.level.${p.level}`)}</Badge>
+                    <Badge tone="accent">{p.ageBands.length === 0 ? t("age.forAll") : p.ageBands.map((b) => b.replace("-", "–")).join(", ")}</Badge>
+                  </span>
                   <span className="small muted">{t("programs.lessonsN", { n: ls.length })}</span>
                 </div>
                 <h3 style={{ margin: "8px 0 4px", fontSize: "var(--text-lg)" }}>{pick(p.title)}</h3>

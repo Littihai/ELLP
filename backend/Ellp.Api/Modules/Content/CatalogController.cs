@@ -31,7 +31,7 @@ public sealed class CatalogController : ControllerBase
         if (me is null) return Unauthorized(ApiResponse<object>.Fail(ApiCodes.Unauthorized, "sign in"));
         var scope = RoleRules.IsSuper(me) ? ownerId : me.OwnerId;
         var list = await _s.ProgramsAsync(scope, ct);
-        if (me.Role == Role.learner) list = list.Where(p => p.Published).ToList();
+        if (me.Role == Role.learner) list = list.Where(p => p.Published && Progress.GamificationRules.ProgramVisible(p, me, DateTime.UtcNow)).ToList();
         return Ok(ApiResponse<List<LearningProgram>>.Ok(list));
     }
 

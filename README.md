@@ -1,7 +1,7 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.0.0** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.0.1** is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
@@ -24,6 +24,13 @@ pays only the improvement. The first activity of a day moves the **streak** (+5 
 day, week or forever, and pay XP and badges. A lesson's **unlock rules** (finish lesson X, reach level N, have N XP, complete
 quest Q, hold an N-day streak) all have to pass before its video opens. The demo opens with **Baby Shark**; finishing it unlocks
 *The Wheels on the Bus*, and so on. Full rules: [docs/gamification.md](docs/gamification.md).
+
+## Conditions by age (1.0.1)
+
+A learner's **birth year** (the year only) gives an age band: 3–5, 6–8, 9–12, 13+. Programs say which bands they are for, lessons can
+require `min_age` or `age_band`, and each band has its own pass mark, leaderboard visibility and streak forgiveness in the tenant's
+settings (gentler for the youngest). A teacher can open every band to one child. A parent's acknowledgement is recorded per learner
+as a first trace toward PDPA. Decision: [docs/decisions/0004-age-bands.md](docs/decisions/0004-age-bands.md).
 
 ## Multi-tenant
 
@@ -54,7 +61,8 @@ Open http://localhost:5174. Pick a demo account on the sign-in page (the passwor
 | Account | Email | Role |
 |---|---|---|
 | น้องมิ้นท์ | mint.parent@example.com | Learner, mid-way through Set 1 |
-| Nong Pim (new) | pim.parent@example.com | Learner with nothing done yet |
+| Nong Pim (new) | pim.parent@example.com | Learner with nothing done yet, no parent acknowledgement |
+| น้องปุ๊กกี้ | pukkie.parent@example.com | Learner aged 4 (band 3–5): filtered programs, hidden leaderboard, 50 % pass mark |
 | Teacher Ann | ann@sunshine.example.com | Admin of Sunshine Kindergarten |
 | คุณครูใหญ่ สมศรี | principal@sunshine.example.com | Owner of Sunshine Kindergarten |
 | Platform Admin | super@ellp.example.com | Super Admin (owners page, every tenant) |
@@ -89,7 +97,7 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 - The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
-- No automated UI tests yet; the backend has 42 rule and engine tests.
+- No automated UI tests yet; the backend has 58 rule and engine tests.
 
 ## License
 

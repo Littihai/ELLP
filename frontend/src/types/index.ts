@@ -10,6 +10,19 @@ export type Role = "superadmin" | "owner" | "admin" | "learner";
 
 export type StatusTone = "accent" | "ok" | "warn" | "stop" | "neutral";
 
+/** Age bands (1.0.1): kindergarten, lower primary, upper primary, older. A learner's band comes from their birth year. */
+export type AgeBand = "3-5" | "6-8" | "9-12" | "13+";
+
+/** What changes per age band (tenant settings, decision 0004). */
+export interface AgeRule {
+  /** the quiz pass mark for this band */
+  quizPassPct: number;
+  /** whether learners of this band see the leaderboard */
+  leaderboardVisible: boolean;
+  /** a broken streak is not reset for this band (no punishment for young children) */
+  streakFreeze: boolean;
+}
+
 /** A tenant: a school, a publisher or a family that owns programs and members. */
 export interface Owner {
   id: string;
@@ -28,6 +41,8 @@ export interface Program {
   title: Text2;
   description: Text2;
   level: "beginner" | "elementary" | "intermediate";
+  /** who the program is for; empty = every age */
+  ageBands: AgeBand[];
   color: string;
   published: boolean;
   createdAt: string;
@@ -39,7 +54,9 @@ export type UnlockRule =
   | { type: "min_level"; level: number }
   | { type: "min_xp"; xp: number }
   | { type: "quest_completed"; questId: string }
-  | { type: "streak_days"; days: number };
+  | { type: "streak_days"; days: number }
+  | { type: "min_age"; years: number }
+  | { type: "age_band"; bands: AgeBand[] };
 
 export interface QuizQuestion {
   id: string;
@@ -97,6 +114,12 @@ export interface UserProfile {
   /** null only for the Super Admin */
   ownerId: string | null;
   enrolledProgramIds: string[];
+  /** the year only (the minimum needed for an age band); null = not given yet */
+  birthYear: number | null;
+  /** a teacher or parent opened every age band to this learner (override) */
+  allowAllAges: boolean;
+  /** a parent or guardian acknowledged the use of the platform (a first trace for PDPA; full consent flow comes with parent accounts) */
+  parentConsent: { acknowledged: boolean; at: string | null; note: string };
   xp: number;
   streakDays: number;
   lastActiveDate: string | null;
@@ -184,6 +207,7 @@ export interface OwnerSettings {
     allowedRecipients: string[];
   };
   leaderboard: { visible: boolean; size: number };
+  ageRules: Record<AgeBand, AgeRule>;
 }
 
 export interface LeaderboardRow {
