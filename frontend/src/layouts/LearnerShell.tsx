@@ -16,8 +16,16 @@ const NAV: { to: string; key: string; icon: IconName; end?: boolean }[] = [
   { to: "/app/quests", key: "nav.quests", icon: "rocket" },
   { to: "/app/leaderboard", key: "nav.leaderboard", icon: "trophy" },
   { to: "/app/mock", key: "nav.mock", icon: "checklist" },
+  { to: "/app/placement", key: "nav.placement", icon: "goal" },
   { to: "/app/plan", key: "nav.plan", icon: "star" },
   { to: "/app/certificates", key: "nav.certificates", icon: "trophy" },
+  { to: "/app/profile", key: "nav.profile", icon: "person" },
+  { to: "/app/contact", key: "nav.contact", icon: "comment" },
+];
+/** A parent (1.4) has no lessons of their own: the children's page, the catalog, their profile and the teacher. */
+const PARENT_NAV: typeof NAV = [
+  { to: "/app/family", key: "nav.family", icon: "heart" },
+  { to: "/app/programs", key: "nav.programs", icon: "video" },
   { to: "/app/profile", key: "nav.profile", icon: "person" },
   { to: "/app/contact", key: "nav.contact", icon: "comment" },
 ];
@@ -33,6 +41,8 @@ export function LearnerShell() {
   if (!user) return null;
   const lv = levelInfo(user.xp);
   const myOwner = owners?.filter((o) => o.id === user.ownerId) ?? [];
+  const parent = user.role === "parent";
+  const NAVS = parent ? PARENT_NAV : NAV;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -44,14 +54,16 @@ export function LearnerShell() {
           </NavLink>
           {!mobile && (
             <nav className="learn-nav" aria-label="main" style={{ marginLeft: 16 }}>
-              {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={15} />{t(n.key)}</NavLink>)}
+              {NAVS.map((n) => <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={15} />{t(n.key)}</NavLink>)}
             </nav>
           )}
           <span className="hdr-spacer" />
-          <span className="xp-chip" title={`${user.xp} XP`}>
-            <span className="lvl">{lv.level}</span>{user.xp} XP
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: "var(--tone-warn-fg)" }}><Icon name="flame" size={13} />{user.streakDays}</span>
-          </span>
+          {!parent && (
+            <span className="xp-chip" title={`${user.xp} XP`}>
+              <span className="lvl">{lv.level}</span>{user.xp} XP
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: "var(--tone-warn-fg)" }}><Icon name="flame" size={13} />{user.streakDays}</span>
+            </span>
+          )}
           {!mobile && <LangToggle />}
           <button type="button" className="btn-icon" onClick={toggle} aria-label={t("app.theme")} title={t("app.theme")}><Icon name={resolved === "dark" ? "sun" : "moon"} size={18} /></button>
           <button type="button" className="btn-icon" onClick={() => nav("/app/profile")} aria-label={t("nav.profile")} style={{ padding: 3 }}><Avatar name={user.displayName} color={user.avatarColor} size={30} /></button>
@@ -66,7 +78,7 @@ export function LearnerShell() {
       {myOwner.length > 0 && <ChatWidget owners={myOwner} />}
       {mobile && (
         <nav className="learn-bottom" aria-label="main">
-          {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={18} />{t(n.key)}</NavLink>)}
+          {NAVS.map((n) => <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={18} />{t(n.key)}</NavLink>)}
         </nav>
       )}
     </div>

@@ -68,6 +68,12 @@ public sealed class AdminController : ControllerBase
     {
         var (me, err) = await Staff(u.OwnerId, ct); if (err is not null) return err;
         if (!RoleRules.CanAssignRole(me!, u.Role)) return Forbidden();
+        if (u.Role == Role.parent)
+        {
+            var learners = (await _s.UsersAsync(u.OwnerId, ct)).Where(x => x.Role == Role.learner).Select(x => x.Uid).ToHashSet();
+            if (u.ChildUids.Any(c => !learners.Contains(c))) return BadRequest(ApiResponse<object>.Fail(ApiCodes.Validation, "a child must be a learner of the same tenant"));
+        }
+        else u.ChildUids = new();
         if (u.ParentConsent.Acknowledged && string.IsNullOrWhiteSpace(u.ParentConsent.At)) u.ParentConsent.At = Clock.NowIso();
         if (!u.ParentConsent.Acknowledged) u.ParentConsent.At = null;
         if (string.IsNullOrWhiteSpace(u.Uid)) { u.Uid = Clock.NewId("u"); u.CreatedAt = Clock.NowIso(); }
@@ -89,6 +95,7 @@ public sealed class AdminController : ControllerBase
         var (me, err) = await Staff(target.OwnerId, ct); if (err is not null) return err;
         if (me!.Uid == uid) return Conflict(ApiResponse<object>.Fail(ApiCodes.Validation, "cannot remove yourself"));
         await _s.DeleteUserAsync(uid, ct);
+        foreach (var p in (await _s.UsersAsync(target.OwnerId, ct)).Where(p => p.ChildUids.Contains(uid))) { p.ChildUids.Remove(uid); await _s.UpsertUserAsync(p, ct); }
         return Ok(ApiResponse<object?>.Ok(null));
     }
 

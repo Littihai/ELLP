@@ -5,6 +5,9 @@ import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
 import { ageBandOf, ageOf, levelInfo, quizPassed } from "@/lib/gamification";
 import { fmtDate } from "@/lib/format";
+import { skillProfile } from "@/lib/skills";
+import { SkillBars } from "./shared";
+import { Link } from "react-router-dom";
 
 /** The learner's own page: level, stats, every badge (earned or not) and the full XP history. */
 export function ProfilePage() {
@@ -12,8 +15,8 @@ export function ProfilePage() {
   const { t, pick, lang } = useI18n();
   const u = user!;
   const { data, error, loading, reload } = useAsync(async () => {
-    const [badges, progress, xp, owners] = await Promise.all([api.badges(), api.myProgress(), api.myXpEvents(), api.owners()]);
-    return { badges, progress, xp, owner: owners.find((o) => o.id === u.ownerId) ?? null };
+    const [badges, progress, xp, owners, lessons, placement] = await Promise.all([api.badges(), api.myProgress(), api.myXpEvents(), api.owners(), api.lessons(), u.role === "learner" ? api.myPlacement() : Promise.resolve(null)]);
+    return { badges, progress, xp, owner: owners.find((o) => o.id === u.ownerId) ?? null, lessons, placement };
   }, [u.uid, u.xp]);
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
@@ -33,7 +36,8 @@ export function ProfilePage() {
               <Badge tone="accent">{t("app.levelN", { n: lv.level })} · {pick(lv.title)}</Badge>
               <Badge tone="warn"><Icon name="flame" size={11} />{t("app.daysN", { n: u.streakDays })}</Badge>
               <Badge tone="neutral">{t("age.band")}: {ageBandOf(u) ? `${t(`age.band.${ageBandOf(u)!}`)} · ${t("age.years", { n: ageOf(u.birthYear) ?? 0 })}` : t("age.unknown")}</Badge>
-              <Badge tone={u.parentConsent.acknowledged ? "ok" : "stop"}><Icon name={u.parentConsent.acknowledged ? "checkCircle" : "alert"} size={11} />{u.parentConsent.acknowledged ? `${t("age.consent")} · ${fmtDate(u.parentConsent.at, lang)}` : t("age.consentMissing")}</Badge>
+              {u.role === "learner" && <Badge tone={u.parentConsent.acknowledged ? "ok" : "stop"}><Icon name={u.parentConsent.acknowledged ? "checkCircle" : "alert"} size={11} />{u.parentConsent.acknowledged ? `${t("age.consent")} · ${fmtDate(u.parentConsent.at, lang)}` : t("age.consentMissing")}</Badge>}
+              {u.role === "learner" && (u.placementCefr ? <Badge tone="accent"><Icon name="goal" size={11} />CEFR {u.placementCefr} · {t("plc.takenAt")} {fmtDate(u.placementAt, lang)}</Badge> : <Link to="/app/placement" className="btn btn-ghost btn-sm"><Icon name="goal" size={13} /> {t("plc.notYet")} · {t("plc.take")}</Link>)}
             </div>
             <div style={{ marginTop: 10, maxWidth: 420 }}>
               <div className="small muted" style={{ marginBottom: 4 }}>{u.xp} XP {lv.nextLevelXp ? `· ${t("home.toNext", { n: lv.xpToNext, lvl: lv.level + 1 })}` : `· ${t("home.maxLevel")}`}</div>
@@ -48,6 +52,12 @@ export function ProfilePage() {
         <StatCard icon="checklist" label={t("profile.quizzesPassed")} value={quizzes} tone="accent" />
         <StatCard icon="trophy" label={t("profile.badges")} value={u.badgeIds.length} tone="warn" />
       </div>
+      {u.role === "learner" && (
+        <Card title={t("skill.title")} style={{ marginBottom: 16 }}>
+          <div className="small muted" style={{ marginBottom: 10 }}>{t("skill.sub")}</div>
+          <SkillBars rows={skillProfile(data.lessons.filter((l) => u.enrolledProgramIds.some((id) => id === l.programId)), data.progress)} before={data.placement?.bySkill ?? null} />
+        </Card>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
         <Card title={t("profile.badges")}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>

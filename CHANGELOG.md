@@ -2,6 +2,28 @@
 
 All notable changes to ELLP. The format follows Keep a Changelog; versions follow TMCL-PR's order (1.0.0 … 1.0.9, 1.1.0).
 
+## [1.4.0] — 2026-11-08
+
+Placement test, skill profile, parent accounts and the weekly report (decision 0008).
+
+### Added
+- Placement test per tenant: questions tagged by skill and CEFR level, scored on the server as a ladder (a level passes at
+  60 % with every lower level passed), up to three recommended programs. Public at `/placement` (answers stripped; a
+  visitor's result follows them into the account at sign-up) and at `/app/placement` for learners (saved to the profile).
+  Admin › Placement edits tests and lists results. A "free placement test" button on the landing page.
+- Skills on lessons (listening, speaking, reading, writing, grammar, vocabulary) with chips on programs and lessons, a
+  skill profile (lessons finished per skill, quiz accuracy) on Home and Profile with the placement result as the "before" marker.
+- Parent accounts (`role: parent`, `childUids`): a family page with the children, one child's week next to the week before
+  (XP, lessons, quizzes, active days, minutes), skills, recent activity, programs and certificates; the weekly report in
+  plain sentences built from the numbers; "email this report" to the parent; "confirm parental consent" on the child's record.
+  Admin › Members assigns the parent role and the children; Admin › Parent reports sends this week's report to every parent.
+- Seed: skills on every lesson, two placement tests (adults, kids), one result, two parent accounts, a little recent activity.
+  12 new xUnit tests (109 in all).
+
+### Changed
+- Demo state key moved to `ellp.demo.v7`. `package.json` and the csproj version now read 1.4.0 (they had stayed at 1.0.1).
+- Sign-up sends the browser key so a chat or a placement result made before the account is linked to it (live API too).
+
 ## [1.3.0] — 2026-11-08
 
 Online payment, certificates, mock tests, HLS (decision 0007).

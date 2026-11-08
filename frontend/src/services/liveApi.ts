@@ -1,10 +1,10 @@
 import type {
   Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
-  OwnerSettings, Payment, Program, Quest, QuestProgress, UserProfile, Violation, XpEvent,
+  OwnerSettings, Payment, PlacementResult, PlacementTest, Program, Quest, QuestProgress, UserProfile, Violation, XpEvent,
 } from "@/types";
 import type { SessionDecision } from "@/lib/integrity";
 import { readSessionId, writeSessionId } from "./api";
-import { API_BASE, type ActivityResult, type AdminStats, type EllpApi, type LeaderboardPeriod, type PublicProgram } from "./api";
+import { API_BASE, type ActivityResult, type AdminStats, type ChildOverview, type EllpApi, type LeaderboardPeriod, type PublicProgram } from "./api";
 import { firebaseSignIn, firebaseSignOut, firebaseSignUp, getIdToken, onFirebaseUser } from "./firebase";
 
 /** The C# API's envelope (backend/Ellp.Api/Shared/Api/ApiResponse.cs). */
@@ -50,6 +50,8 @@ export const liveApi: EllpApi = {
   publicProgram: (id) => get<{ program: Program; owner: Owner; lessons: Lesson[]; settings: OwnerSettings } | null>(`/public/programs/${id}`),
   chatThread: (ownerId, visitorKey) => get<ChatThread | null>(`/public/chat${qs({ ownerId, visitorKey })}`),
   chatSend: (ownerId, visitorKey, name, email, text) => post<ChatThread>("/public/chat", { ownerId, visitorKey, name, email, text }),
+  publicPlacementTest: (ownerId) => get<PlacementTest | null>(`/public/placement${qs({ ownerId })}`),
+  submitPlacement: (ownerId, testId, answers, visitorKey) => post<PlacementResult>("/public/placement/submit", { ownerId, testId, answers, visitorKey }),
 
   owners: () => get<Owner[]>("/catalog/owners"),
   programs: (ownerId) => get<Program[]>(`/catalog/programs${qs({ ownerId })}`),
@@ -89,6 +91,11 @@ export const liveApi: EllpApi = {
   startMockAttempt: (testId) => post<MockAttempt>(`/me/mock/${testId}/start`),
   submitMockAttempt: (id, answers, timedOut) => post<{ attempt: MockAttempt; result: ActivityResult }>(`/me/mock/attempts/${id}/submit`, { answers, timedOut }),
   myMockAttempts: () => get<MockAttempt[]>("/me/mock/attempts"),
+  myPlacement: () => get<PlacementResult | null>("/me/placement"),
+  myChildren: () => get<UserProfile[]>("/me/children"),
+  childOverview: (uid, weekKey) => get<ChildOverview>(`/me/children/${uid}${qs({ week: weekKey })}`),
+  emailChildReport: (uid, weekKey) => post<MailLog>(`/me/children/${uid}/report-email`, { weekKey }),
+  confirmChildConsent: (uid) => post<UserProfile>(`/me/children/${uid}/consent`),
 
   members: (ownerId) => get<UserProfile[]>(`/admin/members${qs({ ownerId })}`),
   saveMember: (u) => post<UserProfile>("/admin/members", u),
@@ -100,6 +107,11 @@ export const liveApi: EllpApi = {
   saveMockTest: (t) => post<MockTest>("/admin/mock", t),
   removeMockTest: (id) => del(`/admin/mock/${id}`),
   mockAttempts: (ownerId) => get<MockAttempt[]>(`/admin/mock/attempts${qs({ ownerId })}`),
+  placementTests: (ownerId) => get<PlacementTest[]>(`/admin/placement${qs({ ownerId })}`),
+  savePlacementTest: (t) => post<PlacementTest>("/admin/placement", t),
+  removePlacementTest: (id) => del(`/admin/placement/${id}`),
+  placementResults: (ownerId) => get<PlacementResult[]>(`/admin/placement/results${qs({ ownerId })}`),
+  sendWeeklyReports: (ownerId) => post<MailLog[]>(`/admin/reports/send${qs({ ownerId })}`),
   violations: (ownerId) => get<Violation[]>(`/admin/violations${qs({ ownerId })}`),
   sessions: (ownerId) => get<LearnerSession[]>(`/admin/sessions${qs({ ownerId })}`),
   liftPause: (uid, lessonId) => del(`/admin/violations/pause${qs({ uid, lessonId })}`),

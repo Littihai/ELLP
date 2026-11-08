@@ -6,7 +6,7 @@ export type Lang = "th" | "en";
 export type Text2 = { th: string; en: string };
 
 /** Who the person is on the platform (one role per account, scoped to an owner except the Super Admin). */
-export type Role = "superadmin" | "owner" | "admin" | "learner";
+export type Role = "superadmin" | "owner" | "admin" | "learner" | "parent";
 
 export type StatusTone = "accent" | "ok" | "warn" | "stop" | "neutral";
 
@@ -21,10 +21,83 @@ export const TRACKS: Track[] = ["kids", "school", "toeic", "ielts", "kpo", "foun
 export type Cefr = "pre-A1" | "A1" | "A2" | "B1" | "B2" | "C1";
 export const CEFR_LEVELS: Cefr[] = ["pre-A1", "A1", "A2", "B1", "B2", "C1"];
 
+/** Skills a lesson trains and a placement test measures (1.4, decision 0008). */
+export type Skill = "listening" | "speaking" | "reading" | "writing" | "grammar" | "vocabulary";
+export const SKILLS: Skill[] = ["listening", "speaking", "reading", "writing", "grammar", "vocabulary"];
+
 /** Plans (1.1): free = catalog + the first lesson of every program; pro = every lesson of one track; premium = everything. */
 export type Plan = "free" | "pro" | "premium";
 export const PLANS: Plan[] = ["free", "pro", "premium"];
 export type PlanStatus = "active" | "pending" | "expired";
+
+// ── 1.4 (decision 0008): placement test, skill profile, parent accounts and weekly reports ──
+
+/** One placement question: tagged with the skill it measures and the CEFR level it sits at. */
+export interface PlacementQuestion { id: string; skill: Skill; cefr: Cefr; prompt: Text2; choices: string[]; answer: number }
+
+/** A tenant's placement test. Public (answers stripped); the result places the person at a CEFR level and recommends programs. */
+export interface PlacementTest {
+  id: string;
+  ownerId: string;
+  title: Text2;
+  description: Text2;
+  questions: PlacementQuestion[];
+  published: boolean;
+}
+
+export interface SkillScore { skill: Skill; raw: number; total: number }
+export interface LevelScore { cefr: Cefr; raw: number; total: number }
+
+/** What a placement test said about one person: a visitor (by browser key, linked at sign-up) or a learner. */
+export interface PlacementResult {
+  id: string;
+  ownerId: string;
+  testId: string;
+  uid: string | null;
+  visitorKey: string | null;
+  answers: Record<string, number>;
+  raw: number;
+  total: number;
+  byLevel: LevelScore[];
+  bySkill: SkillScore[];
+  /** the estimated level: the highest level passed with every lower level passed too */
+  cefr: Cefr;
+  recommendedProgramIds: string[];
+  submittedAt: string;
+}
+
+/** How far a learner is in one skill, from the lessons tagged with it. */
+export interface SkillProfileRow {
+  skill: Skill;
+  lessonsDone: number;
+  lessonsTotal: number;
+  quizCorrect: number;
+  quizTotal: number;
+  /** lessons done over lessons available, 0–100 */
+  pct: number;
+  /** quiz answers right over answered, 0–100; null before any quiz */
+  accuracy: number | null;
+}
+
+/** One child's week, as the parent reads it (and as the weekly email says it). */
+export interface WeeklyReport {
+  uid: string;
+  weekKey: string;
+  from: string;
+  to: string;
+  xp: number;
+  lessonsDone: number;
+  quizzesPassed: number;
+  activeDays: number;
+  minutes: number;
+  level: number;
+  streakDays: number;
+  skills: SkillProfileRow[];
+  strongest: Skill | null;
+  weakest: Skill | null;
+  /** a few plain sentences built from the numbers (rule-based; a language model may write them later) */
+  summary: Text2;
+}
 
 // ── 1.3 (decision 0007): payments, certificates, mock tests ──
 export type PaymentMethod = "promptpay" | "card" | "transfer";
@@ -235,6 +308,8 @@ export interface Lesson {
   xpReward: number;
   /** words the song teaches, shown as chips under the player */
   vocabulary: string[];
+  /** the skills this lesson trains (1.4); the skill profile and the weekly report add them up */
+  skills: Skill[];
   quiz: QuizQuestion[];
   unlock: UnlockRule[];
   published: boolean;
@@ -288,6 +363,11 @@ export interface UserProfile {
   planExpiresAt: string | null;
   /** a teacher or parent opened every age band to this learner (override) */
   allowAllAges: boolean;
+  /** 1.4: a parent account's children; empty for everyone else */
+  childUids: string[];
+  /** 1.4: the level the placement test estimated and when; null until taken */
+  placementCefr: Cefr | null;
+  placementAt: string | null;
   /** a parent or guardian acknowledged the use of the platform (a first trace for PDPA; full consent flow comes with parent accounts) */
   parentConsent: { acknowledged: boolean; at: string | null; note: string };
   xp: number;
@@ -431,6 +511,8 @@ export interface SignUpInput {
   plan: Plan;
   planTrack: Track | null;
   note: string;
+  /** the browser key, so a chat or a placement result made before sign-up follows the person into the account */
+  visitorKey: string | null;
 }
 
 export interface LeaderboardRow {

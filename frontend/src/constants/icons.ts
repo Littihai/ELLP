@@ -1,20 +1,20 @@
 import {
-  AlertIcon, ArrowLeftIcon, ArrowRightIcon, BellIcon, BookIcon, CheckCircleFillIcon, CheckCircleIcon, CheckIcon, ChecklistIcon, ChevronDownIcon,
-  ChevronLeftIcon, ChevronRightIcon, ClockIcon, CommentDiscussionIcon, FlameIcon, GearIcon, GlobeIcon, GraphIcon, HomeIcon, InboxIcon, InfoIcon,
-  LockIcon, MailIcon, MoonIcon, MortarBoardIcon, OrganizationIcon, PaperAirplaneIcon, PencilIcon, PeopleIcon, PersonIcon, PlayIcon, PlusIcon,
-  RocketIcon, SearchIcon, ShieldLockIcon, SignOutIcon, StarFillIcon, StarIcon, SunIcon, SyncIcon, ThreeBarsIcon, TrashIcon, TrophyIcon,
+  AlertIcon, ArrowLeftIcon, ArrowRightIcon, BellIcon, BookIcon, CalendarIcon, CheckCircleFillIcon, CheckCircleIcon, CheckIcon, ChecklistIcon, ChevronDownIcon,
+  ChevronLeftIcon, ChevronRightIcon, ClockIcon, CommentDiscussionIcon, FlameIcon, GearIcon, GlobeIcon, GoalIcon, GraphIcon, HeartIcon, HomeIcon, InboxIcon, InfoIcon,
+  LightBulbIcon, LockIcon, MailIcon, MoonIcon, MortarBoardIcon, OrganizationIcon, PaperAirplaneIcon, PencilIcon, PeopleIcon, PersonIcon, PlayIcon, PlusIcon,
+  ReportIcon, RocketIcon, SearchIcon, ShieldLockIcon, SignOutIcon, StarFillIcon, StarIcon, SunIcon, SyncIcon, TagIcon, ThreeBarsIcon, TrashIcon, TrophyIcon,
   UnlockIcon, VideoIcon, XIcon, ZapIcon, type Icon as Octicon,
 } from "@primer/octicons-react";
 
 /** Platform icons: GitHub's Octicons only (TMCL-PR rule: no emoji as icons). Add an entry here before using a new one. */
 export const ICON = {
-  alert: AlertIcon, arrowLeft: ArrowLeftIcon, arrowRight: ArrowRightIcon, bell: BellIcon, book: BookIcon, checkCircle: CheckCircleIcon,
+  alert: AlertIcon, arrowLeft: ArrowLeftIcon, arrowRight: ArrowRightIcon, bell: BellIcon, book: BookIcon, calendar: CalendarIcon, checkCircle: CheckCircleIcon,
   checkCircleFill: CheckCircleFillIcon, check: CheckIcon, checklist: ChecklistIcon, chevronDown: ChevronDownIcon, chevronLeft: ChevronLeftIcon,
-  chevronRight: ChevronRightIcon, clock: ClockIcon, comment: CommentDiscussionIcon, flame: FlameIcon, gear: GearIcon, globe: GlobeIcon,
-  graph: GraphIcon, home: HomeIcon, inbox: InboxIcon, info: InfoIcon, lock: LockIcon, mail: MailIcon, moon: MoonIcon, mortarBoard: MortarBoardIcon,
+  chevronRight: ChevronRightIcon, clock: ClockIcon, comment: CommentDiscussionIcon, flame: FlameIcon, gear: GearIcon, globe: GlobeIcon, goal: GoalIcon,
+  graph: GraphIcon, heart: HeartIcon, home: HomeIcon, inbox: InboxIcon, info: InfoIcon, lightBulb: LightBulbIcon, lock: LockIcon, mail: MailIcon, moon: MoonIcon, mortarBoard: MortarBoardIcon,
   organization: OrganizationIcon, paperAirplane: PaperAirplaneIcon, pencil: PencilIcon, people: PeopleIcon, person: PersonIcon, play: PlayIcon,
-  plus: PlusIcon, rocket: RocketIcon, search: SearchIcon, shieldLock: ShieldLockIcon, signOut: SignOutIcon, starFill: StarFillIcon, star: StarIcon,
-  sun: SunIcon, sync: SyncIcon, threeBars: ThreeBarsIcon, trash: TrashIcon, trophy: TrophyIcon, unlock: UnlockIcon, video: VideoIcon, x: XIcon,
+  plus: PlusIcon, report: ReportIcon, rocket: RocketIcon, search: SearchIcon, shieldLock: ShieldLockIcon, signOut: SignOutIcon, starFill: StarFillIcon, star: StarIcon,
+  sun: SunIcon, sync: SyncIcon, tag: TagIcon, threeBars: ThreeBarsIcon, trash: TrashIcon, trophy: TrophyIcon, unlock: UnlockIcon, video: VideoIcon, x: XIcon,
   zap: ZapIcon,
 } satisfies Record<string, Octicon>;
 

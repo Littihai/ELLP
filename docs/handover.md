@@ -29,6 +29,12 @@ What you are getting, what to look at first, and what we would ask you to do nex
     Admin › Mock tests (editor), Admin › Certificates.
 12. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 97 tests on the rules and the engine.
 
+## What 1.4 added (read decision 0008)
+
+Placement test (`Modules/Placement`, `lib/placement.ts`), skill tags and the per-skill profile (`lib/skills.ts`), parent accounts
+and the weekly report (`Modules/Family`, `lib/family.ts`). The admin pages are Placement and Parent reports; the learner pages
+are `/app/placement` and `/app/family`; `/placement` is public. Sign in as `somchai@example.com` to see the parent view.
+
 ## A good first task (1.3.x)
 
 Take the Omise gateway live against a test account: set `OMISE_SECRET_KEY` / `OMISE_PUBLIC_KEY`, point the webhook at

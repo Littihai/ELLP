@@ -7,7 +7,7 @@ import { useAsync } from "@/hooks/useAsync";
 import { api, USE_DEMO, type ActivityResult } from "@/services";
 import { WATCH_COMPLETE_PCT, ageBandOf, ageRuleFor, lessonComplete, quizPassed } from "@/lib/gamification";
 import type { Lesson, LessonProgress } from "@/types";
-import { CheerModal, RuleRow, useUnlock } from "./shared";
+import { CheerModal, RuleRow, SkillChips, useUnlock } from "./shared";
 import { canAccessLesson } from "@/lib/access";
 import { Link as RLink } from "react-router-dom";
 import { DEFAULT_POLICY, PROFILE_RULES, defaultProfileFor, isPaused } from "@/lib/integrity";
@@ -83,7 +83,7 @@ export function LessonPage() {
       <PageHeader
         pretitle={`${t("programs.lessons")} ${lesson.order}`}
         title={pick(lesson.title)}
-        sub={pick(lesson.summary)}
+        sub={<>{pick(lesson.summary)}{lesson.skills.length > 0 && <div style={{ marginTop: 6 }}><SkillChips skills={lesson.skills} /></div>}</>}
         actions={done ? <Badge tone="ok"><Icon name="checkCircleFill" size={12} />{t("lesson.complete")}</Badge> : <Badge tone="accent"><Icon name="zap" size={12} />{t("lesson.xpReward", { xp: lesson.xpReward })}</Badge>}
       />
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 20, alignItems: "start", userSelect: rules.noCopy ? "none" : undefined }} className="lesson-grid" onContextMenu={(e) => { if (rules.noCopy) e.preventDefault(); }}>

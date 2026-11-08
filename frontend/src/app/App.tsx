@@ -39,6 +39,10 @@ import { PublicShell } from "@/modules/public/PublicShell";
 import { LandingPage } from "@/modules/public/LandingPage";
 import { PublicProgramPage } from "@/modules/public/PublicProgramPage";
 import { SignupPage } from "@/modules/public/SignupPage";
+import { PlacementPage } from "@/modules/public/PlacementPage";
+import { FamilyPage } from "@/modules/learn/FamilyPage";
+import { PlacementAdminPage } from "@/modules/admin/PlacementAdminPage";
+import { ReportsAdminPage } from "@/modules/admin/ReportsAdminPage";
 
 /** Two worlds behind two doors: /login → /app/* (learners) and /admin/login → /admin/* (staff). */
 export function App() {
@@ -55,6 +59,7 @@ export function App() {
                   <Route path="/catalog" element={<LandingPage catalogOnly />} />
                   <Route path="/catalog/:programId" element={<PublicProgramPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/placement" element={<PlacementPage />} />
                   <Route path="/verify" element={<CertificateVerifyPage />} />
                   <Route path="/certificate/:code" element={<CertificateVerifyPage />} />
                 </Route>
@@ -75,6 +80,8 @@ export function App() {
                     <Route path="certificates" element={<CertificatesPage />} />
                     <Route path="mock" element={<MockTestsPage />} />
                     <Route path="mock/:testId" element={<MockRunPage />} />
+                    <Route path="placement" element={<PlacementPage />} />
+                    <Route path="family" element={<FamilyPage />} />
                     <Route path="contact" element={<ContactPage />} />
                   </Route>
                 </Route>
@@ -92,6 +99,8 @@ export function App() {
                     <Route path="integrity" element={<IntegrityPage />} />
                     <Route path="payments" element={<PaymentsPage />} />
                     <Route path="mock" element={<MockTestsAdminPage />} />
+                    <Route path="placement" element={<PlacementAdminPage />} />
+                    <Route path="reports" element={<ReportsAdminPage />} />
                     <Route path="certificates" element={<CertificatesAdminPage />} />
                     <Route path="inbox" element={<InboxPage />} />
                     <Route path="mail" element={<MailLogPage />} />

@@ -11,7 +11,7 @@ public sealed record WatchInput(string LessonId, int WatchedPct);
 public sealed record QuizInput(string LessonId, int[] Answers);
 public sealed record MessageInput(string Subject, string Body);
 public sealed record EnrollInput(string ProgramId);
-public sealed record RegisterInput(string DisplayName, string Email, int? BirthYear, string Track, string OwnerId, string Plan, string? PlanTrack, string Note);
+public sealed record RegisterInput(string DisplayName, string Email, int? BirthYear, string Track, string OwnerId, string Plan, string? PlanTrack, string Note, string? VisitorKey);
 public sealed record PlanInput(string Plan, string? PlanTrack, string Note);
 
 /// <summary>The signed-in learner's own data and activities. /auth/session is the first call after Firebase sign-in: it returns (and on first visit creates) the profile.</summary>
@@ -64,6 +64,17 @@ public sealed class MeController : ControllerBase
         var u = new UserProfile { Uid = uid, DisplayName = string.IsNullOrWhiteSpace(input.DisplayName) ? (email ?? uid) : input.DisplayName.Trim(), Email = (email ?? input.Email).ToLowerInvariant(), Role = Role.learner, OwnerId = owner.Id, BirthYear = input.BirthYear, Track = input.Track, AvatarColor = "#066fd1", CreatedAt = Clock.NowIso() };
         Access.PlanRules.ApplyRequest(u, input.Plan, input.PlanTrack, input.Note ?? "", Clock.NowIso());
         u.EnrolledProgramIds = (await _s.ProgramsAsync(owner.Id, ct)).Where(p => p.Published && (p.Track == u.Track || p.Track == "foundation")).Select(p => p.Id).ToList();
+        // 1.4: a chat or a placement result made as a visitor follows the person into the account
+        if (!string.IsNullOrWhiteSpace(input.VisitorKey))
+        {
+            var chat = await _s.FindChatAsync(owner.Id, null, input.VisitorKey, ct);
+            if (chat is not null && chat.Uid is null) { chat.Uid = u.Uid; chat.Email = u.Email; chat.Name = u.DisplayName; await _s.UpsertChatAsync(chat, ct); }
+            foreach (var r in (await _s.PlacementResultsOfVisitorAsync(input.VisitorKey, ct)).Where(r => r.OwnerId == owner.Id && r.Uid is null))
+            {
+                r.Uid = u.Uid; r.VisitorKey = null; u.PlacementCefr = r.Cefr; u.PlacementAt = r.SubmittedAt;
+                await _s.UpsertPlacementResultAsync(r, ct);
+            }
+        }
         await _s.UpsertUserAsync(u, ct);
         return Ok(ApiResponse<UserProfile>.Ok(u));
     }

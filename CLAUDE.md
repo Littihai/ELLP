@@ -25,6 +25,9 @@ Docs: `docs/architecture.md`, `docs/data-model.md`, `docs/gamification.md`, `doc
 - No emoji as icons: Octicons via `constants/icons.ts`. No hex colours in components: tokens in `styles/tokens.css`.
 - No text a person reads in code: `{ th, en }` in `frontend/src/i18n/dict.ts` or in the data.
 - Children's data: the birth year only (never a date), fictional seed only; the parent acknowledgement is a record, not yet verified consent (decision 0004).
+- The placement, skill and family rules live twice too (`frontend/src/lib/placement.ts`, `lib/skills.ts`, `lib/family.ts` ↔
+  `backend/.../Modules/Placement/PlacementRules.cs`, `Modules/Family/FamilyRules.cs`); the weekly-report sentences must be
+  identical on both sides. A parent (`role: parent`) reads only children in `childUids` of the same tenant.
 - The commerce and mock-scoring rules live twice too (`frontend/src/lib/commerce.ts`, `backend/.../Modules/Commerce/CommerceRules.cs`); payment keys are `OMISE_SECRET_KEY` / `OMISE_PUBLIC_KEY`; the demo gateway moves no money and its confirm endpoint is Development-only.
 - The integrity rules live twice too (`frontend/src/lib/integrity.ts`, `backend/.../Modules/Integrity/IntegrityRules.cs`); the media signing key is `MEDIA_SIGNING_KEY` (Development has a built-in one).
 - The plan rules live twice too (`frontend/src/lib/access.ts`, `backend/.../Modules/Access/PlanRules.cs`); public endpoints strip quiz answers.
@@ -52,4 +55,5 @@ dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj -c Release
 
 ## Open items
 
-See `docs/roadmap.md`. Next: 1.3.x (Omise live test, e-tax receipts, scheduled expiry) and 1.2.x hardening (Playwright).
+See `docs/roadmap.md`. Next: 1.4.x (scheduled weekly reports, verified consent), 1.5 (flashcards, coins, 6/12-month packages,
+sales landing), 1.3.x (Omise live test, e-tax receipts) and 1.2.x hardening (Playwright).

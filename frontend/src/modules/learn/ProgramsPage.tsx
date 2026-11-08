@@ -9,7 +9,8 @@ import { canAccessLesson, planCoversProgram } from "@/lib/access";
 import { programComplete } from "@/lib/commerce";
 import { Link as RLink } from "react-router-dom";
 
-import { Thumb } from "./shared";
+import { SkillChips, Thumb } from "./shared";
+import { programSkills } from "@/lib/skills";
 
 /** All programs of the learner's owner, with how far they got in each. */
 export function ProgramsPage() {
@@ -49,6 +50,7 @@ export function ProgramsPage() {
                 </div>
                 <h3 style={{ margin: "8px 0 4px", fontSize: "var(--text-lg)" }}>{pick(p.title)}</h3>
                 <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)", minHeight: 42 }}>{pick(p.description)}</p>
+                <div style={{ marginTop: 8 }}><SkillChips skills={programSkills(ls)} /></div>
                 <div style={{ margin: "12px 0 10px" }}>
                   <div className="small muted" style={{ marginBottom: 4 }}>{t("programs.doneN", { done, total: ls.length })}</div>
                   <Bar pct={ls.length ? (done / ls.length) * 100 : 0} tone={done === ls.length && ls.length > 0 ? "ok" : undefined} />
@@ -108,6 +110,7 @@ export function ProgramPage() {
                 <div className="row" style={{ marginTop: 8, gap: 12 }}>
                   <span className="small" style={{ color: "var(--color-accent-700)", fontWeight: 600 }}><Icon name="zap" size={12} /> {t("lesson.xpReward", { xp: l.xpReward })}</span>
                   {l.quiz.length > 0 && <span className="small muted"><Icon name="checklist" size={12} /> {t("lesson.quiz")} ({l.quiz.length})</span>}
+                  <SkillChips skills={l.skills} small />
                   {p && p.watchedPct > 0 && !p.completed && <div style={{ flex: 1, minWidth: 90, maxWidth: 200 }}><Bar pct={p.watchedPct} /></div>}
                 </div>
               </div>

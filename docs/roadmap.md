@@ -23,6 +23,24 @@ Left for later: a streaming provider with DRM, a player library for HLS, and Pla
 Gateway interface (demo / Omise / manual), receipts and expiry, certificates with public verification, timed mock tests scored
 in the exam's scale, lazy hls.js for streaming providers.
 
+## 1.4.0 — done: placement, skills, parents (decision 0008)
+
+Placement test as a CEFR ladder with recommended programs (public and in-app), skill tags on lessons and a per-skill profile,
+parent accounts with a family page, the rule-based weekly report by email, consent confirmation by the parent.
+
+## 1.4.x — finish the parent loop
+- Scheduled Monday job for the weekly reports (today a button on Admin › Parent reports) and for plan expiry.
+- Verified consent: emailed link to the parent, policy version, withdrawal (completes decisions 0004 and 0008 for PDPA s.20).
+- Screen-time limit per child set by the parent, ending in a "take a break" screen that costs no XP or streak.
+- Parent-mode PIN on the child's device for settings and contact.
+
+## 1.5 — what the competitor review suggested next (in order)
+- **Flashcards with spaced repetition** from each lesson's vocabulary (a daily review quest).
+- **Coins and an avatar shop**: coins from XP events, cosmetic items only, per-tenant catalog.
+- **6- and 12-month packages** with a published refund policy, next to the monthly plans.
+- **Sales landing**: comparison table of plans, testimonials (fictional in the demo), FAQ, LINE funnel.
+- **AI tutor and AI-written weekly summaries** only once there are paying users (the data for the summary is already there).
+
 ## 1.3.x — go live with money
 - Run the Omise path against a test account: PromptPay QR, card token via Omise.js, webhook endpoint reachable, refund API.
 - E-tax invoice fields (tax id, address) on receipts for tenants that need them.

@@ -1,6 +1,6 @@
 import type {
   Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
-  OwnerSettings, Payment, PaymentMethod, PaymentStatus, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
+  OwnerSettings, Payment, PaymentMethod, PaymentStatus, PlacementResult, PlacementTest, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, WeeklyReport, XpEvent,
 } from "@/types";
 import type { SessionDecision } from "@/lib/integrity";
 
@@ -35,6 +35,19 @@ export interface AdminStats {
 
 export type LeaderboardPeriod = "week" | "all";
 
+/** One child as the parent's page shows them (1.4): the week, the week before, the skill profile's inputs, placement and certificates. */
+export interface ChildOverview {
+  child: UserProfile;
+  report: WeeklyReport;
+  previous: WeeklyReport;
+  programs: Program[];
+  lessons: Lesson[];
+  progress: LessonProgress[];
+  xp: XpEvent[];
+  placement: PlacementResult | null;
+  certificates: Certificate[];
+}
+
 /** A program as the public catalog shows it: with its owner and a count, and the preview lesson. */
 export interface PublicProgram {
   program: Program;
@@ -63,6 +76,9 @@ export interface EllpApi {
   /** the chat of one visitor (by their browser key) or of the signed-in learner, with one tenant */
   chatThread(ownerId: string, visitorKey: string | null): Promise<ChatThread | null>;
   chatSend(ownerId: string, visitorKey: string | null, name: string, email: string, text: string): Promise<ChatThread>;
+  // 1.4: the placement test is public (answers stripped); a visitor's result waits under their browser key until sign-up
+  publicPlacementTest(ownerId: string): Promise<PlacementTest | null>;
+  submitPlacement(ownerId: string, testId: string, answers: Record<string, number>, visitorKey: string | null): Promise<PlacementResult>;
 
   // catalog (what everybody signed in may read)
   owners(): Promise<Owner[]>;
@@ -105,6 +121,13 @@ export interface EllpApi {
   startMockAttempt(testId: string): Promise<MockAttempt>;
   submitMockAttempt(attemptId: string, answers: Record<string, number>, timedOut: boolean): Promise<{ attempt: MockAttempt; result: ActivityResult }>;
   myMockAttempts(): Promise<MockAttempt[]>;
+  // 1.4
+  myPlacement(): Promise<PlacementResult | null>;
+  /** parent accounts: the children, one child's overview for a week, the report by email, and the consent record */
+  myChildren(): Promise<UserProfile[]>;
+  childOverview(uid: string, weekKey: string): Promise<ChildOverview>;
+  emailChildReport(uid: string, weekKey: string): Promise<MailLog>;
+  confirmChildConsent(uid: string): Promise<UserProfile>;
 
   // owner admin
   members(ownerId: string): Promise<UserProfile[]>;
@@ -130,6 +153,12 @@ export interface EllpApi {
   saveMockTest(t: MockTest): Promise<MockTest>;
   removeMockTest(id: string): Promise<void>;
   mockAttempts(ownerId: string): Promise<MockAttempt[]>;
+  placementTests(ownerId: string): Promise<PlacementTest[]>;
+  savePlacementTest(t: PlacementTest): Promise<PlacementTest>;
+  removePlacementTest(id: string): Promise<void>;
+  placementResults(ownerId: string): Promise<PlacementResult[]>;
+  /** mails this week's report to every parent of the tenant (test-mode guard applies); returns what went out */
+  sendWeeklyReports(ownerId: string): Promise<MailLog[]>;
   violations(ownerId: string): Promise<Violation[]>;
   sessions(ownerId: string): Promise<LearnerSession[]>;
   liftPause(uid: string, lessonId: string): Promise<void>;

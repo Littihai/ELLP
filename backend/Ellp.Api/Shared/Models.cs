@@ -8,7 +8,7 @@ namespace Ellp.Api.Shared;
 
 public sealed record Text2(string Th, string En);
 
-public enum Role { superadmin, owner, admin, learner }
+public enum Role { superadmin, owner, admin, learner, parent }
 
 public sealed class Owner
 {
@@ -90,6 +90,8 @@ public sealed class Lesson
     public int DurationSec { get; set; }
     public int XpReward { get; set; } = 50;
     public List<string> Vocabulary { get; set; } = new();
+    /// <summary>The skills this lesson trains (1.4): listening, speaking, reading, writing, grammar, vocabulary.</summary>
+    public List<string> Skills { get; set; } = new();
     public List<QuizQuestion> Quiz { get; set; } = new();
     public List<UnlockRule> Unlock { get; set; } = new();
     public bool Published { get; set; }
@@ -144,6 +146,11 @@ public sealed class UserProfile
     public string? PlanExpiresAt { get; set; }
     /// <summary>A teacher or parent opened every age band to this learner.</summary>
     public bool AllowAllAges { get; set; }
+    /// <summary>1.4: a parent account's children; empty for everyone else.</summary>
+    public List<string> ChildUids { get; set; } = new();
+    /// <summary>1.4: the level the placement test estimated and when; null until taken.</summary>
+    public string? PlacementCefr { get; set; }
+    public string? PlacementAt { get; set; }
     public ParentConsent ParentConsent { get; set; } = new();
     public int Xp { get; set; }
     public int StreakDays { get; set; }
@@ -307,6 +314,80 @@ public sealed class OwnerSettings
     public Pricing Pricing { get; set; } = new();
     /// <summary>demo | omise | manual</summary>
     public string PaymentProvider { get; set; } = "demo";
+}
+
+// ── 1.4 (decision 0008): placement test, skill profile, parent accounts and weekly reports ──
+
+public sealed class PlacementQuestion
+{
+    public string Id { get; set; } = "";
+    public string Skill { get; set; } = "grammar";
+    public string Cefr { get; set; } = "A1";
+    public Text2 Prompt { get; set; } = new("", "");
+    public List<string> Choices { get; set; } = new();
+    public int Answer { get; set; }
+}
+
+public sealed class PlacementTest
+{
+    public string Id { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public Text2 Title { get; set; } = new("", "");
+    public Text2 Description { get; set; } = new("", "");
+    public List<PlacementQuestion> Questions { get; set; } = new();
+    public bool Published { get; set; }
+}
+
+public sealed class SkillScore { public string Skill { get; set; } = ""; public int Raw { get; set; } public int Total { get; set; } }
+public sealed class LevelScore { public string Cefr { get; set; } = ""; public int Raw { get; set; } public int Total { get; set; } }
+
+/// <summary>What a placement test said about one person: a visitor (by browser key, linked at sign-up) or a learner.</summary>
+public sealed class PlacementResult
+{
+    public string Id { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string TestId { get; set; } = "";
+    public string? Uid { get; set; }
+    public string? VisitorKey { get; set; }
+    public Dictionary<string, int> Answers { get; set; } = new();
+    public int Raw { get; set; }
+    public int Total { get; set; }
+    public List<LevelScore> ByLevel { get; set; } = new();
+    public List<SkillScore> BySkill { get; set; } = new();
+    public string Cefr { get; set; } = "pre-A1";
+    public List<string> RecommendedProgramIds { get; set; } = new();
+    public string SubmittedAt { get; set; } = "";
+}
+
+public sealed class SkillProfileRow
+{
+    public string Skill { get; set; } = "";
+    public int LessonsDone { get; set; }
+    public int LessonsTotal { get; set; }
+    public int QuizCorrect { get; set; }
+    public int QuizTotal { get; set; }
+    public int Pct { get; set; }
+    public int? Accuracy { get; set; }
+}
+
+/// <summary>One child's week, as the parent reads it and as the weekly email says it.</summary>
+public sealed class WeeklyReport
+{
+    public string Uid { get; set; } = "";
+    public string WeekKey { get; set; } = "";
+    public string From { get; set; } = "";
+    public string To { get; set; } = "";
+    public int Xp { get; set; }
+    public int LessonsDone { get; set; }
+    public int QuizzesPassed { get; set; }
+    public int ActiveDays { get; set; }
+    public int Minutes { get; set; }
+    public int Level { get; set; }
+    public int StreakDays { get; set; }
+    public List<SkillProfileRow> Skills { get; set; } = new();
+    public string? Strongest { get; set; }
+    public string? Weakest { get; set; }
+    public Text2 Summary { get; set; } = new("", "");
 }
 
 // ── 1.3 (decision 0007): payments, certificates, mock tests ──

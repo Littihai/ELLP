@@ -74,8 +74,8 @@ public static class RoleRules
     public static bool CanAssignRole(UserProfile actor, Role target) => actor.Role switch
     {
         Role.superadmin => true,
-        Role.owner => target is Role.owner or Role.admin or Role.learner,
-        Role.admin => target == Role.learner,
+        Role.owner => target is Role.owner or Role.admin or Role.learner or Role.parent,
+        Role.admin => target is Role.learner or Role.parent,
         _ => false,
     };
 }
