@@ -28,6 +28,13 @@ import { ApprovalsPage } from "@/modules/admin/ApprovalsPage";
 import { ChatAdminPage } from "@/modules/admin/ChatAdminPage";
 import { IntegrityPage } from "@/modules/admin/IntegrityPage";
 import { PlanPage } from "@/modules/learn/PlanPage";
+import { ReceiptPage } from "@/modules/learn/ReceiptPage";
+import { CertificatesPage } from "@/modules/learn/CertificatesPage";
+import { MockRunPage, MockTestsPage } from "@/modules/learn/MockTestsPage";
+import { CertificateVerifyPage } from "@/modules/public/CertificateVerifyPage";
+import { PaymentsPage } from "@/modules/admin/PaymentsPage";
+import { MockTestsAdminPage } from "@/modules/admin/MockTestsAdminPage";
+import { CertificatesAdminPage } from "@/modules/admin/CertificatesAdminPage";
 import { PublicShell } from "@/modules/public/PublicShell";
 import { LandingPage } from "@/modules/public/LandingPage";
 import { PublicProgramPage } from "@/modules/public/PublicProgramPage";
@@ -48,6 +55,8 @@ export function App() {
                   <Route path="/catalog" element={<LandingPage catalogOnly />} />
                   <Route path="/catalog/:programId" element={<PublicProgramPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/verify" element={<CertificateVerifyPage />} />
+                  <Route path="/certificate/:code" element={<CertificateVerifyPage />} />
                 </Route>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/admin/login" element={<LoginPage admin />} />
@@ -62,6 +71,10 @@ export function App() {
                     <Route path="leaderboard" element={<LeaderboardPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="plan" element={<PlanPage />} />
+                    <Route path="receipts/:paymentId" element={<ReceiptPage />} />
+                    <Route path="certificates" element={<CertificatesPage />} />
+                    <Route path="mock" element={<MockTestsPage />} />
+                    <Route path="mock/:testId" element={<MockRunPage />} />
                     <Route path="contact" element={<ContactPage />} />
                   </Route>
                 </Route>
@@ -77,6 +90,9 @@ export function App() {
                     <Route path="approvals" element={<ApprovalsPage />} />
                     <Route path="chat" element={<ChatAdminPage />} />
                     <Route path="integrity" element={<IntegrityPage />} />
+                    <Route path="payments" element={<PaymentsPage />} />
+                    <Route path="mock" element={<MockTestsAdminPage />} />
+                    <Route path="certificates" element={<CertificatesAdminPage />} />
                     <Route path="inbox" element={<InboxPage />} />
                     <Route path="mail" element={<MailLogPage />} />
                     <Route path="settings" element={<SettingsPage />} />

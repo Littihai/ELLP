@@ -6,6 +6,7 @@ import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
 import { ageBandOf, checkUnlock, programVisible } from "@/lib/gamification";
 import { canAccessLesson, planCoversProgram } from "@/lib/access";
+import { programComplete } from "@/lib/commerce";
 import { Link as RLink } from "react-router-dom";
 
 import { Thumb } from "./shared";
@@ -82,7 +83,10 @@ export function ProgramPage() {
     <>
       <Link to="/app/programs" className="btn btn-ghost" style={{ marginBottom: 10 }}><Icon name="arrowLeft" size={14} /> {t("app.back")}</Link>
       <PageHeader pretitle={<>{t(`track.${data.program.track}`)} · {data.program.cefr}{data.program.targetScore && <> · {data.program.targetScore}</>}</>} title={pick(data.program.title)} sub={pick(data.program.description)}
-        actions={!planCoversProgram(u, data.program) && <RLink to="/app/plan" className="btn btn-secondary btn-sm"><Icon name="lock" size={14} /> {t("plan.needed", { plan: t(`plan.${data.program.plan}`) })} · {t("plan.upgrade")}</RLink>} />
+        actions={<>
+          {!planCoversProgram(u, data.program) && <RLink to="/app/plan" className="btn btn-secondary btn-sm"><Icon name="lock" size={14} /> {t("plan.needed", { plan: t(`plan.${data.program.plan}`) })} · {t("plan.upgrade")}</RLink>}
+          {programComplete(data.lessons, data.progress) && <RLink to="/app/certificates" className="btn btn-primary btn-sm"><Icon name="trophy" size={14} /> {t("cert.get")}</RLink>}
+        </>} />
       <div className="stack" style={{ gap: 12 }}>
         {data.lessons.map((l) => {
           const p = data.progress.find((x) => x.lessonId === l.id);

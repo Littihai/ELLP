@@ -15,7 +15,7 @@ import { TRACKS, type Role, type Track, type UserProfile } from "@/types";
 const COLORS = ["#f59f00", "#4c58c4", "#2fb344", "#0b78a8", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
 const blank = (ownerId: string): UserProfile => ({
   uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], birthYear: null, track: null, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
-  plan: "free", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: null,
+  plan: "free", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: null, planExpiresAt: null,
   xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)], active: true, createdAt: "",
 });
 

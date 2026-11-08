@@ -8,6 +8,8 @@ import { api, USE_DEMO } from "@/services";
 import type { AgeBand, AgeRule, OwnerSettings } from "@/types";
 import { AGE_BANDS, DEFAULT_AGE_RULES } from "@/lib/gamification";
 import { DEFAULT_POLICY } from "@/lib/integrity";
+import { DEFAULT_PRICING } from "@/lib/commerce";
+import type { PaymentProvider } from "@/types";
 
 /** The tenant's outgoing email identity and test-mode guard, the leaderboard, and the build. */
 export function SettingsPage() {
@@ -22,7 +24,7 @@ function Inner() {
   const [s, setS] = useState<OwnerSettings | null>(null);
   const [busy, setBusy] = useState(false);
   // a tenant saved before 1.0.1 has no age rules yet: the defaults fill the gap until the next save
-  useEffect(() => { if (data) setS({ ...data, ageRules: { ...DEFAULT_AGE_RULES, ...(data.ageRules ?? {}) }, integrity: { ...DEFAULT_POLICY, ...(data.integrity ?? {}) } }); }, [data]);
+  useEffect(() => { if (data) setS({ ...data, ageRules: { ...DEFAULT_AGE_RULES, ...(data.ageRules ?? {}) }, integrity: { ...DEFAULT_POLICY, ...(data.integrity ?? {}) }, pricing: { ...DEFAULT_PRICING, ...(data.pricing ?? {}) }, paymentProvider: data.paymentProvider ?? "demo" }); }, [data]);
   if (loading && !s) return <Loading />;
   if (error || !s) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
 
@@ -44,6 +46,19 @@ function Inner() {
               <div className="row"><Switch checked={s.email.testMode} onChange={(v) => setS({ ...s, email: { ...s.email, testMode: v } })} /> <b>{t("set.testMode")}</b></div>
               <div className="small muted" style={{ marginTop: 4 }}>{t("set.testModeHint")}</div>
             </div>
+          </div>
+        </Card>
+        <Card title={t("set.pricing")}>
+          <p className="muted small" style={{ margin: "0 0 12px" }}>{t("set.pricingHint")}</p>
+          <div className="form-grid">
+            <Field label={`${t("plan.pro")} (฿)`}><input className="input" type="number" min={0} value={s.pricing.pro} onChange={(e) => setS({ ...s, pricing: { ...s.pricing, pro: Math.max(0, parseInt(e.target.value || "0", 10) || 0) } })} /></Field>
+            <Field label={`${t("plan.premium")} (฿)`}><input className="input" type="number" min={0} value={s.pricing.premium} onChange={(e) => setS({ ...s, pricing: { ...s.pricing, premium: Math.max(0, parseInt(e.target.value || "0", 10) || 0) } })} /></Field>
+            <Field label={t("set.months")}><input className="input" type="number" min={1} max={24} value={s.pricing.months} onChange={(e) => setS({ ...s, pricing: { ...s.pricing, months: Math.min(24, Math.max(1, parseInt(e.target.value || "1", 10) || 1)) } })} /></Field>
+            <Field label={t("set.provider")} hint={t("set.providerHint")}>
+              <select className="input" value={s.paymentProvider} onChange={(e) => setS({ ...s, paymentProvider: e.target.value as PaymentProvider })}>
+                {(["demo", "omise", "manual"] as PaymentProvider[]).map((p) => <option key={p} value={p}>{t(`set.provider.${p}`)}</option>)}
+              </select>
+            </Field>
           </div>
         </Card>
         <Card title={t("chat.title")}>

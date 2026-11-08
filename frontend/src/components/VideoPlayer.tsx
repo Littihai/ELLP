@@ -45,6 +45,26 @@ export function VideoPlayer({ lesson, src, rules, policy, progress, watermark, o
 
   const say = useCallback((m: string) => { setNotice(m); window.setTimeout(() => setNotice((n) => (n === m ? null : n)), 3500); }, []);
 
+  // 1.3: an HLS stream (Cloudflare Stream / Mux .m3u8) plays through hls.js where the browser has no native HLS; mp4 plays as is
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const isHls = /\.m3u8(\?|$)/i.test(src);
+    if (!isHls || v.canPlayType("application/vnd.apple.mpegurl")) { v.src = src; return; }
+    let destroy: (() => void) | null = null;
+    let alive = true;
+    // hls.js is loaded only when a stream needs it, so the demo bundle stays small
+    import("hls.js").then(({ default: Hls }) => {
+      if (!alive) return;
+      if (!Hls.isSupported()) { v.src = src; return; }
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(v);
+      destroy = () => hls.destroy();
+    });
+    return () => { alive = false; destroy?.(); };
+  }, [src]);
+
   const report = useCallback((final = false) => {
     const v = videoRef.current;
     if (!v || !v.duration) return;
@@ -147,7 +167,6 @@ export function VideoPlayer({ lesson, src, rules, policy, progress, watermark, o
     <div ref={boxRef} className="player" onContextMenu={(e) => { if (rules.noCopy) e.preventDefault(); }} style={{ background: "#000" }}>
       <video
         ref={videoRef}
-        src={src}
         controls
         playsInline
         preload="metadata"

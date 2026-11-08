@@ -33,4 +33,5 @@ public static class ApiCodes
     public const string LessonPaused = "LESSON_PAUSED";
     public const string SessionRefused = "SESSION_REFUSED";
     public const string SessionEnded = "SESSION_ENDED";
+    public const string GatewayOff = "GATEWAY_OFF";
 }

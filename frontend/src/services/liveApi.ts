@@ -1,6 +1,6 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
-  UserProfile, Violation, XpEvent,
+  Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
+  OwnerSettings, Payment, Program, Quest, QuestProgress, UserProfile, Violation, XpEvent,
 } from "@/types";
 import type { SessionDecision } from "@/lib/integrity";
 import { readSessionId, writeSessionId } from "./api";
@@ -79,11 +79,27 @@ export const liveApi: EllpApi = {
   sendMessage: (subject, body) => post<InboxMessage>("/me/messages", { subject, body }),
   enroll: (programId) => post<UserProfile>("/me/enroll", { programId }),
   requestPlan: (plan, planTrack, note) => post<UserProfile>("/me/plan", { plan, planTrack, note }),
+  myPayments: () => get<Payment[]>("/me/payments"),
+  createCheckout: (plan, planTrack, method, note) => post<Payment>("/me/checkout", { plan, planTrack, method, note }),
+  confirmDemoPayment: (id) => post<Payment>(`/me/payments/${id}/demo-confirm`),
+  myCertificates: () => get<Certificate[]>("/me/certificates"),
+  issueCertificate: (programId) => post<Certificate>("/me/certificates", { programId }),
+  verifyCertificate: (code) => get<Certificate | null>(`/public/certificates/${encodeURIComponent(code)}`),
+  mockTests: (ownerId) => get<MockTest[]>(`/catalog/mock${qs({ ownerId })}`),
+  startMockAttempt: (testId) => post<MockAttempt>(`/me/mock/${testId}/start`),
+  submitMockAttempt: (id, answers, timedOut) => post<{ attempt: MockAttempt; result: ActivityResult }>(`/me/mock/attempts/${id}/submit`, { answers, timedOut }),
+  myMockAttempts: () => get<MockAttempt[]>("/me/mock/attempts"),
 
   members: (ownerId) => get<UserProfile[]>(`/admin/members${qs({ ownerId })}`),
   saveMember: (u) => post<UserProfile>("/admin/members", u),
   removeMember: (uid) => del(`/admin/members/${uid}`),
   setMemberPlan: (uid, plan, status, planTrack, note) => put<UserProfile>(`/admin/members/${uid}/plan`, { plan, status, planTrack, note }),
+  payments: (ownerId) => get<Payment[]>(`/admin/payments${qs({ ownerId })}`),
+  setPaymentStatus: (id, status) => put<Payment>(`/admin/payments/${id}/status`, { status }),
+  certificates: (ownerId) => get<Certificate[]>(`/admin/certificates${qs({ ownerId })}`),
+  saveMockTest: (t) => post<MockTest>("/admin/mock", t),
+  removeMockTest: (id) => del(`/admin/mock/${id}`),
+  mockAttempts: (ownerId) => get<MockAttempt[]>(`/admin/mock/attempts${qs({ ownerId })}`),
   violations: (ownerId) => get<Violation[]>(`/admin/violations${qs({ ownerId })}`),
   sessions: (ownerId) => get<LearnerSession[]>(`/admin/sessions${qs({ ownerId })}`),
   liftPause: (uid, lessonId) => del(`/admin/violations/pause${qs({ uid, lessonId })}`),

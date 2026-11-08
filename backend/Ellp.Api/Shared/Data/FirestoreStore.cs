@@ -136,4 +136,32 @@ public sealed class FirestoreStore : IEllpStore
         return all;
     }
     public Task UpsertSessionAsync(LearnerSession s, CancellationToken ct) => Set("sessions", s.Id, s, ct);
+
+    public async Task<List<Payment>> PaymentsAsync(string ownerId, CancellationToken ct) => (await All<Payment>(Where("payments", "ownerId", ownerId), ct)).OrderByDescending(p => p.CreatedAt).ToList();
+    public async Task<List<Payment>> PaymentsOfUserAsync(string uid, CancellationToken ct) => (await All<Payment>(Where("payments", "uid", uid), ct)).OrderByDescending(p => p.CreatedAt).ToList();
+    public Task<Payment?> PaymentAsync(string id, CancellationToken ct) => One<Payment>("payments", id, ct);
+    public async Task<Payment?> PaymentByReferenceAsync(string reference, CancellationToken ct) => (await All<Payment>(_db.Collection("payments").WhereEqualTo("reference", reference).Limit(1), ct)).FirstOrDefault();
+    public Task UpsertPaymentAsync(Payment p, CancellationToken ct) => Set("payments", p.Id, p, ct);
+    /// <summary>A transaction over counters/{ownerId}_{year} so two payments never share a number.</summary>
+    public async Task<int> NextReceiptSeqAsync(string ownerId, int year, CancellationToken ct)
+    {
+        var doc = _db.Collection("counters").Document($"{ownerId}_{year}");
+        return await _db.RunTransactionAsync(async tx =>
+        {
+            var snap = await tx.GetSnapshotAsync(doc, ct);
+            var next = (snap.Exists && snap.TryGetValue<long>("seq", out var cur) ? (int)cur : 0) + 1;
+            tx.Set(doc, new Dictionary<string, object> { ["seq"] = next }, SetOptions.Overwrite);
+            return next;
+        }, cancellationToken: ct);
+    }
+    public async Task<List<Certificate>> CertificatesAsync(string ownerId, CancellationToken ct) => (await All<Certificate>(Where("certificates", "ownerId", ownerId), ct)).OrderByDescending(c => c.IssuedAt).ToList();
+    public Task<List<Certificate>> CertificatesOfUserAsync(string uid, CancellationToken ct) => All<Certificate>(Where("certificates", "uid", uid), ct);
+    public async Task<Certificate?> CertificateByCodeAsync(string code, CancellationToken ct) => (await All<Certificate>(_db.Collection("certificates").WhereEqualTo("code", code).Limit(1), ct)).FirstOrDefault();
+    public Task UpsertCertificateAsync(Certificate c, CancellationToken ct) => Set("certificates", c.Id, c, ct);
+    public Task<List<MockTest>> MockTestsAsync(string ownerId, CancellationToken ct) => All<MockTest>(Where("mockTests", "ownerId", ownerId), ct);
+    public Task UpsertMockTestAsync(MockTest t, CancellationToken ct) => Set("mockTests", t.Id, t, ct);
+    public Task DeleteMockTestAsync(string id, CancellationToken ct) => Del("mockTests", id, ct);
+    public async Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct) => (await All<MockAttempt>(Where("mockAttempts", "ownerId", ownerId), ct)).OrderByDescending(a => a.StartedAt).ToList();
+    public async Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct) => (await All<MockAttempt>(Where("mockAttempts", "uid", uid), ct)).OrderByDescending(a => a.StartedAt).ToList();
+    public Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct) => Set("mockAttempts", a.Id, a, ct);
 }

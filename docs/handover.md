@@ -23,13 +23,17 @@ What you are getting, what to look at first, and what we would ask you to do nex
     strict rules listed beside it. Press play: at 2 s the video stops for an in-video question with a countdown; try to drag the
     bar ahead (it snaps back); switch tabs three times (warning, warning, pause). As **ครูเบนซ์** open Admin › Learning integrity:
     the events, the live sessions, and the pause to lift. Open the same learner in a second tab to see the session ladder.
-11. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 84 tests on the rules and the engine.
+11. Sign in as **คุณเจ** → Plan: pick Premium → PromptPay → a demo QR appears → "simulate" → Premium is active with an end date and a
+    receipt (EPA-2026-000x, printable). Mock tests → TOEIC Mini → answer → submit → a 10–990 estimate. Certificates: **คุณแอน**
+    holds one; open `/verify` signed out and type ELLP-7K3M-QX2P. As **ครูเบนซ์**: Admin › Payments (confirm a transfer, refund),
+    Admin › Mock tests (editor), Admin › Certificates.
+12. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 97 tests on the rules and the engine.
 
-## A good first task (1.2.x / 1.3)
+## A good first task (1.3.x)
 
-Pick the streaming provider (Cloudflare Stream or Mux), add hls.js to `VideoPlayer` for its URLs, and write decision record 0007
-with the cost and the DRM option. Then the Playwright tests the roadmap lists. For 1.3: online payment (Omise or Stripe) replacing
-transfer + slip on the plan page and the Approvals page.
+Take the Omise gateway live against a test account: set `OMISE_SECRET_KEY` / `OMISE_PUBLIC_KEY`, point the webhook at
+`/api/v1/payments/webhook/omise`, add the Omise.js card tokenisation to `PlanPage`, and write decision record 0008 with what the
+test account showed. Then the Playwright tests the roadmap lists (checkout, mock test, certificate verify).
 
 ## Read in this order
 

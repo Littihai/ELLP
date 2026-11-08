@@ -26,6 +26,8 @@ public interface IProgressService
     Task<ActivityResult> RecordPositionAsync(UserProfile me, string lessonId, double positionSec, double watchedSec, double durationSec, CancellationToken ct);
     Task<ActivityResult> RecordCheckpointAsync(UserProfile me, string lessonId, string checkpointId, bool correct, CancellationToken ct);
     Task<LessonProgress> RecordReplayAsync(UserProfile me, string lessonId, CancellationToken ct);
+    /// <summary>XP from something that is not a lesson (a mock test, a teacher's award): the streak moves, the ledger gets a line.</summary>
+    Task<ActivityResult> AwardAsync(UserProfile me, string? programId, string kind, int xp, string note, CancellationToken ct);
 }
 
 /// <summary>
@@ -216,6 +218,18 @@ public sealed class ProgressService : IProgressService
             }
         }
         await End(c, p, ct);
+        return c.Out;
+    }
+
+    public async Task<ActivityResult> AwardAsync(UserProfile me, string? programId, string kind, int xp, string note, CancellationToken ct)
+    {
+        var p = new LessonProgress { Uid = me.Uid, LessonId = $"award:{kind}", UpdatedAt = Clock.NowIso() };
+        var c = await Begin(me, p, ct);
+        await TouchDay(c, ct);
+        await AddXp(c, programId, kind, xp, note, ct);
+        c.Out.LevelAfter = LevelFor(c.Me.Xp);
+        c.Out.Progress = p;
+        await _s.UpsertUserAsync(c.Me, ct);
         return c.Out;
     }
 

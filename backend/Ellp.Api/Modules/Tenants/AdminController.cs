@@ -23,6 +23,7 @@ public sealed class AdminStats
     public int OpenMessages { get; set; }
     public int PendingPlans { get; set; }
     public int OpenChats { get; set; }
+    public int RevenueThisMonth { get; set; }
     public int XpThisWeek { get; set; }
     public int CompletionsThisWeek { get; set; }
     public List<DayXp> XpByDay { get; set; } = new();
@@ -300,6 +301,7 @@ public sealed class AdminController : ControllerBase
             OpenMessages = (await _s.MessagesAsync(ownerId, null, ct)).Count(m => m.Status == "open"),
             PendingPlans = users.Count(u => u.PlanStatus == "pending"),
             OpenChats = ownerId is null ? 0 : (await _s.ChatsAsync(ownerId, ct)).Count(c => c.Status == "open"),
+            RevenueThisMonth = ownerId is null ? 0 : (await _s.PaymentsAsync(ownerId, ct)).Where(p => p.Status == "paid" && p.PaidAt is not null && p.PaidAt.StartsWith(now.ToString("yyyy-MM"))).Sum(p => p.Amount),
             XpThisWeek = events.Where(e => GamificationRules.WeekKey(At(e.At)) == wk).Sum(e => e.Xp),
             CompletionsThisWeek = completions.Count(p => p.CompletedAt is not null && GamificationRules.WeekKey(At(p.CompletedAt)) == wk),
             XpByDay = days,

@@ -32,7 +32,12 @@ public sealed class MeController : ControllerBase
     public async Task<IActionResult> Session(CancellationToken ct)
     {
         var me = await _me.GetAsync(ct);
-        if (me is not null) return Ok(ApiResponse<UserProfile>.Ok(me));
+        if (me is not null)
+        {
+            // 1.3: a paid plan past its end is expired the moment the learner comes back
+            if (Commerce.CommerceRules.ExpireIfDue(me, DateTime.UtcNow)) await _s.UpsertUserAsync(me, ct);
+            return Ok(ApiResponse<UserProfile>.Ok(me));
+        }
         var (uid, email, name) = _me.Claims;
         if (uid is null) return NoUser();
         var existing = await _s.UserAsync(uid, ct);
