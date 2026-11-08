@@ -12,7 +12,7 @@ import type { AgeBand, Lesson, Program, Quest, QuizQuestion, UnlockRule } from "
 import { AGE_BANDS } from "@/lib/gamification";
 
 const blank = (programId: string, order: number): Lesson => ({
-  id: "", programId, order, title: { th: "", en: "" }, summary: { th: "", en: "" }, youtubeId: "", durationSec: 120, xpReward: 50, vocabulary: [], quiz: [], unlock: [], published: false,
+  id: "", programId, order, title: { th: "", en: "" }, summary: { th: "", en: "" }, youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 120, xpReward: 50, vocabulary: [], quiz: [], unlock: [], published: false,
 });
 
 /** Lessons of one program: the video, its XP, the words, the quiz and the unlock conditions, all in one form. */
@@ -41,7 +41,7 @@ function Inner() {
   const program = data.programs.find((p) => p.id === programId);
 
   const save = async () => {
-    if (!edit || !edit.title.th.trim() || !edit.youtubeId.trim()) return;
+    if (!edit || !edit.title.th.trim() || (!edit.youtubeId.trim() && !edit.videoUrl.trim())) return;
     await api.saveLesson({ ...edit, youtubeId: edit.youtubeId.trim(), title: { th: edit.title.th, en: edit.title.en || edit.title.th } });
     setEdit(null); toast(t("app.saved")); reload();
   };
@@ -65,9 +65,9 @@ function Inner() {
                     {lessons.map((l) => (
                       <tr key={l.id}>
                         <td>{l.order}</td>
-                        <td><img src={ytThumb(l.youtubeId)} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 4, display: "block" }} /></td>
+                        <td>{l.youtubeId ? <img src={ytThumb(l.youtubeId)} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 4, display: "block" }} /> : <span style={{ display: "grid", placeItems: "center", width: 64, height: 40, borderRadius: 4, background: "var(--color-neutral-200)" }}><Icon name="video" size={16} /></span>}</td>
                         <td><b>{pick(l.title)}</b><div className="small muted">{fmtDuration(l.durationSec)} · {l.vocabulary.length} {t("les.vocab").split(" ")[0]}</div></td>
-                        <td><code className="small">{l.youtubeId}</code></td>
+                        <td><code className="small">{l.youtubeId || (l.videoUrl ? "mp4" : "—")}</code>{l.checkpoints.length > 0 && <div className="small muted">{l.checkpoints.length} cp</div>}</td>
                         <td>{l.xpReward}</td>
                         <td>{l.quiz.length}</td>
                         <td>{l.unlock.length === 0 ? <Badge tone="ok"><Icon name="unlock" size={11} />{t("rule.met")}</Badge> : <Badge tone="neutral"><Icon name="lock" size={11} />{l.unlock.length}</Badge>}</td>
@@ -121,7 +121,7 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
   const num = (v: string, min: number) => Math.max(min, parseInt(v || "0", 10) || 0);
 
   return (
-    <Modal wide title={l.id ? t("app.edit") : t("les.add")} onClose={onClose} actions={<><Button variant="tertiary" onClick={onClose}>{t("app.cancel")}</Button><Button onClick={onSave} disabled={!l.title.th.trim() || !l.youtubeId.trim()}>{t("app.save")}</Button></>}>
+    <Modal wide title={l.id ? t("app.edit") : t("les.add")} onClose={onClose} actions={<><Button variant="tertiary" onClick={onClose}>{t("app.cancel")}</Button><Button onClick={onSave} disabled={!l.title.th.trim() || (!l.youtubeId.trim() && !l.videoUrl.trim())}>{t("app.save")}</Button></>}>
       <div className="form-grid">
         <Field label={t("les.program")}>
           <select className="input" value={l.programId} onChange={(e) => set({ programId: e.target.value })}>{programs.map((p) => <option key={p.id} value={p.id}>{pick(p.title)}</option>)}</select>
@@ -137,6 +137,7 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
             {l.youtubeId && <img src={ytThumb(l.youtubeId)} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 4 }} />}
           </div>
         </Field>
+        <Field label={t("les.video")} hint={t("les.videoHint")} span2><input className="input" value={l.videoUrl} onChange={(e) => set({ videoUrl: e.target.value.trim() })} placeholder="https://…/lesson.mp4" /></Field>
         <Field label={t("les.duration")}><input className="input" type="number" min={10} value={l.durationSec} onChange={(e) => set({ durationSec: num(e.target.value, 10) })} /></Field>
         <Field label={t("les.xp")}><input className="input" type="number" min={0} value={l.xpReward} onChange={(e) => set({ xpReward: num(e.target.value, 0) })} /></Field>
         <Field label={t("les.vocab")}><input className="input" value={l.vocabulary.join(", ")} onChange={(e) => set({ vocabulary: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></Field>
@@ -166,6 +167,26 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
           </div>
         ))}
         <div><Button size="sm" variant="secondary" icon="plus" onClick={() => set({ unlock: [...l.unlock, newRule("lesson_completed")] })}>{t("les.addRule")}</Button></div>
+      </div>
+
+      <h3 style={{ margin: "20px 0 10px", fontSize: "var(--text-lg)" }}>{t("les.checkpoints")}</h3>
+      <div className="stack" style={{ gap: 12 }}>
+        {l.checkpoints.map((c, i) => {
+          const setC = (patch: Partial<typeof c>) => set({ checkpoints: l.checkpoints.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+          return (
+            <div key={c.id} className="quiz-q">
+              <div className="form-grid">
+                <Field label={t("les.cpAt")}><input className="input" type="number" min={1} value={c.atSec} onChange={(e) => setC({ atSec: num(e.target.value, 1) })} /></Field>
+                <Field label={t("les.answer")}><input className="input" type="number" min={1} max={Math.max(1, c.choices.length)} value={c.answer + 1} onChange={(e) => setC({ answer: Math.min(c.choices.length - 1, num(e.target.value, 1) - 1) })} /></Field>
+                <Field label={t("les.prompt.th")}><input className="input" value={c.prompt.th} onChange={(e) => setC({ prompt: { ...c.prompt, th: e.target.value } })} /></Field>
+                <Field label={t("les.prompt.en")}><input className="input" value={c.prompt.en} onChange={(e) => setC({ prompt: { ...c.prompt, en: e.target.value } })} /></Field>
+                <Field label={t("les.choices")} span2><input className="input" value={c.choices.join(" | ")} onChange={(e) => setC({ choices: e.target.value.split("|").map((s) => s.trim()) })} /></Field>
+                <div className="span-2" style={{ display: "flex", justifyContent: "flex-end" }}><Button size="sm" variant="tertiary" icon="trash" onClick={() => set({ checkpoints: l.checkpoints.filter((_, j) => j !== i) })}>{t("app.delete")}</Button></div>
+              </div>
+            </div>
+          );
+        })}
+        <div><Button size="sm" variant="secondary" icon="plus" onClick={() => set({ checkpoints: [...l.checkpoints, { id: newId("cp"), atSec: 10, prompt: { th: "", en: "" }, choices: ["", "", ""], answer: 0 }] })}>{t("les.addCheckpoint")}</Button></div>
       </div>
 
       <h3 style={{ margin: "20px 0 10px", fontSize: "var(--text-lg)" }}>{t("les.quiz")}</h3>

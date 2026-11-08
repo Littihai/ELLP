@@ -6,11 +6,12 @@ import { useToast } from "@/components/ui/Toast";
 import { useAsync } from "@/hooks/useAsync";
 import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
-import { CEFR_LEVELS, PLANS, TRACKS, type AgeBand, type Cefr, type Plan, type Program, type Track } from "@/types";
+import { CEFR_LEVELS, PLANS, PROFILES, TRACKS, type AgeBand, type Cefr, type Plan, type ProctoringProfile, type Program, type Track } from "@/types";
 import { AGE_BANDS } from "@/lib/gamification";
+import { defaultProfileFor } from "@/lib/integrity";
 
 const COLORS = ["#066fd1", "#f59f00", "#2fb344", "#4c58c4", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
-const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, track: "foundation", cefr: "A1", targetScore: "", plan: "free", ageBands: [], color: COLORS[0], published: false, createdAt: "" });
+const blank = (ownerId: string): Program => ({ id: "", ownerId, title: { th: "", en: "" }, description: { th: "", en: "" }, track: "foundation", cefr: "A1", targetScore: "", plan: "free", proctoring: null, ageBands: [], color: COLORS[0], published: false, createdAt: "" });
 
 /** The owner's teaching media (programs). A program is a container; its videos live on the Lessons page. */
 export function ProgramsAdminPage() {
@@ -54,7 +55,7 @@ function Inner() {
                     <Badge tone={p.plan === "free" ? "ok" : p.plan === "pro" ? "accent" : "warn"}>{t(`plan.${p.plan}`)}</Badge>
                     <Badge tone="accent">{p.ageBands.length === 0 ? t("age.forAll") : p.ageBands.map((b) => b.replace("-", "–")).join(", ")}</Badge>
                   </span>
-                  <span className="small muted">{t("programs.lessonsN", { n })} · {t(`track.${p.track}`)} · {p.cefr}</span>
+                  <span className="small muted">{t("programs.lessonsN", { n })} · {t(`track.${p.track}`)} · {p.cefr} · {t(`integ.profile.${p.proctoring ?? defaultProfileFor(p.track)}`)}</span>
                 </div>
                 <h3 style={{ margin: "8px 0 4px", fontSize: "var(--text-lg)" }}>{pick(p.title)}</h3>
                 <p className="muted" style={{ margin: 0, fontSize: "var(--text-sm)", minHeight: 42 }}>{pick(p.description)}</p>
@@ -85,6 +86,12 @@ function Inner() {
               <select className="input" value={edit.cefr} onChange={(e) => setEdit({ ...edit, cefr: e.target.value as Cefr })}>{CEFR_LEVELS.map((c) => <option key={c} value={c}>{t(`cefr.${c}`)}</option>)}</select>
             </Field>
             <Field label={t("prg.target")}><input className="input" value={edit.targetScore} onChange={(e) => setEdit({ ...edit, targetScore: e.target.value })} placeholder="TOEIC 600+" /></Field>
+            <Field label={t("prg.proctoring")}>
+              <select className="input" value={edit.proctoring ?? ""} onChange={(e) => setEdit({ ...edit, proctoring: (e.target.value || null) as ProctoringProfile | null })}>
+                <option value="">{t("integ.profile.default")} ({t(`integ.profile.${defaultProfileFor(edit.track)}`)})</option>
+                {PROFILES.map((pf) => <option key={pf} value={pf}>{t(`integ.profile.${pf}`)}</option>)}
+              </select>
+            </Field>
             <Field label={t("prg.plan")} hint={t("prg.planHint")}>
               <select className="input" value={edit.plan} onChange={(e) => setEdit({ ...edit, plan: e.target.value as Plan })}>{PLANS.map((pl) => <option key={pl} value={pl}>{t(`plan.${pl}`)}</option>)}</select>
             </Field>

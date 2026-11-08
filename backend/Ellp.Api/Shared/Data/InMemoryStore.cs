@@ -22,6 +22,8 @@ public sealed class InMemoryStore : IEllpStore
     private readonly ConcurrentBag<MailLog> _mail = new();
     private readonly ConcurrentDictionary<string, OwnerSettings> _settings = new();
     private readonly ConcurrentDictionary<string, ChatThread> _chats = new();
+    private readonly ConcurrentBag<Violation> _violations = new();
+    private readonly ConcurrentDictionary<string, LearnerSession> _sessions = new();
 
     public InMemoryStore()
     {
@@ -103,4 +105,14 @@ public sealed class InMemoryStore : IEllpStore
     public Task<ChatThread?> FindChatAsync(string ownerId, string? uid, string? visitorKey, CancellationToken ct) =>
         Task.FromResult(_chats.Values.Where(c => c.OwnerId == ownerId && c.Status == "open").FirstOrDefault(c => (uid is not null && c.Uid == uid) || (visitorKey is not null && c.VisitorKey == visitorKey)));
     public Task UpsertChatAsync(ChatThread c, CancellationToken ct) { _chats[c.Id] = c; return Task.CompletedTask; }
+
+    public Task<List<Violation>> ViolationsAsync(string ownerId, CancellationToken ct) => L(_violations.Where(v => v.OwnerId == ownerId).OrderByDescending(v => v.At));
+    public Task AddViolationAsync(Violation v, CancellationToken ct) { _violations.Add(v); return Task.CompletedTask; }
+    public Task<List<LearnerSession>> SessionsAsync(string uid, CancellationToken ct) => L(_sessions.Values.Where(s => s.Uid == uid));
+    public Task<List<LearnerSession>> SessionsOfOwnerAsync(string ownerId, CancellationToken ct)
+    {
+        var uids = _users.Values.Where(u => u.OwnerId == ownerId).Select(u => u.Uid).ToHashSet();
+        return L(_sessions.Values.Where(s => uids.Contains(s.Uid)));
+    }
+    public Task UpsertSessionAsync(LearnerSession s, CancellationToken ct) { _sessions[s.Id] = s; return Task.CompletedTask; }
 }

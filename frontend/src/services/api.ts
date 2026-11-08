@@ -1,7 +1,8 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus,
-  Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, XpEvent,
+  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus,
+  Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
 } from "@/types";
+import type { SessionDecision } from "@/lib/integrity";
 
 /** What one learner activity (a watch mark or a quiz) earned, so the page can celebrate it. */
 export interface ActivityResult {
@@ -73,6 +74,16 @@ export interface EllpApi {
   myQuests(): Promise<QuestProgress[]>;
   myXpEvents(): Promise<XpEvent[]>;
   recordWatch(lessonId: string, watchedPct: number): Promise<ActivityResult>;
+  /** 1.2, the platform's own player: the real position and played seconds; the percentage follows from the duration */
+  recordPosition(lessonId: string, positionSec: number, watchedSec: number, durationSec: number): Promise<ActivityResult>;
+  recordCheckpoint(lessonId: string, checkpointId: string, correct: boolean): Promise<ActivityResult>;
+  recordReplay(lessonId: string): Promise<LessonProgress>;
+  /** the URL the player loads: the stored URL in demo mode, a signed short-lived URL in live mode */
+  videoUrl(lessonId: string): Promise<string>;
+  reportViolation(lessonId: string | null, type: ViolationType, detail: string): Promise<{ violation: Violation; action: string; pausedUntil: string | null; strikes: number }>;
+  startSession(deviceLabel: string): Promise<{ session: LearnerSession; decision: SessionDecision }>;
+  heartbeat(sessionId: string): Promise<void>;
+  endSession(sessionId: string): Promise<void>;
   submitQuiz(lessonId: string, answers: number[]): Promise<ActivityResult>;
   leaderboard(programId: string | null, period: LeaderboardPeriod): Promise<LeaderboardRow[]>;
   myMessages(): Promise<InboxMessage[]>;
@@ -98,6 +109,9 @@ export interface EllpApi {
   settings(ownerId: string): Promise<OwnerSettings>;
   saveSettings(s: OwnerSettings): Promise<OwnerSettings>;
   adminStats(ownerId: string | null): Promise<AdminStats>;
+  violations(ownerId: string): Promise<Violation[]>;
+  sessions(ownerId: string): Promise<LearnerSession[]>;
+  liftPause(uid: string, lessonId: string): Promise<void>;
   chatThreads(ownerId: string): Promise<ChatThread[]>;
   chatReply(threadId: string, text: string): Promise<ChatThread>;
   chatSetStatus(threadId: string, status: ChatThread["status"], linkedUid?: string | null): Promise<ChatThread>;
@@ -110,6 +124,11 @@ export interface EllpApi {
 
 export const USE_DEMO = (import.meta.env.VITE_USE_DEMO ?? "true") !== "false";
 export const API_BASE = import.meta.env.VITE_API_BASE ?? "/api/v1";
+
+/** The id of this tab's learner session (sessionStorage: a second tab is a second session, as the limit intends). */
+export const SESSION_KEY = "ellp.session";
+export function readSessionId(): string | null { try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; } }
+export function writeSessionId(id: string | null) { try { if (id) sessionStorage.setItem(SESSION_KEY, id); else sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ } }
 
 /** The visitor's chat key, kept in this browser so a chat begun before sign-up is found again. */
 export function visitorKey(): string {

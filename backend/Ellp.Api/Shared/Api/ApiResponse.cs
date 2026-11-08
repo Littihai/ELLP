@@ -30,4 +30,7 @@ public static class ApiCodes
     public const string WatchFirst = "WATCH_FIRST";
     public const string MailFailed = "MAIL_FAILED";
     public const string PlanRequired = "PLAN_REQUIRED";
+    public const string LessonPaused = "LESSON_PAUSED";
+    public const string SessionRefused = "SESSION_REFUSED";
+    public const string SessionEnded = "SESSION_ENDED";
 }

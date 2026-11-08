@@ -60,4 +60,10 @@ public interface IEllpStore
     /// <summary>The open thread of a learner (by uid) or a visitor (by key) with one tenant.</summary>
     Task<ChatThread?> FindChatAsync(string ownerId, string? uid, string? visitorKey, CancellationToken ct);
     Task UpsertChatAsync(ChatThread c, CancellationToken ct);
+
+    Task<List<Violation>> ViolationsAsync(string ownerId, CancellationToken ct);
+    Task AddViolationAsync(Violation v, CancellationToken ct);
+    Task<List<LearnerSession>> SessionsAsync(string uid, CancellationToken ct);
+    Task<List<LearnerSession>> SessionsOfOwnerAsync(string ownerId, CancellationToken ct);
+    Task UpsertSessionAsync(LearnerSession s, CancellationToken ct);
 }

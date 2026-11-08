@@ -25,6 +25,7 @@ Docs: `docs/architecture.md`, `docs/data-model.md`, `docs/gamification.md`, `doc
 - No emoji as icons: Octicons via `constants/icons.ts`. No hex colours in components: tokens in `styles/tokens.css`.
 - No text a person reads in code: `{ th, en }` in `frontend/src/i18n/dict.ts` or in the data.
 - Children's data: the birth year only (never a date), fictional seed only; the parent acknowledgement is a record, not yet verified consent (decision 0004).
+- The integrity rules live twice too (`frontend/src/lib/integrity.ts`, `backend/.../Modules/Integrity/IntegrityRules.cs`); the media signing key is `MEDIA_SIGNING_KEY` (Development has a built-in one).
 - The plan rules live twice too (`frontend/src/lib/access.ts`, `backend/.../Modules/Access/PlanRules.cs`); public endpoints strip quiz answers.
 - The gamification rules live twice (`frontend/src/lib/gamification.ts`, `backend/.../GamificationRules.cs`): change both and
   the tests in the same commit.
@@ -50,4 +51,4 @@ dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj -c Release
 
 ## Open items
 
-See `docs/roadmap.md`. Next is 1.2: the self-hosted player and the learning-integrity rules for the exam tracks; then 1.3 payment, certificates, mock tests.
+See `docs/roadmap.md`. Next: 1.2.x hardening (HLS, Playwright) and 1.3 payment, certificates, mock tests, DRM.

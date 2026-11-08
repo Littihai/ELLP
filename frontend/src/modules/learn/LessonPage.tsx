@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
@@ -10,6 +10,10 @@ import type { Lesson, LessonProgress } from "@/types";
 import { CheerModal, RuleRow, useUnlock } from "./shared";
 import { canAccessLesson } from "@/lib/access";
 import { Link as RLink } from "react-router-dom";
+import { DEFAULT_POLICY, PROFILE_RULES, defaultProfileFor, isPaused } from "@/lib/integrity";
+import { VideoPlayer } from "@/components/VideoPlayer";
+import { useToast } from "@/components/ui/Toast";
+import type { ViolationType } from "@/types";
 
 /**
  * The lesson: the YouTube player (locked until the rules pass), the words, the quiz, and the next lesson.
@@ -27,10 +31,26 @@ export function LessonPage() {
     const lesson = lessons.find((l) => l.id === lessonId) ?? null;
     const program = programs.find((p) => p.id === lesson?.programId) ?? null;
     const allowed = !!lesson && !!program && canAccessLesson(u, program, lesson, lessons);
-    return { lesson, program, allowed, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests, passPct: ageRuleFor(settings, u).quizPassPct };
+    const videoSrc = lesson?.videoUrl ? await api.videoUrl(lesson.id) : "";
+    return { lesson, program, allowed, videoSrc, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests, passPct: ageRuleFor(settings, u).quizPassPct, policy: settings?.integrity ?? DEFAULT_POLICY };
   }, [lessonId, u.uid]);
   const [cheer, setCheer] = useState<ActivityResult | null>(null);
+  const { toast } = useToast();
   const unlock = useUnlock(data?.lesson ?? undefined, u, data?.progress ?? [], data?.questRows ?? []);
+  const [, tick] = useState(0);
+  useEffect(() => { const id = window.setInterval(() => tick((n) => n + 1), 30000); return () => window.clearInterval(id); }, []);
+
+  // the ladder: the store decides (warn / pause); the page tells the learner and refreshes the pause state
+  const onViolation = useCallback(async (type: ViolationType, detail: string) => {
+    if (!data?.lesson) return;
+    const r = await api.reportViolation(data.lesson.id, type, detail);
+    const policy = data.policy;
+    if (r.action === "warned") toast(t("integ.warn", { n: r.strikes, what: t(`integ.type.${type}`), max: policy.pauseAfterViolations }), "warn");
+    if (r.pausedUntil) {
+      setData((d) => d && { ...d, progress: d.progress.map((p) => (p.lessonId === data.lesson!.id ? { ...p, pausedUntil: r.pausedUntil } : p)).concat(d.progress.some((p) => p.lessonId === data.lesson!.id) ? [] : [{ uid: u.uid, lessonId: data.lesson!.id, watchedPct: 0, completed: false, quizScore: null, quizTotal: null, completedAt: null, updatedAt: "", watchedSec: 0, lastPositionSec: 0, replays: 0, checkpointResults: {}, pausedUntil: r.pausedUntil }]) });
+      toast(t("integ.paused"), "stop");
+    }
+  }, [data, t, toast, setData, u.uid]);
 
   const applyResult = (r: ActivityResult) => {
     setData((d) => d && { ...d, progress: [...d.progress.filter((p) => p.lessonId !== r.progress.lessonId), r.progress] });
@@ -51,7 +71,11 @@ export function LessonPage() {
   const done = lessonComplete(lesson, progress, data.passPct);
   const noAge = ageBandOf(u) === null;
   const paywalled = !data.allowed;
-  const open = unlock.ok && !paywalled;
+  const profile = data.program ? (data.program.proctoring ?? defaultProfileFor(data.program.track)) : "off";
+  const rules = PROFILE_RULES[profile];
+  const paused = isPaused(progress);
+  const open = unlock.ok && !paywalled && !paused;
+  const pauseLeftMin = paused && progress?.pausedUntil ? Math.max(1, Math.ceil((new Date(progress.pausedUntil).getTime() - Date.now()) / 60000)) : 0;
 
   return (
     <>
@@ -62,8 +86,13 @@ export function LessonPage() {
         sub={pick(lesson.summary)}
         actions={done ? <Badge tone="ok"><Icon name="checkCircleFill" size={12} />{t("lesson.complete")}</Badge> : <Badge tone="accent"><Icon name="zap" size={12} />{t("lesson.xpReward", { xp: lesson.xpReward })}</Badge>}
       />
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 20, alignItems: "start" }} className="lesson-grid">
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 20, alignItems: "start", userSelect: rules.noCopy ? "none" : undefined }} className="lesson-grid" onContextMenu={(e) => { if (rules.noCopy) e.preventDefault(); }}>
         <div className="stack">
+          {paused && (
+            <Card>
+              <div className="row"><Icon name="alert" size={18} color="var(--tone-stop-solid)" /><div><b>{t("integ.paused")}</b><div className="small muted">{t("integ.pausedSub", { m: pauseLeftMin })}</div></div></div>
+            </Card>
+          )}
           {paywalled && data.program && (
             <Card>
               <div className="row" style={{ justifyContent: "space-between" }}>
@@ -72,11 +101,18 @@ export function LessonPage() {
               </div>
             </Card>
           )}
-          <Player lesson={lesson} unlocked={open} progress={progress} onResult={applyResult} />
+          {lesson.videoUrl && open ? (
+            <VideoPlayer lesson={lesson} src={data.videoSrc} rules={rules} policy={data.policy} progress={progress} watermark={u.email} onResult={applyResult} onViolation={onViolation} />
+          ) : (
+            <Player lesson={lesson} unlocked={open} progress={progress} onResult={applyResult} />
+          )}
+          {lesson.videoUrl && open && USE_DEMO && (progress?.watchedPct ?? 0) < WATCH_COMPLETE_PCT && (
+            <div className="row" style={{ justifyContent: "flex-end" }}><Button variant="secondary" size="sm" icon="checkCircle" onClick={() => api.recordWatch(lesson.id, 100).then(applyResult)}>{t("lesson.markWatched")}</Button></div>
+          )}
           {open && (
             <div className="row" style={{ justifyContent: "space-between" }}>
               <div style={{ flex: 1, minWidth: 160 }}>
-                <div className="small muted" style={{ marginBottom: 4 }}>{t("lesson.watchedPct", { pct: watched })}</div>
+                <div className="small muted" style={{ marginBottom: 4 }}>{t("lesson.watchedPct", { pct: watched })}{progress && progress.watchedSec > 0 && <> · {t("integ.watched", { m: Math.max(1, Math.round(progress.watchedSec / 60)), p: `${Math.floor(progress.lastPositionSec / 60)}:${String(Math.round(progress.lastPositionSec % 60)).padStart(2, "0")}` })}</>}</div>
                 <Bar pct={watched} tone={canQuiz ? "ok" : undefined} />
               </div>
               <span className="small muted">{t("lesson.ytHint", { id: lesson.youtubeId })}</span>
@@ -88,6 +124,22 @@ export function LessonPage() {
           {open && lesson.quiz.length > 0 && <Quiz lesson={lesson} progress={progress} enabled={canQuiz} passPct={data.passPct} onResult={applyResult} />}
         </div>
         <div className="stack">
+          {profile !== "off" && (
+            <Card title={<>{t("integ.rules")} <Badge tone={profile === "strict" ? "stop" : "warn"}>{t(`integ.profile.${profile}`)}</Badge></>}>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: "var(--text-sm)", display: "grid", gap: 4 }}>
+                {rules.blockSeek && <li>{t("integ.rule.blockSeek")}</li>}
+                {rules.lockSpeed && <li>{t("integ.rule.lockSpeed")}</li>}
+                {rules.checkpoints && lesson.checkpoints.length > 0 && <li>{t("integ.rule.checkpoints", { n: data.policy.checkpointTimeLimitSec })}</li>}
+                {rules.trackAttention && <li>{t("integ.rule.attention")}</li>}
+                {rules.punishAttention && <li>{t("integ.rule.ladder", { n: data.policy.pauseAfterViolations, m: data.policy.pauseMinutes })}</li>}
+                {rules.requireFullscreen && <li>{t("integ.rule.fullscreen")}</li>}
+                {rules.replayLimit && data.policy.maxReplays > 0 && <li>{t("integ.rule.replays", { n: data.policy.maxReplays })}</li>}
+                {rules.sessionLimit && <li>{t("integ.rule.sessions", { n: data.policy.maxSessions })}</li>}
+                {rules.watermark && <li>{t("integ.rule.watermark")}</li>}
+                {rules.noCopy && <li>{t("integ.rule.noCopy")}</li>}
+              </ul>
+            </Card>
+          )}
           {lesson.unlock.length > 0 && (
             <Card title={t("lesson.unlockRules")}>
               <div className="stack" style={{ gap: 8 }}>{unlock.rows.map((r, i) => <RuleRow key={i} rule={r.rule} ok={r.ok} lessons={data.lessons} quests={data.quests} noAge={noAge} />)}</div>

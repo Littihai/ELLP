@@ -26,6 +26,57 @@ export type Plan = "free" | "pro" | "premium";
 export const PLANS: Plan[] = ["free", "pro", "premium"];
 export type PlanStatus = "active" | "pending" | "expired";
 
+/** How strictly a program's player behaves (1.2, decision 0006): off for songs, standard for foundations, strict for exams. */
+export type ProctoringProfile = "off" | "standard" | "strict";
+export const PROFILES: ProctoringProfile[] = ["off", "standard", "strict"];
+
+/** What the tenant decides about the integrity ladder and limits. */
+export interface IntegrityPolicy {
+  /** the n-th attention violation in a lesson pauses it (1 and 2 warn) */
+  pauseAfterViolations: number;
+  pauseMinutes: number;
+  /** sessions a learner may hold at once */
+  maxSessions: number;
+  /** completed plays of one video; 0 = unlimited */
+  maxReplays: number;
+  checkpointTimeLimitSec: number;
+  /** XP for a right in-video answer */
+  checkpointXp: number;
+}
+
+export type ViolationType = "tab_switch" | "window_blur" | "fullscreen_exit" | "seek_attempt" | "speed_attempt" | "pause_spam" | "duplicate_session" | "checkpoint_timeout" | "replay_limit";
+
+export interface Violation {
+  id: string;
+  uid: string;
+  ownerId: string;
+  lessonId: string | null;
+  type: ViolationType;
+  /** what the ladder did: logged | warned | paused | kicked_old | refused */
+  action: string;
+  detail: string;
+  at: string;
+}
+
+/** One signed-in device/tab of a learner; a heartbeat keeps it alive. */
+export interface LearnerSession {
+  id: string;
+  uid: string;
+  deviceLabel: string;
+  startedAt: string;
+  lastSeenAt: string;
+  active: boolean;
+}
+
+/** An in-video question: the video pauses at `atSec` and resumes once answered (or the time runs out). */
+export interface Checkpoint {
+  id: string;
+  atSec: number;
+  prompt: Text2;
+  choices: string[];
+  answer: number;
+}
+
 /** What changes per age band (tenant settings, decision 0004). */
 export interface AgeRule {
   /** the quiz pass mark for this band */
@@ -59,6 +110,8 @@ export interface Program {
   targetScore: string;
   /** the lowest plan that opens every lesson; the first lesson is always a free preview */
   plan: Plan;
+  /** null = the track's default (lib/integrity.ts defaultProfileFor) */
+  proctoring: ProctoringProfile | null;
   /** who the program is for; empty = every age */
   ageBands: AgeBand[];
   color: string;
@@ -91,6 +144,9 @@ export interface Lesson {
   summary: Text2;
   /** YouTube video id (the part after v=). Admins paste it in the lesson form. */
   youtubeId: string;
+  /** a self-hosted video (mp4 / HLS) the platform's own player controls; when set it wins over youtubeId (1.2) */
+  videoUrl: string;
+  checkpoints: Checkpoint[];
   durationSec: number;
   xpReward: number;
   /** words the song teaches, shown as chips under the player */
@@ -166,6 +222,12 @@ export interface LessonProgress {
   quizTotal: number | null;
   completedAt: string | null;
   updatedAt: string;
+  /** 1.2: seconds really played, the last position, completed plays, answered checkpoints and a pause set by the ladder */
+  watchedSec: number;
+  lastPositionSec: number;
+  replays: number;
+  checkpointResults: Record<string, boolean>;
+  pausedUntil: string | null;
 }
 
 export interface QuestProgress {
@@ -240,6 +302,7 @@ export interface OwnerSettings {
   lineUrl: string;
   /** what a visitor reads under "how to pay" when requesting a plan */
   paymentInstructions: Text2;
+  integrity: IntegrityPolicy;
 }
 
 /** A chat between a visitor (not signed in yet) or a learner and the tenant's admins (1.1). */

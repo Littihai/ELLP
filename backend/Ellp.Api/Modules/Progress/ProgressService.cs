@@ -23,6 +23,9 @@ public interface IProgressService
     Task<ActivityResult> RecordWatchAsync(UserProfile me, string lessonId, int watchedPct, CancellationToken ct);
     Task<ActivityResult> SubmitQuizAsync(UserProfile me, string lessonId, int[] answers, CancellationToken ct);
     Task<List<LeaderboardRow>> LeaderboardAsync(UserProfile me, string? programId, string period, CancellationToken ct);
+    Task<ActivityResult> RecordPositionAsync(UserProfile me, string lessonId, double positionSec, double watchedSec, double durationSec, CancellationToken ct);
+    Task<ActivityResult> RecordCheckpointAsync(UserProfile me, string lessonId, string checkpointId, bool correct, CancellationToken ct);
+    Task<LessonProgress> RecordReplayAsync(UserProfile me, string lessonId, CancellationToken ct);
 }
 
 /// <summary>
@@ -143,6 +146,7 @@ public sealed class ProgressService : IProgressService
         await AssertPlan(me, lesson, ct);
         if (!Unlocked(lesson, me, progress, quests)) throw new InvalidOperationException("LESSON_LOCKED");
         var p = progress.FirstOrDefault(x => x.LessonId == lessonId) ?? new LessonProgress { Uid = me.Uid, LessonId = lessonId };
+        if (Integrity.IntegrityRules.IsPaused(p, DateTime.UtcNow)) throw new InvalidOperationException("LESSON_PAUSED");
         var c = await Begin(me, p, ct);
         var before = p.WatchedPct;
         p.WatchedPct = Math.Max(p.WatchedPct, Math.Clamp(watchedPct, 0, 100));
@@ -182,6 +186,46 @@ public sealed class ProgressService : IProgressService
         FinishIfDue(c, lesson, p);
         await End(c, p, ct);
         return c.Out;
+    }
+
+    /// <summary>The player's report: the server computes the percentage from the position and keeps the played seconds and the position.</summary>
+    public async Task<ActivityResult> RecordPositionAsync(UserProfile me, string lessonId, double positionSec, double watchedSec, double durationSec, CancellationToken ct)
+    {
+        var p = await ProgressOf(me.Uid, lessonId, ct);
+        p.LastPositionSec = Math.Max(0, positionSec);
+        p.WatchedSec = Math.Max(p.WatchedSec, Math.Max(0, watchedSec));
+        await _s.UpsertProgressAsync(p, ct);
+        return await RecordWatchAsync(me, lessonId, Integrity.IntegrityRules.PercentOf(positionSec, durationSec), ct);
+    }
+
+    /// <summary>An in-video question answered or timed out: a right answer pays the policy's XP, once per checkpoint.</summary>
+    public async Task<ActivityResult> RecordCheckpointAsync(UserProfile me, string lessonId, string checkpointId, bool correct, CancellationToken ct)
+    {
+        var lesson = await _s.LessonAsync(lessonId, ct) ?? throw new KeyNotFoundException("LESSON_NOT_FOUND");
+        if (lesson.Checkpoints.All(c => c.Id != checkpointId)) throw new KeyNotFoundException("CHECKPOINT_NOT_FOUND");
+        var p = await ProgressOf(me.Uid, lessonId, ct);
+        var c = await Begin(me, p, ct);
+        if (!p.CheckpointResults.ContainsKey(checkpointId))
+        {
+            p.CheckpointResults[checkpointId] = correct;
+            if (correct)
+            {
+                var xp = (await _s.SettingsAsync(me.OwnerId ?? "", ct)).Integrity.CheckpointXp;
+                await TouchDay(c, ct);
+                await AddXp(c, lesson.ProgramId, "quiz", xp, $"{lesson.Title.En} checkpoint", ct);
+            }
+        }
+        await End(c, p, ct);
+        return c.Out;
+    }
+
+    public async Task<LessonProgress> RecordReplayAsync(UserProfile me, string lessonId, CancellationToken ct)
+    {
+        _ = await _s.LessonAsync(lessonId, ct) ?? throw new KeyNotFoundException("LESSON_NOT_FOUND");
+        var p = await ProgressOf(me.Uid, lessonId, ct);
+        p.Replays += 1; p.UpdatedAt = Clock.NowIso();
+        await _s.UpsertProgressAsync(p, ct);
+        return p;
     }
 
     public async Task<List<LeaderboardRow>> LeaderboardAsync(UserProfile me, string? programId, string period, CancellationToken ct)

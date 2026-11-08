@@ -34,6 +34,8 @@ public sealed class LearningProgram
     public string TargetScore { get; set; } = "";
     /// <summary>The lowest plan that opens every lesson; the first lesson is always a free preview.</summary>
     public string Plan { get; set; } = "free";
+    /// <summary>off | standard | strict; null = the track's default (IntegrityRules.DefaultProfileFor).</summary>
+    public string? Proctoring { get; set; }
     /// <summary>Who the program is for ("3-5", "6-8", "9-12", "13+"); empty = every age (decision 0004).</summary>
     public List<string> AgeBands { get; set; } = new();
     public string Color { get; set; } = "#066fd1";
@@ -64,6 +66,16 @@ public sealed class QuizQuestion
     public int Answer { get; set; }
 }
 
+/// <summary>An in-video question: the player pauses at AtSec and resumes once answered or when the time runs out.</summary>
+public sealed class Checkpoint
+{
+    public string Id { get; set; } = "";
+    public int AtSec { get; set; }
+    public Text2 Prompt { get; set; } = new("", "");
+    public List<string> Choices { get; set; } = new();
+    public int Answer { get; set; }
+}
+
 public sealed class Lesson
 {
     public string Id { get; set; } = "";
@@ -72,6 +84,9 @@ public sealed class Lesson
     public Text2 Title { get; set; } = new("", "");
     public Text2 Summary { get; set; } = new("", "");
     public string YoutubeId { get; set; } = "";
+    /// <summary>A self-hosted video the platform's own player controls; when set it wins over YoutubeId (1.2).</summary>
+    public string VideoUrl { get; set; } = "";
+    public List<Checkpoint> Checkpoints { get; set; } = new();
     public int DurationSec { get; set; }
     public int XpReward { get; set; } = 50;
     public List<string> Vocabulary { get; set; } = new();
@@ -155,6 +170,45 @@ public sealed class LessonProgress
     public int? QuizTotal { get; set; }
     public string? CompletedAt { get; set; }
     public string UpdatedAt { get; set; } = "";
+    public double WatchedSec { get; set; }
+    public double LastPositionSec { get; set; }
+    public int Replays { get; set; }
+    public Dictionary<string, bool> CheckpointResults { get; set; } = new();
+    public string? PausedUntil { get; set; }
+}
+
+/// <summary>The tenant's integrity ladder and limits (1.2).</summary>
+public sealed class IntegrityPolicy
+{
+    public int PauseAfterViolations { get; set; } = 3;
+    public int PauseMinutes { get; set; } = 10;
+    public int MaxSessions { get; set; } = 1;
+    public int MaxReplays { get; set; } = 3;
+    public int CheckpointTimeLimitSec { get; set; } = 60;
+    public int CheckpointXp { get; set; } = 10;
+}
+
+public sealed class Violation
+{
+    public string Id { get; set; } = "";
+    public string Uid { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string? LessonId { get; set; }
+    public string Type { get; set; } = "";
+    /// <summary>logged | warned | paused | kicked_old | refused</summary>
+    public string Action { get; set; } = "logged";
+    public string Detail { get; set; } = "";
+    public string At { get; set; } = "";
+}
+
+public sealed class LearnerSession
+{
+    public string Id { get; set; } = "";
+    public string Uid { get; set; } = "";
+    public string DeviceLabel { get; set; } = "";
+    public string StartedAt { get; set; } = "";
+    public string LastSeenAt { get; set; } = "";
+    public bool Active { get; set; } = true;
 }
 
 public sealed class QuestProgress
@@ -247,6 +301,7 @@ public sealed class OwnerSettings
     public Dictionary<string, AgeRule> AgeRules { get; set; } = new();
     public string LineUrl { get; set; } = "";
     public Text2 PaymentInstructions { get; set; } = new("", "");
+    public IntegrityPolicy Integrity { get; set; } = new();
 }
 
 public sealed class ChatMessage

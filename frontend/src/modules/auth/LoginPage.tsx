@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { isStaff, useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
@@ -13,7 +13,7 @@ import { USE_DEMO } from "@/services";
  * sample accounts sit under the form, each a click away.
  */
 export function LoginPage({ admin = false }: { admin?: boolean }) {
-  const { user, ready, signIn } = useAuth();
+  const { user, ready, signIn, notice, clearNotice } = useAuth();
   const { t } = useI18n();
   const { resolved, toggle } = useTheme();
   const nav = useNavigate();
@@ -21,8 +21,9 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<"idle" | "wrong" | "ok">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(notice);
   const [busy, setBusy] = useState(false);
+  useEffect(() => { if (notice) { setError(notice); setState("wrong"); clearNotice(); } }, [notice, clearNotice]);
 
   if (ready && user) return <Navigate to={isStaff(user) ? "/admin" : "/app"} replace />;
 
@@ -39,7 +40,7 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
       window.setTimeout(() => nav(loc.state?.from ?? (admin ? "/admin" : "/app"), { replace: true }), 350);
     } catch (err) {
       const code = err instanceof Error ? err.message : "";
-      setError(code === "ACCOUNT_DISABLED" ? t("login.disabled") : code === "FIREBASE_NOT_CONFIGURED" ? t("login.firebaseMissing") : t("login.failed"));
+      setError(code === "ACCOUNT_DISABLED" ? t("login.disabled") : code === "SESSION_REFUSED" ? t("login.sessionRefused") : code === "FIREBASE_NOT_CONFIGURED" ? t("login.firebaseMissing") : t("login.failed"));
       setState("wrong");
     } finally {
       setBusy(false);
