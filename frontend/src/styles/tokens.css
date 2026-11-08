@@ -1,0 +1,501 @@
+/*
+ * ELLP design-system tokens (adopted from the TMCL-PR theme).
+ * Retune colors, space and elevation here;
+ * every component reads these variables — never hard-code a hex in a component.
+ *
+ * Themes: the light palette is the default. `<html data-theme="dark">` swaps the
+ * color tokens below; everything that reads a token follows automatically.
+ * Printed documents (.pr-paper / .mt-paper) are paper, so they always re-declare
+ * the light palette for their own subtree — a dark PR form would print black.
+ */
+:root,
+.pr-paper,
+.mt-paper,
+.theme-light {
+  color-scheme: light;
+
+  /* base ground */
+  --color-bg: #f6f8fb;
+  --color-surface: #ffffff;
+  --color-text: #182433;
+  --color-accent: #066fd1;
+  --color-accent-2: #4299e1;
+  --color-divider: color-mix(in srgb, #182433 14%, transparent);
+  /* text/icons that sit on an accent or tone-solid fill */
+  --color-on-accent: #ffffff;
+  /* dimmed backdrop behind modals */
+  --color-scrim: color-mix(in srgb, #182433 50%, transparent);
+  /* deep brand panel (login hero, toasts) — dark in both themes, white text */
+  --color-brand-deep: #182433;
+  --color-on-brand-deep: #ffffff;
+  /* text on a solid status fill (red/green/amber) — white in both themes */
+  --tone-on-solid: #ffffff;
+
+  /* neutral ramp */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f6f8fb;
+  --color-neutral-200: #e6e7e9;
+  --color-neutral-300: #d6dbe1;
+  --color-neutral-400: #bbc3cd;
+  --color-neutral-500: #929dab;
+  --color-neutral-600: #667382;
+  --color-neutral-700: #49566c;
+  --color-neutral-800: #2c3b4e;
+  --color-neutral-900: #182433;
+  --muted: var(--color-neutral-600);
+
+  /* accent ramp */
+  --color-accent-100: #e7f1fb;
+  --color-accent-200: #cfe3f7;
+  --color-accent-300: #9fc8ef;
+  --color-accent-400: #6faee7;
+  --color-accent-500: #3f94de;
+  --color-accent-600: #066fd1;
+  --color-accent-700: #0558a6;
+  --color-accent-800: #04427c;
+  --color-accent-900: #022c52;
+
+  /* semantic status tones (from design TONE map) */
+  --tone-warn-fg: #9a5b00;
+  --tone-warn-bg: #fdf1d6;
+  --tone-warn-solid: #f59f00;
+  --tone-ok-fg: #1f7a32;
+  --tone-ok-bg: #e3f5e7;
+  --tone-ok-solid: #2fb344;
+  --tone-stop-fg: #a62828;
+  --tone-stop-bg: #fbe4e4;
+  --tone-stop-solid: #d63939;
+  --tone-danger: #d63939;
+  --tone-go-fg: var(--tone-ok-fg);
+  --tone-go-bg: var(--tone-ok-bg);
+
+  /* chart series (hand-drawn SVG charts) */
+  --chart-1: #066fd1;
+  --chart-2: #f59f00;
+  --chart-3: #2fb344;
+  --chart-4: #d63939;
+  --chart-5: #4263eb;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #182433 8%, transparent);
+  --shadow-md: 0 4px 12px color-mix(in srgb, #182433 12%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #182433 18%, transparent);
+}
+
+:root {
+  /* type */
+  --font-heading: "Inter", "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: "Inter", "Noto Sans Thai", system-ui, sans-serif;
+  --font-mono-num: "Inter", system-ui, sans-serif;
+
+  /* type scale — seven steps, nothing in between (labels 12, body 13/14, titles 16/18/22, big numbers 28) */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+
+  /* page frame */
+  --page-max: 1320px;
+  --page-pad: 24px;
+
+  /* radius */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  /* buttons, fields and drop-downs: the medium step until "Radius Form" picks its own; a text area never goes beyond 18px (a pill would not fit it) */
+  --radius-form: var(--radius-md);
+  --radius-form-area: min(var(--radius-form), 18px);
+
+  /* one height for every control on a row (button, field, drop-down): md everywhere, sm in tables and dense toolbars */
+  --control-h: 44px;
+  --control-h-sm: 36px;
+  --control-h-lg: 52px;
+}
+
+/*
+ * Customize (Settings > General and the Customize panel). Each choice is one attribute on <html>; a default has no
+ * attribute, so the values above stay the single source for the default look. See lib/appearance.ts.
+ */
+
+/* corner radius */
+:root[data-radius="none"] { --radius-sm: 0; --radius-md: 0; --radius-lg: 0; --radius-xl: 0; }
+:root[data-radius="md"]   { --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-xl: 14px; }
+:root[data-radius="lg"]   { --radius-sm: 6px; --radius-md: 9px; --radius-lg: 14px; --radius-xl: 20px; }
+:root[data-radius="xl"]   { --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px; --radius-xl: 26px; }
+
+/* Radius Form: the corner of buttons, fields and drop-downs on its own; unset it follows the radius step above */
+:root[data-radius-form="none"] { --radius-form: 0; }
+:root[data-radius-form="sm"]   { --radius-form: 4px; }
+:root[data-radius-form="md"]   { --radius-form: 8px; }
+:root[data-radius-form="lg"]   { --radius-form: 12px; }
+:root[data-radius-form="xl"]   { --radius-form: 18px; }
+:root[data-radius-form="full"] { --radius-form: 999px; }
+
+/*
+ * Smoothness (Settings > General > Motion): the length of the app's interaction animations (menus growing from their
+ * button, the phone drawer, side panels, the light/dark circle, pinned items) is written as `calc(<base> * var(--motion-scale))`.
+ * The default has no attribute. "Reduce motion" still switches the animations off whatever the scale is.
+ */
+:root                      { --motion-scale: 1; }
+:root[data-smooth="fast"]  { --motion-scale: 0.55; }
+:root[data-smooth="soft"]  { --motion-scale: 1.8; }
+:root[data-smooth="silky"] { --motion-scale: 3; }
+
+/*
+ * Frame of the open page in the pinned row of the top bar (Settings > General): the text colour by default, one of the
+ * accent colours (the same light / dark pairs as `--ac` / `--ad` below, steel being the hand-tuned default accent), or none.
+ */
+:root                                          { --pin-frame: var(--color-text); }
+:root[data-pin-frame="none"]                   { --pin-frame: transparent; }
+:root[data-pin-frame="steel"]                  { --pin-frame: #066fd1; }
+:root[data-pin-frame="azure"]                  { --pin-frame: #0b78a8; }
+:root[data-pin-frame="teal"]                   { --pin-frame: #2f7f86; }
+:root[data-pin-frame="green"]                  { --pin-frame: #3f7f58; }
+:root[data-pin-frame="indigo"]                 { --pin-frame: #4c58c4; }
+:root[data-pin-frame="violet"]                 { --pin-frame: #6b5fb0; }
+:root[data-pin-frame="rose"]                   { --pin-frame: #b0566f; }
+:root[data-pin-frame="amber"]                  { --pin-frame: #a8612a; }
+:root[data-pin-frame="slate"]                  { --pin-frame: #4f6076; }
+:root[data-theme="dark"][data-pin-frame="steel"]  { --pin-frame: #4299e1; }
+:root[data-theme="dark"][data-pin-frame="azure"]  { --pin-frame: #5cbde8; }
+:root[data-theme="dark"][data-pin-frame="teal"]   { --pin-frame: #62b5bb; }
+:root[data-theme="dark"][data-pin-frame="green"]  { --pin-frame: #6fbd8f; }
+:root[data-theme="dark"][data-pin-frame="indigo"] { --pin-frame: #8d96ee; }
+:root[data-theme="dark"][data-pin-frame="violet"] { --pin-frame: #a69ce3; }
+:root[data-theme="dark"][data-pin-frame="rose"]   { --pin-frame: #e58ea5; }
+:root[data-theme="dark"][data-pin-frame="amber"]  { --pin-frame: #e3a463; }
+:root[data-theme="dark"][data-pin-frame="slate"]  { --pin-frame: #9fb0c4; }
+
+/* page width */
+:root[data-container="narrow"] { --page-max: 1140px; }
+:root[data-container="wide"]   { --page-max: 1640px; }
+:root[data-container="fluid"]  { --page-max: none; }
+
+/* typeface (the packages are loaded on demand: lib/fonts.ts) */
+:root[data-font="plex"] {
+  --font-heading: "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif;
+  --font-mono-num: "IBM Plex Sans Thai", system-ui, sans-serif;
+}
+:root[data-font="sarabun"] {
+  --font-heading: "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+  --font-mono-num: "Sarabun", system-ui, sans-serif;
+}
+:root[data-font="system"] {
+  --font-heading: system-ui, -apple-system, "Segoe UI", "Leelawadee UI", "Noto Sans Thai", sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", "Leelawadee UI", "Noto Sans Thai", sans-serif;
+  --font-mono-num: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/*
+ * Dark palette. The ramps are mirrored rather than recolored: `neutral-100` is
+ * still "the faintest tint above the surface" and `accent-700` is still "accent
+ * text", so a component written against the light theme reads correctly here.
+ * `.theme-dark` / `.theme-light` pin a subtree to one palette (theme previews).
+ */
+:root[data-theme="dark"],
+.theme-dark {
+  color-scheme: dark;
+
+  --color-bg: #121b27;
+  --color-surface: #182433;
+  --color-text: #e6e9ee;
+  --color-accent: #4299e1;
+  --color-accent-2: #63b3ed;
+  --color-divider: color-mix(in srgb, #e6e9ee 14%, transparent);
+  --color-on-accent: #0f1418;
+  --color-scrim: color-mix(in srgb, #000000 62%, transparent);
+  --color-brand-deep: #0f1722;
+
+  --color-neutral-50: #1d2a3b;
+  --color-neutral-100: #1f2d40;
+  --color-neutral-200: #263548;
+  --color-neutral-300: #33465c;
+  --color-neutral-400: #4d6178;
+  --color-neutral-500: #7d8da1;
+  --color-neutral-600: #9aa8ba;
+  --color-neutral-700: #b6c1ce;
+  --color-neutral-800: #d0d8e1;
+  --color-neutral-900: #e6e9ee;
+
+  --color-accent-100: #12263d;
+  --color-accent-200: #163355;
+  --color-accent-300: #1c4676;
+  --color-accent-400: #2a64a3;
+  --color-accent-500: #3b82cc;
+  --color-accent-600: #4299e1;
+  --color-accent-700: #6cb2ee;
+  --color-accent-800: #9ccbf4;
+  --color-accent-900: #cfe5fa;
+
+  --tone-warn-fg: #f5c25a;
+  --tone-warn-bg: #3a2c0b;
+  --tone-warn-solid: #f59f00;
+  --tone-ok-fg: #7fd48f;
+  --tone-ok-bg: #14301c;
+  --tone-ok-solid: #2fb344;
+  --tone-stop-fg: #f08a8a;
+  --tone-stop-bg: #3b1818;
+  --tone-stop-solid: #d63939;
+  --tone-danger: #ef6b6b;
+
+  --chart-1: #4299e1;
+  --chart-2: #f5b73d;
+  --chart-3: #4ccf63;
+  --chart-4: #ef6b6b;
+  --chart-5: #7c8cf5;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #000000 45%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #000000 50%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #000000 60%, transparent);
+}
+
+/*
+ * Accent colours (Settings > General). `data-accent` carries one base colour per palette
+ * (--ac in light, --ad in dark) and the whole accent ramp is mixed from it, so a new colour
+ * is two lines. The default (steel) has no attribute and keeps the hand-tuned ramps above.
+ * Printed forms (.pr-paper / .mt-paper) declare their own palette and stay as they are.
+ */
+:root[data-accent="teal"]   { --ac: #2f7f86; --ad: #62b5bb; }
+:root[data-accent="green"]  { --ac: #3f7f58; --ad: #6fbd8f; }
+:root[data-accent="emerald"] { --ac: #0a8038; --ad: #4fd07f; }
+:root[data-accent="violet"] { --ac: #6b5fb0; --ad: #a69ce3; }
+:root[data-accent="rose"]   { --ac: #b0566f; --ad: #e58ea5; }
+:root[data-accent="amber"]  { --ac: #a8612a; --ad: #e3a463; }
+:root[data-accent="indigo"] { --ac: #4c58c4; --ad: #8d96ee; }
+:root[data-accent="azure"]  { --ac: #0b78a8; --ad: #5cbde8; }
+:root[data-accent="slate"]  { --ac: #4f6076; --ad: #9fb0c4; }
+
+:root[data-accent]:not([data-theme="dark"]),
+:root[data-accent] .theme-light {
+  --color-accent: var(--ac);
+  --color-accent-2: color-mix(in srgb, var(--ac) 82%, white);
+  --color-accent-100: color-mix(in srgb, var(--ac) 10%, white);
+  --color-accent-200: color-mix(in srgb, var(--ac) 22%, white);
+  --color-accent-300: color-mix(in srgb, var(--ac) 38%, white);
+  --color-accent-400: color-mix(in srgb, var(--ac) 60%, white);
+  --color-accent-500: color-mix(in srgb, var(--ac) 80%, white);
+  --color-accent-600: var(--ac);
+  --color-accent-700: color-mix(in srgb, var(--ac) 75%, black);
+  --color-accent-800: color-mix(in srgb, var(--ac) 50%, black);
+  --color-accent-900: color-mix(in srgb, var(--ac) 33%, black);
+  --chart-1: var(--ac);
+}
+:root[data-theme="dark"][data-accent],
+:root[data-accent] .theme-dark {
+  --color-accent: var(--ad);
+  --color-accent-2: color-mix(in srgb, var(--ad) 85%, #1c1f23);
+  --color-accent-100: color-mix(in srgb, var(--ad) 14%, #1c1f23);
+  --color-accent-200: color-mix(in srgb, var(--ad) 22%, #1c1f23);
+  --color-accent-300: color-mix(in srgb, var(--ad) 34%, #1c1f23);
+  --color-accent-400: color-mix(in srgb, var(--ad) 50%, #1c1f23);
+  --color-accent-500: color-mix(in srgb, var(--ad) 72%, #1c1f23);
+  --color-accent-600: var(--ad);
+  --color-accent-700: color-mix(in srgb, var(--ad) 75%, white);
+  --color-accent-800: color-mix(in srgb, var(--ad) 50%, white);
+  --color-accent-900: color-mix(in srgb, var(--ad) 30%, white);
+  --chart-1: var(--ad);
+}
+
+/*
+ * Grey base (Customize > Theme base). "slate" is the palette above and has no attribute. The others keep the lightness of
+ * every step of the neutral ramp (so every text/background pair keeps its contrast) and change only the hue and saturation;
+ * the muted grey is checked at 4.5:1. Generated, then pasted: change a base by re-running the generator, not by hand.
+ * The `[data-base].theme-*` selectors let a preview tile show a base inside a page that uses another.
+ */
+:root[data-base="gray"]:not([data-theme="dark"]),
+[data-base="gray"].theme-light {
+  --color-bg: #f7f8fa;
+  --color-text: #1e232d;
+  --color-brand-deep: #1e232d;
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f7f8fa;
+  --color-neutral-200: #e7e7e8;
+  --color-neutral-300: #d8dadf;
+  --color-neutral-400: #bfc2c9;
+  --color-neutral-500: #989ca5;
+  --color-neutral-600: #6c717c;
+  --color-neutral-700: #515764;
+  --color-neutral-800: #343a46;
+  --color-neutral-900: #1e232d;
+  --color-divider: color-mix(in srgb, #1e232d 14%, transparent);
+}
+
+:root[data-base="gray"][data-theme="dark"],
+[data-base="gray"].theme-dark {
+  --color-bg: #171b22;
+  --color-surface: #1e232d;
+  --color-text: #e8e9ec;
+  --color-brand-deep: #13171e;
+  --color-neutral-50: #242934;
+  --color-neutral-100: #262c39;
+  --color-neutral-200: #2e3440;
+  --color-neutral-300: #3c4453;
+  --color-neutral-400: #575f6e;
+  --color-neutral-500: #858c99;
+  --color-neutral-600: #a1a7b3;
+  --color-neutral-700: #bbc0c9;
+  --color-neutral-800: #d4d7dd;
+  --color-neutral-900: #e8e9ec;
+  --color-divider: color-mix(in srgb, #e8e9ec 14%, transparent);
+}
+
+:root[data-base="zinc"]:not([data-theme="dark"]),
+[data-base="zinc"].theme-light {
+  --color-bg: #f8f8f9;
+  --color-text: #232328;
+  --color-brand-deep: #232328;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f8f8f9;
+  --color-neutral-200: #e7e7e8;
+  --color-neutral-300: #dbdbdc;
+  --color-neutral-400: #c3c3c5;
+  --color-neutral-500: #9c9ca0;
+  --color-neutral-600: #727276;
+  --color-neutral-700: #58585d;
+  --color-neutral-800: #3a3a40;
+  --color-neutral-900: #232328;
+  --color-divider: color-mix(in srgb, #232328 14%, transparent);
+}
+
+:root[data-base="zinc"][data-theme="dark"],
+[data-base="zinc"].theme-dark {
+  --color-bg: #1b1b1e;
+  --color-surface: #232328;
+  --color-text: #e9e9eb;
+  --color-brand-deep: #17171a;
+  --color-neutral-50: #2a2a2e;
+  --color-neutral-100: #2d2d32;
+  --color-neutral-200: #34343a;
+  --color-neutral-300: #44444b;
+  --color-neutral-400: #5f5f66;
+  --color-neutral-500: #8c8c92;
+  --color-neutral-600: #a7a7ad;
+  --color-neutral-700: #c0c0c4;
+  --color-neutral-800: #d7d7da;
+  --color-neutral-900: #e9e9eb;
+  --color-divider: color-mix(in srgb, #e9e9eb 14%, transparent);
+}
+
+:root[data-base="neutral"]:not([data-theme="dark"]),
+[data-base="neutral"].theme-light {
+  --color-bg: #f8f8f8;
+  --color-text: #262626;
+  --color-brand-deep: #262626;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f8f8f8;
+  --color-neutral-200: #e8e8e8;
+  --color-neutral-300: #dcdcdc;
+  --color-neutral-400: #c4c4c4;
+  --color-neutral-500: #9e9e9e;
+  --color-neutral-600: #727272;
+  --color-neutral-700: #5a5a5a;
+  --color-neutral-800: #3d3d3d;
+  --color-neutral-900: #262626;
+  --color-divider: color-mix(in srgb, #262626 14%, transparent);
+}
+
+:root[data-base="neutral"][data-theme="dark"],
+[data-base="neutral"].theme-dark {
+  --color-bg: #1c1c1c;
+  --color-surface: #262626;
+  --color-text: #eaeaea;
+  --color-brand-deep: #181818;
+  --color-neutral-50: #2c2c2c;
+  --color-neutral-100: #303030;
+  --color-neutral-200: #373737;
+  --color-neutral-300: #484848;
+  --color-neutral-400: #626262;
+  --color-neutral-500: #8f8f8f;
+  --color-neutral-600: #aaaaaa;
+  --color-neutral-700: #c2c2c2;
+  --color-neutral-800: #d8d8d8;
+  --color-neutral-900: #eaeaea;
+  --color-divider: color-mix(in srgb, #eaeaea 14%, transparent);
+}
+
+:root[data-base="stone"]:not([data-theme="dark"]),
+[data-base="stone"].theme-light {
+  --color-bg: #f9f9f8;
+  --color-text: #2b2620;
+  --color-brand-deep: #2b2620;
+  --color-neutral-50: #fbfaf9;
+  --color-neutral-100: #f9f9f8;
+  --color-neutral-200: #e8e8e7;
+  --color-neutral-300: #dedcd9;
+  --color-neutral-400: #c8c4c0;
+  --color-neutral-500: #a39f9a;
+  --color-neutral-600: #78726c;
+  --color-neutral-700: #625b53;
+  --color-neutral-800: #443d36;
+  --color-neutral-900: #2b2620;
+  --color-divider: color-mix(in srgb, #2b2620 14%, transparent);
+}
+
+:root[data-base="stone"][data-theme="dark"],
+[data-base="stone"].theme-dark {
+  --color-bg: #211d18;
+  --color-surface: #2b2620;
+  --color-text: #eceae8;
+  --color-brand-deep: #1c1915;
+  --color-neutral-50: #322c26;
+  --color-neutral-100: #363029;
+  --color-neutral-200: #3e3730;
+  --color-neutral-300: #50483f;
+  --color-neutral-400: #6b635a;
+  --color-neutral-500: #968f88;
+  --color-neutral-600: #b0aaa4;
+  --color-neutral-700: #c7c2bd;
+  --color-neutral-800: #dcd9d5;
+  --color-neutral-900: #eceae8;
+  --color-divider: color-mix(in srgb, #eceae8 14%, transparent);
+}
+
+/*
+ * High contrast (Settings > General): text black/white, the muted greys pulled apart from the
+ * surface, borders you can see on a glary shop-floor screen. Only the neutral ramp changes, so it
+ * combines with any accent and with both themes.
+ */
+:root[data-contrast="high"]:not([data-theme="dark"]) {
+  --color-text: #000000;
+  --color-divider: color-mix(in srgb, #000000 38%, transparent);
+  --color-neutral-900: #000000;
+  --color-neutral-800: #1a1a1c;
+  --color-neutral-700: #2f2f31;
+  --color-neutral-600: #454547;
+  --color-neutral-500: #58585b;
+  --color-neutral-400: #77777a;
+  --color-neutral-300: #8c8c90;
+  --color-neutral-200: #a9a9ad;
+  --muted: var(--color-neutral-600);
+}
+:root[data-contrast="high"][data-theme="dark"] {
+  --color-text: #ffffff;
+  --color-divider: color-mix(in srgb, #ffffff 40%, transparent);
+  --color-neutral-900: #ffffff;
+  --color-neutral-800: #f0f1f2;
+  --color-neutral-700: #dcdee0;
+  --color-neutral-600: #c6c9cd;
+  --color-neutral-500: #aeb2b7;
+  --color-neutral-400: #8a9096;
+  --color-neutral-300: #6f757c;
+  --color-neutral-200: #565c63;
+  --muted: var(--color-neutral-600);
+}
+
+/*
+ * Theme "Soft" (Settings > General > Theme, lib/appearance.ts LOOK_PRESETS): a pale, faintly green page for the white cards to
+ * sit on, with a quieter shadow so a card is told apart by its edge and its colour, not by a drop. The vivid accent, the
+ * rounder corners and the pill-shaped controls are choices the theme sets; this block is only what no other choice can say.
+ * It comes last so it wins over the grey base. Dark mode keeps its own ground.
+ */
+:root[data-look="soft"]:not([data-theme="dark"]) {
+  --color-bg: #f0f6f1;
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #182433 4%, transparent);
+  --shadow-md: 0 6px 18px color-mix(in srgb, #182433 8%, transparent);
+}

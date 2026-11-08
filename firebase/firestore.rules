@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// ELLP Firestore rules (V1.0.0).
+// The browser talks to Firebase Auth only; every read and write of data goes through the C# API, which uses the Admin SDK
+// (bypasses these rules). So the client-side rules are CLOSED, with one exception: a signed-in person may read their own
+// users document, which lets a future client-only feature (or the Firebase console) check a profile without the API.
+// If a later version reads Firestore from the browser, open collections here one at a time and mirror RoleRules.cs.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

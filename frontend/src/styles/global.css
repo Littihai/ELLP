@@ -1,0 +1,26 @@
+/* Global base reset (after TMCL-PR). */
+@import "./tokens.css";
+@import "./ui.css";
+@import "./layout.css";
+@import "./learn.css";
+
+* { box-sizing: border-box; }
+html { overflow-y: scroll; scrollbar-gutter: stable; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-body); font-size: var(--text-md); line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--color-accent-700); text-decoration: none; }
+a:hover { color: var(--color-accent-800); }
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; }
+::selection { background: var(--color-accent-200); }
+h1, h2, h3, h4 { font-family: var(--font-heading); }
+
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

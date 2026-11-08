@@ -1,0 +1,25 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ellp.Api", "Ellp.Api\Ellp.Api.csproj", "{2A5E1F3C-6B8D-4E2A-9C1F-0D3B5A7E9F11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ellp.Api.Tests", "Ellp.Api.Tests\Ellp.Api.Tests.csproj", "{3B6F2A4D-7C9E-4F3B-8D2A-1E4C6B8F0A22}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A5E1F3C-6B8D-4E2A-9C1F-0D3B5A7E9F11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A5E1F3C-6B8D-4E2A-9C1F-0D3B5A7E9F11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A5E1F3C-6B8D-4E2A-9C1F-0D3B5A7E9F11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A5E1F3C-6B8D-4E2A-9C1F-0D3B5A7E9F11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B6F2A4D-7C9E-4F3B-8D2A-1E4C6B8F0A22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B6F2A4D-7C9E-4F3B-8D2A-1E4C6B8F0A22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B6F2A4D-7C9E-4F3B-8D2A-1E4C6B8F0A22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B6F2A4D-7C9E-4F3B-8D2A-1E4C6B8F0A22}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
