@@ -1,7 +1,7 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.4.0** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.0.0** (the first public release; the development milestones 1.0.1 → 1.4.0 are in the changelog) is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)

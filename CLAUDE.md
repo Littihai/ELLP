@@ -52,6 +52,8 @@ dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj -c Release
 - Frontend: pages call `api` from `services/index.ts` only; new pages live in `modules/learn` or `modules/admin`; new icons are
   added to `constants/icons.ts`; new strings to `i18n/dict.ts`.
 - Versioning: `frontend/package.json` and `Ellp.Api.csproj` `<Version>` move together; releases are `vX.Y.Z` tags with notes.
+  The public release of 2026-11-08 is **1.0.0** (the day's development milestones 1.0.1–1.4.0 were folded into it, decisions
+  0004–0008); the next versions are 1.0.1, 1.0.2 … The public demo runs on Firebase Hosting (`firebase/`), demo mode only.
 
 ## Open items
 
