@@ -59,7 +59,9 @@ whether learners see it and how many rows.
 | `3-5` | up to 5 | 50 % | hidden | forgiven (a broken chain carries on) |
 | `6-8` | 6–8 | 60 % | shown | forgiven |
 | `9-12` | 9–12 | 70 % | shown | strict |
-| `13+` | 13 and up | 70 % | shown | strict |
+| `13-15` | 13 to 15 | 70 % | shown | strict |
+| `16-18` | 16 to 18 | 70 % | shown | strict |
+| `18+` | adults | 70 % | shown | strict |
 | unknown | no birth year | 60 % | shown | strict |
 
 The age is `now.year − birthYear`. A tenant changes the three numbers per band in Settings. Programs list the bands they are for

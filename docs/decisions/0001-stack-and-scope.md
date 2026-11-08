@@ -11,7 +11,7 @@ between learners and admins. The first version is a click-through demo, not a pr
 ## Decision
 
 - **Frontend** React 19 + TypeScript + Vite with TMCL-PR's design tokens, i18n and UI conventions copied in (not a shared package:
-  the two repositories evolve apart; see TMCL-PR CLAUDE.md on copying code).
+  the two repositories evolve apart; see TMCL-PR's project guide on copying code).
 - **Backend** ASP.NET Core 9 Web API in TMCL-PR's module shape, with a store interface (`IEllpStore`) so the in-memory store and
   Firestore are interchangeable.
 - **Firebase** for Authentication and Firestore; the API is the only Firestore client (Admin SDK). Hosting is optional.

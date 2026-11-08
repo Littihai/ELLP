@@ -27,19 +27,23 @@ What you are getting, what to look at first, and what we would ask you to do nex
     receipt (EPA-2026-000x, printable). Mock tests → TOEIC Mini → answer → submit → a 10–990 estimate. Certificates: **คุณแอน**
     holds one; open `/verify` signed out and type ELLP-7K3M-QX2P. As **ครูเบนซ์**: Admin › Payments (confirm a transfer, refund),
     Admin › Mock tests (editor), Admin › Certificates.
-12. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 97 tests on the rules and the engine.
+12. Open `/placement` signed out: pick **English Pro Academy**, answer the 12 questions → an estimated CEFR level and the
+    programs that fit; sign up from the result page and the level is on your profile. Sign in as **คุณพ่อสมชาย**
+    (`somchai@example.com`): the family page with two children, the week next to the week before, the skills, "email this
+    report" (redirected in test mode). As **ครูเบนซ์**: Admin › Placement (editor and results), Admin › Parent reports (send to all).
+13. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 109 tests on the rules and the engine.
 
-## What 1.4 added (read decision 0008)
+## Where the newest code is (decision 0008)
 
 Placement test (`Modules/Placement`, `lib/placement.ts`), skill tags and the per-skill profile (`lib/skills.ts`), parent accounts
 and the weekly report (`Modules/Family`, `lib/family.ts`). The admin pages are Placement and Parent reports; the learner pages
-are `/app/placement` and `/app/family`; `/placement` is public. Sign in as `somchai@example.com` to see the parent view.
+are `/app/placement` and `/app/family`; `/placement` is public.
 
-## A good first task (1.3.x)
+## A good first task
 
 Take the Omise gateway live against a test account: set `OMISE_SECRET_KEY` / `OMISE_PUBLIC_KEY`, point the webhook at
-`/api/v1/payments/webhook/omise`, add the Omise.js card tokenisation to `PlanPage`, and write decision record 0008 with what the
-test account showed. Then the Playwright tests the roadmap lists (checkout, mock test, certificate verify).
+`/api/v1/payments/webhook/omise`, add the Omise.js card tokenisation to `PlanPage`, and write decision record 0009 with what the
+test account showed. Or, smaller: a scheduled Monday job that sends the parents' weekly reports (today a button). Then the Playwright tests the roadmap lists (checkout, mock test, certificate verify).
 
 ## Read in this order
 
@@ -51,7 +55,7 @@ test account showed. Then the Playwright tests the roadmap lists (checkout, mock
 
 ## What is deliberately simple
 
-- One profile per account; a parent uses the child's account (roadmap: parent accounts).
+- One profile per account. A parent has their own account and reads the children listed on it; the consent record says who confirmed, not who they are (roadmap: verified consent).
 - Badge conditions are code (two special cases); quests already pay badges from data.
 - Watch progress is a timer in demo mode. Live mode should use the YouTube IFrame API.
 - Firestore rules are closed; all access is via the API. Keep it that way unless a client-only feature needs a read.
@@ -63,7 +67,7 @@ test account showed. Then the Playwright tests the roadmap lists (checkout, mock
 - Backend module = `Modules/<Name>/<Name>Controller.cs` + `<Name>Service.cs`; rules in a static class with tests.
 - `ApiResponse<T>` on every endpoint; the client reads `code`.
 - Secrets never in the repository. Test mode stays on until someone deliberately turns both switches off.
-- Commits in English, one change each; release as `vX.Y.Z` with notes.
+- Commits in English, one change each; release as `vX.Y.Z` with notes. The full list of rules: [contributing.md](contributing.md).
 
 ## Also worth doing
 

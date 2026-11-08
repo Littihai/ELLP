@@ -15,7 +15,7 @@ npm ci
 npm run dev          # http://localhost:5174, VITE_USE_DEMO defaults to true
 ```
 
-Progress lives in this browser's localStorage under `ellp.demo.v1`. Admin › Settings › "Reset demo data" starts over.
+Progress lives in this browser's localStorage under `ellp.demo.v7` (the suffix changes when the seed's shape changes). Admin › Settings › "Reset demo data" starts over.
 
 ## Frontend + API (in-memory, demo header)
 

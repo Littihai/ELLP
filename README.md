@@ -65,7 +65,7 @@ quest Q, hold an N-day streak) all have to pass before its video opens. The demo
 
 ## Conditions by age (1.0.1)
 
-A learner's **birth year** (the year only) gives an age band: 3–5, 6–8, 9–12, 13+. Programs say which bands they are for, lessons can
+A learner's **birth year** (the year only) gives an age band: 3–5, 6–8, 9–12, 13–15, 16–18, 18+. Programs say which bands they are for, lessons can
 require `min_age` or `age_band`, and each band has its own pass mark, leaderboard visibility and streak forgiveness in the tenant's
 settings (gentler for the youngest). A teacher can open every band to one child. A parent's acknowledgement is recorded per learner
 as a first trace toward PDPA. Decision: [docs/decisions/0004-age-bands.md](docs/decisions/0004-age-bands.md).
@@ -104,6 +104,8 @@ Open http://localhost:5174. Pick a demo account on the sign-in page (the passwor
 | น้องพลอย ม.6 | ploy@example.com | Student, 17, school track (free) |
 | คุณเจ | jay@example.com | Adult, TOEIC track, Pro requested and pending |
 | คุณแอน | ann.k@example.com | Adult, ก.พ. track, Premium active |
+| คุณพ่อสมชาย | somchai@example.com | Parent of น้องมิ้นท์ and น้องปุ๊กกี้ (family page, weekly report) |
+| คุณแม่วรรณา | wanna@example.com | Parent of น้องพลอย |
 | ครูเบนซ์ | benz@englishpro.example.com | Admin of English Pro Academy (approvals, chats) |
 | Teacher Ann | ann@sunshine.example.com | Admin of Sunshine Kindergarten |
 | คุณครูใหญ่ สมศรี | principal@sunshine.example.com | Owner of Sunshine Kindergarten |
@@ -130,7 +132,7 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 ## Documents
 
 [docs/architecture.md](docs/architecture.md) · [docs/data-model.md](docs/data-model.md) · [docs/gamification.md](docs/gamification.md) ·
-[docs/dev-setup.md](docs/dev-setup.md) · [docs/roadmap.md](docs/roadmap.md) · [docs/handover.md](docs/handover.md) ·
+[docs/dev-setup.md](docs/dev-setup.md) · [docs/roadmap.md](docs/roadmap.md) · [docs/handover.md](docs/handover.md) · [docs/contributing.md](docs/contributing.md) ·
 [docs/decisions](docs/decisions) · [CHANGELOG.md](CHANGELOG.md)
 
 ## Honest limits of 1.0.0
@@ -139,10 +141,11 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 - The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
-- No automated UI tests yet; the backend has 97 rule and engine tests.
+- No automated UI tests yet; the backend has 109 rule and engine tests.
 - The Omise gateway is implemented but not yet exercised against a live account; the demo gateway moves no money.
 - TOEIC and IELTS mock scores are practice estimates, not official conversions.
 - The seeded exam lessons play a 5-second CC0 sample clip so the player rules can be seen; real courses replace the URL.
+- The weekly report to parents is written by rules from the numbers, and is sent by a button (a scheduled job is on the roadmap).
 
 ## License
 

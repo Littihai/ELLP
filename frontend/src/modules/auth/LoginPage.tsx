@@ -50,7 +50,7 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
   const signOutQuiet = () => signOut().catch(() => undefined);
 
   const demoIds = admin ? DEMO_STAFF : DEMO_LEARNERS;
-  const demo = USERS.filter((u) => demoIds.includes(u.uid));
+  const demo = demoIds.map((id) => USERS.find((u) => u.uid === id)).filter((u): u is (typeof USERS)[number] => !!u);
 
   return (
     <div className="lg-page">
