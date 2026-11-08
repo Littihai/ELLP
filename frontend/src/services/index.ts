@@ -4,5 +4,5 @@ import { liveApi } from "./liveApi";
 
 /** The data door the pages use (services/api.ts says what it does). */
 export const api: EllpApi = USE_DEMO ? demoApi : liveApi;
-export { USE_DEMO, visitorKey } from "./api";
+export { USE_DEMO, visitorKey, readSessionId, writeSessionId } from "./api";
 export type { ActivityResult, AdminStats, LeaderboardPeriod, PublicProgram } from "./api";

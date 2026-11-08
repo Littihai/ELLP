@@ -19,15 +19,17 @@ What you are getting, what to look at first, and what we would ask you to do nex
    pending Pro request; lesson 2 of TOEIC is locked behind the plan. Open the chat bubble and write to the academy.
 9. Sign in at `/admin/login` as **ครูเบนซ์** → Approvals: approve your request → the learner now opens lesson 2. Chats: reply
    to the visitor, or "create account from chat".
-10. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 72 tests on the rules and the engine.
+10. Sign in as **คุณแอน** (`ann.k@example.com`, Premium) → *IELTS Writing Task 2* lesson 1: the platform's player with the
+    strict rules listed beside it. Press play: at 2 s the video stops for an in-video question with a countdown; try to drag the
+    bar ahead (it snaps back); switch tabs three times (warning, warning, pause). As **ครูเบนซ์** open Admin › Learning integrity:
+    the events, the live sessions, and the pause to lift. Open the same learner in a second tab to see the session ladder.
+11. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 84 tests on the rules and the engine.
 
-## A good first task (1.2)
+## A good first task (1.2.x / 1.3)
 
-Build the self-hosted player for the exam tracks (roadmap 1.2): a `VideoPlayer` component over `<video>` with video.js or plyr,
-fed by a signed URL from a new API endpoint, reporting position every 15 s to `api.recordWatch`, with seek-forward blocked
-beyond the furthest watched second and the speed menu removed. Keep the YouTube path for the kids track. Then the first two
-player rules: in-video quiz checkpoints and the tab-switch warning. Decision record 0006 should say which streaming provider
-was picked and why.
+Pick the streaming provider (Cloudflare Stream or Mux), add hls.js to `VideoPlayer` for its URLs, and write decision record 0007
+with the cost and the DRM option. Then the Playwright tests the roadmap lists. For 1.3: online payment (Omise or Stripe) replacing
+transfer + slip on the plan page and the Approvals page.
 
 ## Read in this order
 

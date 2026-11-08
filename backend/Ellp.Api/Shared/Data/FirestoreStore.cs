@@ -124,4 +124,16 @@ public sealed class FirestoreStore : IEllpStore
         return null;
     }
     public Task UpsertChatAsync(ChatThread c, CancellationToken ct) => Set("chats", c.Id, c, ct);
+
+    public async Task<List<Violation>> ViolationsAsync(string ownerId, CancellationToken ct) => (await All<Violation>(Where("violations", "ownerId", ownerId), ct)).OrderByDescending(v => v.At).ToList();
+    public Task AddViolationAsync(Violation v, CancellationToken ct) => Set("violations", v.Id, v, ct);
+    public Task<List<LearnerSession>> SessionsAsync(string uid, CancellationToken ct) => All<LearnerSession>(Where("sessions", "uid", uid), ct);
+    public async Task<List<LearnerSession>> SessionsOfOwnerAsync(string ownerId, CancellationToken ct)
+    {
+        var uids = (await UsersAsync(ownerId, ct)).Select(u => u.Uid).ToList();
+        var all = new List<LearnerSession>();
+        foreach (var chunk in uids.Chunk(30)) all.AddRange(await All<LearnerSession>(_db.Collection("sessions").WhereIn("uid", chunk), ct));
+        return all;
+    }
+    public Task UpsertSessionAsync(LearnerSession s, CancellationToken ct) => Set("sessions", s.Id, s, ct);
 }

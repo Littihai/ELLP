@@ -1,7 +1,7 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.1.0** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.2.0** is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
@@ -12,6 +12,14 @@ Six **tracks**: children's songs, upper-secondary / university entrance (TGAT, A
 exam (ก.พ.) and foundations. Programs carry a CEFR level and, for exams, a target score. Anyone can read the **catalog** and watch
 the first lesson of every program; **sign-up** is self-service (or an admin signs the person up from the **chat**); **Free / Pro /
 Premium** plans open the rest, with payment confirmed by an admin in 1.1. Decision: [docs/decisions/0005-tracks-plans-signup-chat.md](docs/decisions/0005-tracks-plans-signup-chat.md).
+
+## Learning integrity (1.2)
+
+Exam-track lessons play in the platform's **own player**: no skipping ahead, speed locked to 1×, **questions inside the video**
+that must be answered to continue, a replay limit, fullscreen, a watermark, and real watch time. Tab switches, minimising and
+leaving fullscreen are recorded and climb a **ladder** (warn, warn, pause the lesson); a second device warns, then ends the old
+session, then is refused. Teachers see every event and lift pauses. A web page cannot stop screenshots or recordings, and the
+admin pages say so. Decision: [docs/decisions/0006-player-and-learning-integrity.md](docs/decisions/0006-player-and-learning-integrity.md).
 
 ## Two worlds, two doors
 
@@ -108,8 +116,9 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 - The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
-- No automated UI tests yet; the backend has 72 rule and engine tests.
-- Payment is manual (transfer + admin approval); online payment, self-hosted video and the anti-cheat rules are 1.2–1.3 (roadmap).
+- No automated UI tests yet; the backend has 84 rule and engine tests.
+- Payment is manual (transfer + admin approval); online payment, certificates, mock tests and DRM are 1.3 (roadmap).
+- The seeded exam lessons play a 5-second CC0 sample clip so the player rules can be seen; real courses replace the URL.
 
 ## License
 

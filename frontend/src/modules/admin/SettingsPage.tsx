@@ -7,6 +7,7 @@ import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api, USE_DEMO } from "@/services";
 import type { AgeBand, AgeRule, OwnerSettings } from "@/types";
 import { AGE_BANDS, DEFAULT_AGE_RULES } from "@/lib/gamification";
+import { DEFAULT_POLICY } from "@/lib/integrity";
 
 /** The tenant's outgoing email identity and test-mode guard, the leaderboard, and the build. */
 export function SettingsPage() {
@@ -21,7 +22,7 @@ function Inner() {
   const [s, setS] = useState<OwnerSettings | null>(null);
   const [busy, setBusy] = useState(false);
   // a tenant saved before 1.0.1 has no age rules yet: the defaults fill the gap until the next save
-  useEffect(() => { if (data) setS({ ...data, ageRules: { ...DEFAULT_AGE_RULES, ...(data.ageRules ?? {}) } }); }, [data]);
+  useEffect(() => { if (data) setS({ ...data, ageRules: { ...DEFAULT_AGE_RULES, ...(data.ageRules ?? {}) }, integrity: { ...DEFAULT_POLICY, ...(data.integrity ?? {}) } }); }, [data]);
   if (loading && !s) return <Loading />;
   if (error || !s) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
 
@@ -79,6 +80,15 @@ function Inner() {
               </tbody>
             </table>
           </div>
+        </Card>
+        <Card title={t("ig.policy")}>
+          <p className="muted small" style={{ margin: "0 0 12px" }}>{t("ig.policyHint")}</p>
+          <div className="form-grid">
+            {([["pauseAfterViolations", "ig.pauseAfter", 2, 10], ["pauseMinutes", "ig.pauseMinutes", 1, 1440], ["maxSessions", "ig.maxSessions", 1, 5], ["maxReplays", "ig.maxReplays", 0, 99], ["checkpointTimeLimitSec", "ig.cpTime", 10, 600], ["checkpointXp", "ig.cpXp", 0, 100]] as const).map(([k, label, min, max]) => (
+              <Field key={k} label={t(label)}><input className="input" type="number" min={min} max={max} value={s.integrity[k]} onChange={(e) => setS({ ...s, integrity: { ...s.integrity, [k]: Math.min(max, Math.max(min, parseInt(e.target.value || String(min), 10) || min)) } })} /></Field>
+            ))}
+          </div>
+          <div className="small muted" style={{ marginTop: 10 }}>{t("ig.honest")}</div>
         </Card>
         <Card title={t("set.about")}>
           <div className="small muted">ELLP {t("app.version")} {__APP_VERSION__} · build {new Date(__BUILD_TIME__).toLocaleString()} · {USE_DEMO ? t("app.demoBadge") : "live"}</div>

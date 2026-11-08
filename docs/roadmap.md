@@ -12,7 +12,18 @@ leaderboard and streak forgiveness, parent acknowledgement as a first PDPA trace
 Tracks (kids, school, TOEIC, IELTS, ก.พ., foundation), CEFR levels, age bands to 18+, public catalog and program pages,
 self-service sign-up, Free / Pro / Premium with admin approval, chat with admins (+ LINE link), create account from chat.
 
-## 1.2 — the player and the learning-integrity rules (the owner's table of conditions)
+## 1.2.0 — done: the player and the learning-integrity rules (decision 0006)
+
+Own player for self-hosted video, signed links, proctoring profiles, seek/speed locks, in-video questions, replay limit,
+fullscreen, watermark, attention ladder (warn, warn, pause), session limit (warn, end old, refuse), integrity log and policy.
+Left for later: a streaming provider with DRM, a player library for HLS, and Playwright tests of the player.
+
+## 1.2.x — hardening
+- HLS playback (hls.js) for Cloudflare Stream / Mux URLs; thumbnails from the stream.
+- Real fullscreen enforcement on mobile Safari (no Fullscreen API on iPhone: fall back to a "stay on this page" banner).
+- Playwright tests: checkpoint, seek snap-back, tab-switch ladder, session refuse.
+
+## 1.2 — the original plan (kept for reference)
 
 - **Self-hosted video** for the exam tracks (Firebase Storage first; Cloudflare Stream or Mux when DRM is wanted) with our own
   player (video.js / plyr): real watch position, signed URLs with expiry, no direct file URL.

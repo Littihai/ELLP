@@ -72,6 +72,11 @@ A free program is open to everyone signed in. The first lesson of every program 
 pro programs in the learner's chosen track; premium opens everything; pending or expired counts as free; staff see everything.
 The engine refuses a gated lesson with `PLAN_REQUIRED` (HTTP 402). Rules: `frontend/src/lib/access.ts`, `backend/.../PlanRules.cs`.
 
+## In-video questions (1.2)
+
+A checkpoint is answered once; a right answer pays the tenant's `checkpointXp` (10 by default) as a quiz event. A timeout scores
+0 and the video continues. Checkpoints do not count toward the lesson's pass mark; the end-of-lesson quiz does.
+
 ## Demo-only shortcut
 
 In demo mode the lesson page has "Mark as watched (demo)", which sends `watchedPct = 100`. A timer also credits watch time while

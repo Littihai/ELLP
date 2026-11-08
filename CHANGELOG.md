@@ -2,6 +2,28 @@
 
 All notable changes to ELLP. The format follows Keep a Changelog; versions follow TMCL-PR's order (1.0.0 … 1.0.9, 1.1.0).
 
+## [1.2.0] — 2026-11-08
+
+The platform's own player and the learning-integrity rules (decision 0006).
+
+### Added
+- `VideoPlayer` over `<video>` for self-hosted lessons (`videoUrl`): no seeking past the furthest point watched, speed locked to
+  1×, in-video questions (`checkpoints`) that pause the video and must be answered within the time limit (0 on timeout), replay
+  limit, fullscreen on strict lessons, drifting watermark, no download / picture-in-picture, real position and played seconds
+  reported every 15 s.
+- Proctoring profiles `off` / `standard` / `strict` with a default per track and a per-program override; the lesson page lists
+  the rules in force.
+- Attention events (tab switch, window blur, fullscreen exit) and the ladder: warn, warn, pause the lesson (tenant policy);
+  seek / speed / pause-spam / timeout events recorded; a teacher lifts a pause on the new Learning-integrity page.
+- Concurrent-session limit with heartbeat: warn, end the old session, refuse the new one.
+- Signed short-lived video links (`/media/{lesson}?uid&exp&sig`, HMAC) and a media endpoint that verifies them.
+- Tenant integrity policy in Settings (pause threshold and length, max sessions, max replays, checkpoint time and XP).
+- Seed: the exam lessons use a 5-second CC0 sample clip with checkpoints at 2 s and 4 s. 12 new xUnit tests (84 in all).
+
+### Changed
+- The engine refuses a paused lesson (`LESSON_PAUSED`) and recomputes the watched percentage from the reported position.
+- Demo state key moved to `ellp.demo.v5`.
+
 ## [1.1.0] — 2026-11-08
 
 Every audience, plans, sign-up and chat (decision 0005).

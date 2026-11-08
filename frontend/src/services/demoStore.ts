@@ -1,7 +1,9 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus, Program, Quest,
-  QuestProgress, SignUpInput, Track, UserProfile, XpEvent,
+  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus, Program, Quest,
+  QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
 } from "@/types";
+import { ATTENTION_TYPES, DEFAULT_POLICY, PROFILE_RULES, defaultProfileFor, ladderAction, sessionAlive, sessionDecision, type SessionDecision } from "@/lib/integrity";
+import { readSessionId, writeSessionId } from "./api";
 import {
   BADGES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, OWNERS, OWNER_SETTINGS, PROGRAMS, PROGRESS, QUESTS, QUEST_PROGRESS, USERS, XP_EVENTS,
 } from "@/data/seed";
@@ -31,20 +33,22 @@ interface State {
   mail: MailLog[];
   settings: OwnerSettings[];
   chats: ChatThread[];
+  violations: Violation[];
+  sessions: LearnerSession[];
   /** passwords of accounts created on the sign-up page (seeded accounts all use DEMO_PASSWORD) */
   passwords: Record<string, string>;
   sessionUid: string | null;
 }
 
-// v3: 1.1 added tracks, plans and chats; an older saved state is replaced by a fresh seed
-const KEY = "ellp.demo.v3";
+// v5: 1.2 added the player fields, violations and sessions; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v5";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
   return {
     owners: clone(OWNERS), programs: clone(PROGRAMS), lessons: clone(LESSONS), quests: clone(QUESTS), badges: clone(BADGES), users: clone(USERS),
     progress: clone(PROGRESS), questProgress: clone(QUEST_PROGRESS), xpEvents: clone(XP_EVENTS), messages: clone(MESSAGES), mail: clone(MAIL_LOG),
-    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), passwords: {}, sessionUid: null,
+    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), violations: [], sessions: [], passwords: {}, sessionUid: null,
   };
 }
 
@@ -84,10 +88,46 @@ class DemoStore implements EllpApi {
     if (!u || password !== expected) throw new Error("INVALID_CREDENTIALS");
     if (!u.active) throw new Error("ACCOUNT_DISABLED");
     this.s.sessionUid = u.uid;
+    if (u.role === "learner") this.openSession(u, "sign-in");   // may throw SESSION_REFUSED
     this.save(); this.emit();
     return structuredClone(u);
   }
-  async signOut() { this.s.sessionUid = null; this.save(); this.emit(); }
+
+  // ── sessions (1.2): one learner, a limited number of live tabs/devices; the ladder warns, ends the old one, then refuses ──
+  private policyOf(ownerId: string | null) { return this.s.settings.find((x) => x.ownerId === ownerId)?.integrity ?? DEFAULT_POLICY; }
+  private liveSessions(uid: string) { return this.s.sessions.filter((x) => x.uid === uid && x.active && sessionAlive(x.lastSeenAt)); }
+  private openSession(u: UserProfile, deviceLabel: string): { session: LearnerSession; decision: SessionDecision } {
+    const mine = readSessionId();
+    const existing = mine ? this.s.sessions.find((x) => x.id === mine && x.uid === u.uid && x.active) : undefined;
+    if (existing) { existing.lastSeenAt = nowIso(); return { session: structuredClone(existing), decision: "allow" }; }
+    const others = this.liveSessions(u.uid);
+    const prior = this.s.violations.filter((v) => v.uid === u.uid && v.type === "duplicate_session").length;
+    const decision = sessionDecision(others.length, prior, this.policyOf(u.ownerId).maxSessions);
+    if (decision !== "allow") {
+      this.s.violations.unshift({ id: newId("vio"), uid: u.uid, ownerId: u.ownerId ?? "", lessonId: null, type: "duplicate_session", action: decision === "warn" ? "warned" : decision === "kick_old" ? "kicked_old" : "refused", detail: `${others.length} other live session(s); ${deviceLabel}`, at: nowIso() });
+      if (decision === "refuse") { this.s.sessionUid = null; this.save(); throw new Error("SESSION_REFUSED"); }
+      if (decision === "kick_old") for (const o of others) o.active = false;
+    }
+    const session: LearnerSession = { id: newId("ses"), uid: u.uid, deviceLabel, startedAt: nowIso(), lastSeenAt: nowIso(), active: true };
+    this.s.sessions.unshift(session);
+    writeSessionId(session.id);
+    return { session: structuredClone(session), decision };
+  }
+  async startSession(deviceLabel: string) { const me = this.me(); const r = this.openSession(me, deviceLabel); this.save(); return r; }
+  async heartbeat(sessionId: string) {
+    const x = this.s.sessions.find((s) => s.id === sessionId);
+    if (!x) return;
+    if (!x.active) { writeSessionId(null); this.s.sessionUid = null; this.save(); this.emit(); throw new Error("SESSION_ENDED"); }
+    x.lastSeenAt = nowIso(); this.save();
+  }
+  async endSession(sessionId: string) { const x = this.s.sessions.find((s) => s.id === sessionId); if (x) x.active = false; writeSessionId(null); this.save(); }
+  async signOut() {
+    const mine = readSessionId();
+    const x = mine ? this.s.sessions.find((s) => s.id === mine) : undefined;
+    if (x) x.active = false;
+    writeSessionId(null);
+    this.s.sessionUid = null; this.save(); this.emit();
+  }
 
   /** The sign-up page: a learner account under the chosen tenant; a pro/premium wish becomes a pending request for the admin. */
   async signUp(input: SignUpInput): Promise<UserProfile> {
@@ -189,7 +229,7 @@ class DemoStore implements EllpApi {
   private progressOf(uid: string, lessonId: string): LessonProgress {
     let p = this.s.progress.find((x) => x.uid === uid && x.lessonId === lessonId);
     if (!p) {
-      p = { uid, lessonId, watchedPct: 0, completed: false, quizScore: null, quizTotal: null, completedAt: null, updatedAt: nowIso() };
+      p = { uid, lessonId, watchedPct: 0, completed: false, quizScore: null, quizTotal: null, completedAt: null, updatedAt: nowIso(), watchedSec: 0, lastPositionSec: 0, replays: 0, checkpointResults: {}, pausedUntil: null };
       this.s.progress.push(p);
     }
     return p;
@@ -287,6 +327,72 @@ class DemoStore implements EllpApi {
     return out;
   }
 
+  /** The player's position report: the percentage follows from the duration; played seconds and the position are kept for the admin. */
+  async recordPosition(lessonId: string, positionSec: number, watchedSec: number, durationSec: number): Promise<ActivityResult> {
+    const me = this.me();
+    const p = this.progressOf(me.uid, lessonId);
+    p.lastPositionSec = Math.max(0, Math.round(positionSec));
+    p.watchedSec = Math.max(p.watchedSec, Math.round(watchedSec));
+    const pct = durationSec > 0 ? Math.min(100, Math.round((positionSec / durationSec) * 100)) : 0;
+    return this.recordWatch(lessonId, pct);
+  }
+
+  /** An in-video question answered (or timed out): a right answer pays the policy's XP once. */
+  async recordCheckpoint(lessonId: string, checkpointId: string, correct: boolean): Promise<ActivityResult> {
+    const me = this.me();
+    const lesson = this.s.lessons.find((l) => l.id === lessonId);
+    if (!lesson) throw new Error("LESSON_NOT_FOUND");
+    const p = this.progressOf(me.uid, lessonId);
+    const out = this.newResult(p, me);
+    if (!(checkpointId in p.checkpointResults)) {
+      p.checkpointResults[checkpointId] = correct;
+      if (correct) { this.touchDay(me, out); this.addXp(me, lesson.programId, "quiz", this.policyOf(me.ownerId).checkpointXp, `${lesson.title.en} checkpoint`, out); }
+    }
+    out.levelAfter = levelFor(me.xp);
+    out.progress = structuredClone(p);
+    this.save(); this.emit();
+    return out;
+  }
+
+  async recordReplay(lessonId: string) {
+    const me = this.me();
+    const p = this.progressOf(me.uid, lessonId);
+    p.replays += 1; p.updatedAt = nowIso();
+    this.save();
+    return structuredClone(p);
+  }
+
+  async videoUrl(lessonId: string) { return this.s.lessons.find((l) => l.id === lessonId)?.videoUrl ?? ""; }
+
+  private profileOfLesson(lesson: Lesson) {
+    const program = this.s.programs.find((p) => p.id === lesson.programId);
+    return program ? (program.proctoring ?? defaultProfileFor(program.track)) : "off";
+  }
+
+  /** The ladder: attention events of a strict program warn twice and pause the lesson the third time; everything else is recorded. */
+  async reportViolation(lessonId: string | null, type: ViolationType, detail: string) {
+    const me = this.me();
+    const lesson = lessonId ? this.s.lessons.find((l) => l.id === lessonId) : undefined;
+    const policy = this.policyOf(me.ownerId);
+    let action = "logged";
+    let pausedUntil: string | null = null;
+    let strikes = 0;
+    if (lesson && ATTENTION_TYPES.includes(type)) {
+      const punish = PROFILE_RULES[this.profileOfLesson(lesson)].punishAttention;
+      strikes = this.s.violations.filter((v) => v.uid === me.uid && v.lessonId === lesson.id && ATTENTION_TYPES.includes(v.type) && v.action !== "logged").length + 1;
+      action = ladderAction(strikes, policy, punish);
+      if (action === "paused") {
+        const p = this.progressOf(me.uid, lesson.id);
+        p.pausedUntil = new Date(Date.now() + policy.pauseMinutes * 60000).toISOString();
+        pausedUntil = p.pausedUntil;
+      }
+    }
+    const violation: Violation = { id: newId("vio"), uid: me.uid, ownerId: me.ownerId ?? "", lessonId, type, action, detail, at: nowIso() };
+    this.s.violations.unshift(violation);
+    this.save();
+    return { violation: structuredClone(violation), action, pausedUntil, strikes };
+  }
+
   async submitQuiz(lessonId: string, answers: number[]): Promise<ActivityResult> {
     await delay(120);
     const me = this.me();
@@ -366,6 +472,9 @@ class DemoStore implements EllpApi {
     this.save(); this.emit();
     return structuredClone(u);
   }
+  async violations(ownerId: string) { return structuredClone(this.s.violations.filter((v) => v.ownerId === ownerId)); }
+  async sessions(ownerId: string) { const uids = new Set(this.s.users.filter((u) => u.ownerId === ownerId).map((u) => u.uid)); return structuredClone(this.s.sessions.filter((s) => uids.has(s.uid) && s.active && sessionAlive(s.lastSeenAt))); }
+  async liftPause(uid: string, lessonId: string) { const p = this.s.progress.find((x) => x.uid === uid && x.lessonId === lessonId); if (p) p.pausedUntil = null; this.save(); }
   async chatThreads(ownerId: string) { return structuredClone(this.s.chats.filter((c) => c.ownerId === ownerId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))); }
   async chatReply(threadId: string, text: string) {
     await delay(150);
@@ -444,7 +553,7 @@ class DemoStore implements EllpApi {
   async mailLog(ownerId: string) { return structuredClone(this.s.mail.filter((m) => m.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at))); }
   async settings(ownerId: string) {
     let s = this.s.settings.find((x) => x.ownerId === ownerId);
-    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" } }; this.s.settings.push(s); }
+    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" }, integrity: { ...DEFAULT_POLICY } }; this.s.settings.push(s); }
     return structuredClone(s);
   }
   async saveSettings(s: OwnerSettings) {
@@ -497,6 +606,7 @@ class DemoStore implements EllpApi {
     this.s.users = this.s.users.filter((u) => u.ownerId !== id);
     this.s.messages = this.s.messages.filter((m) => m.ownerId !== id);
     this.s.chats = this.s.chats.filter((c) => c.ownerId !== id);
+    this.s.violations = this.s.violations.filter((v) => v.ownerId !== id);
     this.save();
   }
   async resetDemo() { this.s = seed(); this.save(); this.emit(); }

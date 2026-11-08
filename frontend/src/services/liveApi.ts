@@ -1,7 +1,9 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
-  UserProfile, XpEvent,
+  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
+  UserProfile, Violation, XpEvent,
 } from "@/types";
+import type { SessionDecision } from "@/lib/integrity";
+import { readSessionId, writeSessionId } from "./api";
 import { API_BASE, type ActivityResult, type AdminStats, type EllpApi, type LeaderboardPeriod, type PublicProgram } from "./api";
 import { firebaseSignIn, firebaseSignOut, firebaseSignUp, getIdToken, onFirebaseUser } from "./firebase";
 
@@ -59,6 +61,18 @@ export const liveApi: EllpApi = {
   myQuests: () => get<QuestProgress[]>("/me/quests"),
   myXpEvents: () => get<XpEvent[]>("/me/xp"),
   recordWatch: (lessonId, watchedPct) => post<ActivityResult>("/me/watch", { lessonId, watchedPct }),
+  recordPosition: (lessonId, positionSec, watchedSec, durationSec) => post<ActivityResult>("/me/position", { lessonId, positionSec, watchedSec, durationSec }),
+  recordCheckpoint: (lessonId, checkpointId, correct) => post<ActivityResult>("/me/checkpoint", { lessonId, checkpointId, correct }),
+  recordReplay: (lessonId) => post<LessonProgress>("/me/replay", { lessonId }),
+  videoUrl: async (lessonId) => (await get<{ url: string }>(`/me/lessons/${lessonId}/video`)).url,
+  reportViolation: (lessonId, type, detail) => post<{ violation: Violation; action: string; pausedUntil: string | null; strikes: number }>("/me/violations", { lessonId, type, detail }),
+  async startSession(deviceLabel) {
+    const r = await post<{ session: LearnerSession; decision: SessionDecision }>("/me/sessions", { deviceLabel, existingId: readSessionId() });
+    writeSessionId(r.session.id);
+    return r;
+  },
+  heartbeat: (id) => post<void>(`/me/sessions/${id}/heartbeat`),
+  async endSession(id) { await del(`/me/sessions/${id}`); writeSessionId(null); },
   submitQuiz: (lessonId, answers) => post<ActivityResult>("/me/quiz", { lessonId, answers }),
   leaderboard: (programId, period: LeaderboardPeriod) => get<LeaderboardRow[]>(`/leaderboard${qs({ programId, period })}`),
   myMessages: () => get<InboxMessage[]>("/me/messages"),
@@ -70,6 +84,9 @@ export const liveApi: EllpApi = {
   saveMember: (u) => post<UserProfile>("/admin/members", u),
   removeMember: (uid) => del(`/admin/members/${uid}`),
   setMemberPlan: (uid, plan, status, planTrack, note) => put<UserProfile>(`/admin/members/${uid}/plan`, { plan, status, planTrack, note }),
+  violations: (ownerId) => get<Violation[]>(`/admin/violations${qs({ ownerId })}`),
+  sessions: (ownerId) => get<LearnerSession[]>(`/admin/sessions${qs({ ownerId })}`),
+  liftPause: (uid, lessonId) => del(`/admin/violations/pause${qs({ uid, lessonId })}`),
   chatThreads: (ownerId) => get<ChatThread[]>(`/admin/chat${qs({ ownerId })}`),
   chatReply: (id, text) => post<ChatThread>(`/admin/chat/${id}/reply`, { text }),
   chatSetStatus: (id, status, linkedUid) => put<ChatThread>(`/admin/chat/${id}/status`, { status, linkedUid: linkedUid ?? null }),

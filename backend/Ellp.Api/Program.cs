@@ -29,6 +29,10 @@ if (!builder.Environment.IsDevelopment())
 
 builder.Services.AddSingleton(auth);
 builder.Services.AddSingleton(email);
+// 1.2: signed video links (MEDIA_SIGNING_KEY; Development may use the built-in key)
+var media = builder.Configuration.GetSection("Media").Get<Ellp.Api.Modules.Integrity.MediaOptions>() ?? new Ellp.Api.Modules.Integrity.MediaOptions();
+media.SigningKey = Ellp.Api.Modules.Integrity.VideoTokenRules.ResolveKey(Environment.GetEnvironmentVariable("MEDIA_SIGNING_KEY") ?? media.SigningKey, builder.Environment.IsDevelopment());
+builder.Services.AddSingleton(media);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IProgressService, ProgressService>();

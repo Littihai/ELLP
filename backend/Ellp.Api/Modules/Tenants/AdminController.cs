@@ -106,6 +106,30 @@ public sealed class AdminController : ControllerBase
         return Ok(ApiResponse<UserProfile>.Ok(target));
     }
 
+    // ── learning integrity (1.2) ──
+    [HttpGet("violations")]
+    public async Task<IActionResult> Violations([FromQuery] string ownerId, CancellationToken ct)
+    { var (_, err) = await Staff(ownerId, ct); if (err is not null) return err; return Ok(ApiResponse<List<Violation>>.Ok(await _s.ViolationsAsync(ownerId, ct))); }
+
+    [HttpGet("sessions")]
+    public async Task<IActionResult> Sessions([FromQuery] string ownerId, CancellationToken ct)
+    {
+        var (_, err) = await Staff(ownerId, ct); if (err is not null) return err;
+        var now = DateTime.UtcNow;
+        return Ok(ApiResponse<List<LearnerSession>>.Ok((await _s.SessionsOfOwnerAsync(ownerId, ct)).Where(s => s.Active && Integrity.IntegrityRules.SessionAlive(s.LastSeenAt, now)).ToList()));
+    }
+
+    [HttpDelete("violations/pause")]
+    public async Task<IActionResult> LiftPause([FromQuery] string uid, [FromQuery] string lessonId, CancellationToken ct)
+    {
+        var target = await _s.UserAsync(uid, ct);
+        if (target is null) return NotFound(ApiResponse<object>.Fail(ApiCodes.NotFound, "member not found"));
+        var (_, err) = await Staff(target.OwnerId, ct); if (err is not null) return err;
+        var p = (await _s.ProgressAsync(uid, ct)).FirstOrDefault(x => x.LessonId == lessonId);
+        if (p is not null) { p.PausedUntil = null; await _s.UpsertProgressAsync(p, ct); }
+        return Ok(ApiResponse<object?>.Ok(null));
+    }
+
     // ── chats ──
     [HttpGet("chat")]
     public async Task<IActionResult> Chats([FromQuery] string ownerId, CancellationToken ct)

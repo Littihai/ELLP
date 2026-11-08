@@ -26,6 +26,7 @@ import { MailLogPage } from "@/modules/admin/MailLogPage";
 import { SettingsPage } from "@/modules/admin/SettingsPage";
 import { ApprovalsPage } from "@/modules/admin/ApprovalsPage";
 import { ChatAdminPage } from "@/modules/admin/ChatAdminPage";
+import { IntegrityPage } from "@/modules/admin/IntegrityPage";
 import { PlanPage } from "@/modules/learn/PlanPage";
 import { PublicShell } from "@/modules/public/PublicShell";
 import { LandingPage } from "@/modules/public/LandingPage";
@@ -75,6 +76,7 @@ export function App() {
                     <Route path="members" element={<MembersPage />} />
                     <Route path="approvals" element={<ApprovalsPage />} />
                     <Route path="chat" element={<ChatAdminPage />} />
+                    <Route path="integrity" element={<IntegrityPage />} />
                     <Route path="inbox" element={<InboxPage />} />
                     <Route path="mail" element={<MailLogPage />} />
                     <Route path="settings" element={<SettingsPage />} />
