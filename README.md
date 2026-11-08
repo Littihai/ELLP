@@ -1,7 +1,7 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.2.0** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.3.0** is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
@@ -20,6 +20,14 @@ that must be answered to continue, a replay limit, fullscreen, a watermark, and 
 leaving fullscreen are recorded and climb a **ladder** (warn, warn, pause the lesson); a second device warns, then ends the old
 session, then is refused. Teachers see every event and lift pauses. A web page cannot stop screenshots or recordings, and the
 admin pages say so. Decision: [docs/decisions/0006-player-and-learning-integrity.md](docs/decisions/0006-player-and-learning-integrity.md).
+
+## Paying, proving, practising (1.3)
+
+Plans are paid by **PromptPay or card** through a payment gateway (a simulated one in the demo; Omise / Opn Payments wired for
+live, keys on the server) or by **bank transfer** an admin confirms; a receipt is numbered and mailed, a plan runs for the tenant's
+months and reminds a week before it ends. Finishing a program issues a **certificate** with a code anyone can verify at
+`/verify`. The exam tracks have **timed mock tests** scored in the exam's own scale. Decision:
+[docs/decisions/0007-payments-certificates-mock-tests.md](docs/decisions/0007-payments-certificates-mock-tests.md).
 
 ## Two worlds, two doors
 
@@ -116,8 +124,9 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 - The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
-- No automated UI tests yet; the backend has 84 rule and engine tests.
-- Payment is manual (transfer + admin approval); online payment, certificates, mock tests and DRM are 1.3 (roadmap).
+- No automated UI tests yet; the backend has 97 rule and engine tests.
+- The Omise gateway is implemented but not yet exercised against a live account; the demo gateway moves no money.
+- TOEIC and IELTS mock scores are practice estimates, not official conversions.
 - The seeded exam lessons play a 5-second CC0 sample clip so the player rules can be seen; real courses replace the URL.
 
 ## License

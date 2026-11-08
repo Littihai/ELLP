@@ -24,6 +24,7 @@ export function DashboardPage() {
         <StatCard icon="book" label={t("adm.stat.programs")} value={data.programs} sub={`${t("adm.stat.lessons")}: ${data.lessons}`} tone="neutral" onClick={() => nav("/admin/programs")} />
         <StatCard icon="checklist" label={t("adm.stat.pending")} value={data.pendingPlans} tone={data.pendingPlans > 0 ? "warn" : "ok"} onClick={() => nav("/admin/approvals")} />
         <StatCard icon="comment" label={t("adm.stat.chats")} value={data.openChats} tone="neutral" onClick={() => nav("/admin/chat")} />
+        <StatCard icon="zap" label={t("adm.stat.revenue")} value={data.revenueThisMonth.toLocaleString()} tone="ok" onClick={() => nav("/admin/payments")} />
         <StatCard icon="inbox" label={t("adm.stat.open")} value={data.openMessages} tone={data.openMessages > 0 ? "warn" : "ok"} onClick={() => nav("/admin/inbox")} />
         <StatCard icon="zap" label={t("adm.stat.xpWeek")} value={data.xpThisWeek} tone="accent" />
         <StatCard icon="checkCircle" label={t("adm.stat.doneWeek")} value={data.completionsThisWeek} tone="ok" />

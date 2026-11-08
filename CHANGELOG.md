@@ -2,6 +2,25 @@
 
 All notable changes to ELLP. The format follows Keep a Changelog; versions follow TMCL-PR's order (1.0.0 … 1.0.9, 1.1.0).
 
+## [1.3.0] — 2026-11-08
+
+Online payment, certificates, mock tests, HLS (decision 0007).
+
+### Added
+- Payments: a gateway interface with `demo` (simulated PromptPay / card, Development-only "simulate" button), `omise` (Opn
+  Payments: PromptPay source + charge, webhook that re-reads the charge before settling; not yet exercised live) and `manual`
+  (transfer). Settling activates the plan for the tenant's months (renewals add on), joins programs, numbers a receipt
+  (`CODE-YEAR-0001`) and mails it through the test-mode guard. Printable receipt page; payment history; plan expiry with a
+  reminder a week before and an `expired` status; Admin › Payments (confirm, refund, fail) and revenue on the dashboard.
+- Certificates on program completion with a verification code and a public, printable verification page; Admin › Certificates.
+- Mock tests: sections of questions, a clock from the stored start time, server-side scoring in the exam's scale (TOEIC 10–990,
+  IELTS bands, percent), pass marks, XP, attempt history, tab switches recorded; Admin › Mock tests editor; Premium by default.
+- Tenant settings: plan prices and months, payment provider. hls.js loaded lazily for `.m3u8` lessons (Cloudflare Stream / Mux).
+- Seed: payments, a certificate, three mock tests (TOEIC, IELTS, ก.พ.). 13 new xUnit tests (97 in all).
+
+### Changed
+- Demo state key moved to `ellp.demo.v6`.
+
 ## [1.2.0] — 2026-11-08
 
 The platform's own player and the learning-integrity rules (decision 0006).

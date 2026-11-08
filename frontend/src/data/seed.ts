@@ -1,7 +1,8 @@
 import { DEFAULT_AGE_RULES } from "@/lib/gamification";
 import { DEFAULT_POLICY } from "@/lib/integrity";
+import { DEFAULT_PRICING } from "@/lib/commerce";
 import type {
-  Badge, ChatThread, InboxMessage, Lesson, LessonProgress, MailLog, Owner, OwnerSettings, Program, Quest, QuestProgress, UserProfile, XpEvent,
+  Badge, Certificate, ChatThread, MockAttempt, MockTest, Payment, InboxMessage, Lesson, LessonProgress, MailLog, Owner, OwnerSettings, Program, Quest, QuestProgress, UserProfile, XpEvent,
 } from "@/types";
 
 /**
@@ -245,7 +246,7 @@ export const QUESTS: Quest[] = [
     title: { th: "ผ่านแบบทดสอบ 3 ครั้งในสัปดาห์นี้", en: "Pass 3 quizzes this week" }, description: { th: "", en: "" }, goal: { type: "pass_quizzes", target: 3 } },
 ];
 
-const NO_PLAN = { plan: "free" as const, planStatus: "active" as const, planTrack: null, planNote: "", planRequestedAt: null };
+const NO_PLAN = { plan: "free" as const, planStatus: "active" as const, planTrack: null, planNote: "", planRequestedAt: null, planExpiresAt: null };
 const NO_CONSENT = { acknowledged: false, at: null as string | null, note: "" };
 const ACK = { acknowledged: true, at: T0 as string | null, note: "ผู้ปกครองรับทราบตอนสมัคร" };
 const staff = (uid: string, name: string, email: string, role: UserProfile["role"], ownerId: string | null, color: string): UserProfile => ({
@@ -260,17 +261,17 @@ export const USERS: UserProfile[] = [
   staff("u_admin_bright", "Khun Bee", "bee@brightkids.example.com", "admin", "own_bright", "#a8612a"),
   staff("u_admin_pro", "ครูเบนซ์", "benz@englishpro.example.com", "admin", "own_pro", "#0b78a8"),
   // kids (Sunshine)
-  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2019, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "pro", planStatus: "active", planTrack: "kids", planNote: "โอนแล้ว 1 ต.ค.", planRequestedAt: T0, xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
+  { uid: "u_mint", displayName: "น้องมิ้นท์", email: "mint.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2019, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "pro", planStatus: "active", planTrack: "kids", planNote: "โอนแล้ว 1 ต.ค.", planRequestedAt: T0, planExpiresAt: "2026-12-01T00:00:00.000Z", xp: 130, streakDays: 2, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_shark"], avatarColor: "#f59f00", active: true, createdAt: T0 },
   { uid: "u_tee", displayName: "น้องตี๋", email: "tee.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2017, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 320, streakDays: 5, lastActiveDate: null, badgeIds: ["bdg_first", "bdg_streak3"], avatarColor: "#4c58c4", active: true, createdAt: T0 },
-  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2016, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
+  { uid: "u_fah", displayName: "น้องฟ้า", email: "fah.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1", "prg_body"], birthYear: 2016, track: "kids", allowAllAges: false, parentConsent: ACK, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, planExpiresAt: "2027-01-01T00:00:00.000Z", xp: 560, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2fb344", active: true, createdAt: T0 },
   { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2020, track: "kids", allowAllAges: false, parentConsent: NO_CONSENT, ...NO_PLAN, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
   { uid: "u_pukkie", displayName: "น้องปุ๊กกี้", email: "pukkie.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2022, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 40, streakDays: 1, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
   // Bright Kids
   { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], birthYear: 2021, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
   // English Pro Academy (teens and adults)
   { uid: "u_ploy", displayName: "น้องพลอย ม.6", email: "ploy@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_tgat", "prg_found"], birthYear: 2009, track: "school", allowAllAges: false, parentConsent: ACK, ...NO_PLAN, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#0b78a8", active: true, createdAt: T0 },
-  { uid: "u_jay", displayName: "คุณเจ", email: "jay@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_toeic"], birthYear: 1998, track: "toeic", allowAllAges: false, parentConsent: NO_CONSENT, plan: "pro", planStatus: "pending", planTrack: "toeic", planNote: "โอน 1,290 บาท 7 พ.ย. 20:15 สลิปส่งทางแชทแล้ว", planRequestedAt: "2026-11-07T13:20:00.000Z", xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2f7f86", active: true, createdAt: "2026-11-07T13:00:00.000Z" },
-  { uid: "u_ann2", displayName: "คุณแอน", email: "ann.k@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_kpo", "prg_ielts"], birthYear: 1995, track: "kpo", allowAllAges: false, parentConsent: NO_CONSENT, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, xp: 260, streakDays: 3, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#a8612a", active: true, createdAt: T0 },
+  { uid: "u_jay", displayName: "คุณเจ", email: "jay@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_toeic"], birthYear: 1998, track: "toeic", allowAllAges: false, parentConsent: NO_CONSENT, plan: "pro", planStatus: "pending", planTrack: "toeic", planNote: "โอน 1,290 บาท 7 พ.ย. 20:15 สลิปส่งทางแชทแล้ว", planRequestedAt: "2026-11-07T13:20:00.000Z", planExpiresAt: null, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#2f7f86", active: true, createdAt: "2026-11-07T13:00:00.000Z" },
+  { uid: "u_ann2", displayName: "คุณแอน", email: "ann.k@example.com", role: "learner", ownerId: "own_pro", enrolledProgramIds: ["prg_kpo", "prg_ielts"], birthYear: 1995, track: "kpo", allowAllAges: false, parentConsent: NO_CONSENT, plan: "premium", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: T0, planExpiresAt: "2026-11-14T00:00:00.000Z", xp: 260, streakDays: 3, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#a8612a", active: true, createdAt: T0 },
 ];
 
 const P = (uid: string, lessonId: string, watchedPct: number, quizScore: number | null, quizTotal: number | null, completed: boolean): LessonProgress =>
@@ -342,9 +343,69 @@ export const CHATS: ChatThread[] = [
 ];
 
 export const OWNER_SETTINGS: OwnerSettings[] = [
-  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@sunshine-demo", paymentInstructions: { th: "โอนเข้าบัญชีโรงเรียน (ตัวอย่าง) 123-4-56789-0 แล้วแนบเลขอ้างอิงในช่องหมายเหตุ", en: "Transfer to the school account (sample) 123-4-56789-0 and put the reference in the note." }, integrity: { ...DEFAULT_POLICY } },
-  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" }, integrity: { ...DEFAULT_POLICY } },
-  { ownerId: "own_pro", email: { fromName: "English Pro Academy", fromAddress: "no-reply@englishpro.example.com", replyTo: "benz@englishpro.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 20 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@englishpro-demo", paymentInstructions: { th: "Pro 1,290 บาท/เดือน · Premium 2,490 บาท/เดือน (ตัวอย่าง) โอนเข้า ธ.ตัวอย่าง 987-6-54321-0 แล้วส่งสลิปในแชทหรือใส่เลขอ้างอิงในหมายเหตุ", en: "Pro 1,290 THB/month · Premium 2,490 THB/month (sample). Transfer to Sample Bank 987-6-54321-0 and send the slip in the chat or put the reference in the note." }, integrity: { ...DEFAULT_POLICY } },
+  { ownerId: "own_sunshine", email: { fromName: "Sunshine Kindergarten", fromAddress: "no-reply@sunshine.example.com", replyTo: "ann@sunshine.example.com", testMode: true, allowedRecipients: ["qa@sunshine.example.com"] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@sunshine-demo", paymentInstructions: { th: "โอนเข้าบัญชีโรงเรียน (ตัวอย่าง) 123-4-56789-0 แล้วแนบเลขอ้างอิงในช่องหมายเหตุ", en: "Transfer to the school account (sample) 123-4-56789-0 and put the reference in the note." }, integrity: { ...DEFAULT_POLICY }, pricing: { ...DEFAULT_PRICING }, paymentProvider: "demo" },
+  { ownerId: "own_bright", email: { fromName: "Bright Kids", fromAddress: "no-reply@brightkids.example.com", replyTo: "bee@brightkids.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" }, integrity: { ...DEFAULT_POLICY }, pricing: { ...DEFAULT_PRICING }, paymentProvider: "demo" },
+  { ownerId: "own_pro", email: { fromName: "English Pro Academy", fromAddress: "no-reply@englishpro.example.com", replyTo: "benz@englishpro.example.com", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 20 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "https://line.me/R/ti/p/@englishpro-demo", paymentInstructions: { th: "Pro 1,290 บาท/เดือน · Premium 2,490 บาท/เดือน (ตัวอย่าง) โอนเข้า ธ.ตัวอย่าง 987-6-54321-0 แล้วส่งสลิปในแชทหรือใส่เลขอ้างอิงในหมายเหตุ", en: "Pro 1,290 THB/month · Premium 2,490 THB/month (sample). Transfer to Sample Bank 987-6-54321-0 and send the slip in the chat or put the reference in the note." }, integrity: { ...DEFAULT_POLICY }, pricing: { ...DEFAULT_PRICING }, paymentProvider: "demo" },
+];
+
+
+export const PAYMENTS: Payment[] = [
+  { id: "pay_1", uid: "u_ann2", ownerId: "own_pro", plan: "premium", planTrack: null, amount: 2490, currency: "THB", months: 1, method: "promptpay", provider: "demo", status: "paid", reference: "chrg_demo_0001", qrPayload: null, receiptNo: "EPA-2026-0001", note: "", createdAt: "2026-10-14T09:00:00.000Z", paidAt: "2026-10-14T09:02:00.000Z" },
+  { id: "pay_2", uid: "u_jay", ownerId: "own_pro", plan: "pro", planTrack: "toeic", amount: 1290, currency: "THB", months: 1, method: "transfer", provider: "manual", status: "pending", reference: "โอน 7 พ.ย. 20:15", qrPayload: null, receiptNo: null, note: "สลิปส่งทางแชทแล้ว", createdAt: "2026-11-07T13:20:00.000Z", paidAt: null },
+  { id: "pay_3", uid: "u_mint", ownerId: "own_sunshine", plan: "pro", planTrack: "kids", amount: 1290, currency: "THB", months: 1, method: "transfer", provider: "manual", status: "paid", reference: "โอน 1 ต.ค.", qrPayload: null, receiptNo: "SUN-2026-0001", note: "", createdAt: "2026-10-01T08:00:00.000Z", paidAt: "2026-10-01T10:00:00.000Z" },
+];
+
+export const CERTIFICATES: Certificate[] = [
+  { id: "cert_1", code: "ELLP-7K3M-QX2P", uid: "u_ann2", learnerName: "คุณแอน", ownerId: "own_pro", ownerName: { th: "สถาบันติวอิงลิชโปร", en: "English Pro Academy" }, programId: "prg_kpo", programTitle: { th: "ภาษาอังกฤษ ก.พ. ภาค ก", en: "Civil Service Exam (ก.พ.) English" }, track: "kpo", cefr: "A2", lessons: 2, xpEarned: 160, issuedAt: "2026-11-01T10:00:00.000Z" },
+];
+
+const mq = (id: string, th: string, en: string, choices: string[], answer: number) => ({ id, prompt: { th, en }, choices, answer });
+
+export const MOCK_TESTS: MockTest[] = [
+  {
+    id: "mock_toeic_mini", ownerId: "own_pro", track: "toeic", durationMin: 10, scoring: "toeic", passMark: 600, requiredPlan: "premium", published: true,
+    title: { th: "TOEIC Mini Test (Listening + Reading)", en: "TOEIC Mini Test (Listening + Reading)" },
+    description: { th: "6 ข้อ 10 นาที คะแนนเทียบสเกล 10–990 โดยประมาณ", en: "6 items in 10 minutes, scaled to the 10–990 range (approximate)." },
+    sections: [
+      { id: "s1", title: { th: "Part 2: Question–Response", en: "Part 2: Question–Response" }, questions: [
+        mq("q1", "\"When does the meeting start?\"", "\"When does the meeting start?\"", ["In room 204", "At nine o'clock", "Yes, it does"], 1),
+        mq("q2", "\"Could you send me the report?\"", "\"Could you send me the report?\"", ["Sure, right away", "It was yesterday", "On the second floor"], 0),
+        mq("q3", "\"Who is leading the project?\"", "\"Who is leading the project?\"", ["Next Monday", "Ms. Tanaka is", "About two weeks"], 1),
+      ] },
+      { id: "s2", title: { th: "Part 5: Incomplete Sentences", en: "Part 5: Incomplete Sentences" }, questions: [
+        mq("q4", "The invoice must be paid ___ 30 days.", "The invoice must be paid ___ 30 days.", ["within", "until", "since"], 0),
+        mq("q5", "Our sales ___ by 12 % last quarter.", "Our sales ___ by 12 % last quarter.", ["rise", "rose", "risen"], 1),
+        mq("q6", "Please review the ___ document before signing.", "Please review the ___ document before signing.", ["attach", "attaching", "attached"], 2),
+      ] },
+    ],
+  },
+  {
+    id: "mock_ielts_mini", ownerId: "own_pro", track: "ielts", durationMin: 8, scoring: "ielts", passMark: 6.5, requiredPlan: "premium", published: true,
+    title: { th: "IELTS Reading Mini (True/False/Not Given)", en: "IELTS Reading Mini (True/False/Not Given)" },
+    description: { th: "4 ข้อ 8 นาที ประเมินเป็น Band โดยประมาณ", en: "4 items in 8 minutes, estimated as a band." },
+    sections: [{ id: "s1", title: { th: "Passage: Urban bees", en: "Passage: Urban bees" }, questions: [
+      mq("q1", "Bees in cities produce more honey than rural bees. (ตามบทความ)", "Bees in cities produce more honey than rural bees.", ["True", "False", "Not Given"], 0),
+      mq("q2", "Pesticide use is lower in cities.", "Pesticide use is lower in cities.", ["True", "False", "Not Given"], 0),
+      mq("q3", "Most beekeepers in London are over 60.", "Most beekeepers in London are over 60.", ["True", "False", "Not Given"], 2),
+      mq("q4", "The author recommends banning rooftop hives.", "The author recommends banning rooftop hives.", ["True", "False", "Not Given"], 1),
+    ] }],
+  },
+  {
+    id: "mock_kpo_mini", ownerId: "own_pro", track: "kpo", durationMin: 6, scoring: "percent", passMark: 60, requiredPlan: "premium", published: true,
+    title: { th: "ก.พ. ภาค ก ภาษาอังกฤษ (ชุดสั้น)", en: "Civil service English (short set)" },
+    description: { th: "5 ข้อ 6 นาที ผ่านที่ 60 % เหมือนเกณฑ์จริง", en: "5 items in 6 minutes; 60 % passes, like the real exam." },
+    sections: [{ id: "s1", title: { th: "Conversation & Structure", en: "Conversation & Structure" }, questions: [
+      mq("q1", "A: \"Would you like some coffee?\" B: \"___\"", "A: \"Would you like some coffee?\" B: \"___\"", ["Yes, please.", "Yes, I like.", "No, I don't like coffee very."], 0),
+      mq("q2", "She has lived here ___ 2019.", "She has lived here ___ 2019.", ["for", "since", "from"], 1),
+      mq("q3", "The documents ___ by the committee yesterday.", "The documents ___ by the committee yesterday.", ["approved", "were approved", "have approved"], 1),
+      mq("q4", "\"How about joining us?\" means …", "\"How about joining us?\" means …", ["an invitation", "a complaint", "an apology"], 0),
+      mq("q5", "If I ___ you, I would apply.", "If I ___ you, I would apply.", ["am", "was", "were"], 2),
+    ] }],
+  },
+];
+
+export const MOCK_ATTEMPTS: MockAttempt[] = [
+  { id: "att_1", uid: "u_ann2", testId: "mock_kpo_mini", ownerId: "own_pro", startedAt: "2026-11-02T10:00:00.000Z", submittedAt: "2026-11-02T10:05:00.000Z", answers: { q1: 0, q2: 1, q3: 1, q4: 0, q5: 1 }, raw: 4, total: 5, sectionScores: [{ sectionId: "s1", raw: 4, total: 5 }], scaled: 80, scaledLabel: "80 %", passed: true, timedOut: false },
 ];
 
 /** The accounts the demo sign-in pages offer. The password is the same for every seeded account and is shown on the page. */

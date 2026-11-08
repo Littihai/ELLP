@@ -26,6 +26,90 @@ export type Plan = "free" | "pro" | "premium";
 export const PLANS: Plan[] = ["free", "pro", "premium"];
 export type PlanStatus = "active" | "pending" | "expired";
 
+// ── 1.3 (decision 0007): payments, certificates, mock tests ──
+export type PaymentMethod = "promptpay" | "card" | "transfer";
+export type PaymentProvider = "demo" | "omise" | "manual";
+export type PaymentStatus = "pending" | "paid" | "failed" | "expired" | "refunded";
+
+export interface Pricing { pro: number; premium: number; currency: "THB"; months: number }
+
+/** One attempt to pay for a plan: through the gateway (PromptPay / card) or by a transfer an admin confirms. */
+export interface Payment {
+  id: string;
+  uid: string;
+  ownerId: string;
+  plan: Plan;
+  planTrack: Track | null;
+  amount: number;
+  currency: "THB";
+  months: number;
+  method: PaymentMethod;
+  provider: PaymentProvider;
+  status: PaymentStatus;
+  /** the provider's charge id, or the transfer reference the learner typed */
+  reference: string;
+  /** the PromptPay payload the QR shows (demo: a fake one) */
+  qrPayload: string | null;
+  receiptNo: string | null;
+  note: string;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+/** A course certificate; `code` is what a parent or employer verifies on /certificate/{code}. */
+export interface Certificate {
+  id: string;
+  code: string;
+  uid: string;
+  learnerName: string;
+  ownerId: string;
+  ownerName: Text2;
+  programId: string;
+  programTitle: Text2;
+  track: Track;
+  cefr: Cefr;
+  lessons: number;
+  xpEarned: number;
+  issuedAt: string;
+}
+
+export type MockScoring = "toeic" | "ielts" | "percent";
+export interface MockQuestion { id: string; prompt: Text2; choices: string[]; answer: number }
+export interface MockSection { id: string; title: Text2; questions: MockQuestion[] }
+
+/** A timed practice exam: sections of questions, a clock, and a score in the exam's own scale. */
+export interface MockTest {
+  id: string;
+  ownerId: string;
+  track: Track;
+  title: Text2;
+  description: Text2;
+  durationMin: number;
+  scoring: MockScoring;
+  /** the pass mark in the scale: TOEIC score, IELTS band, or percent */
+  passMark: number;
+  requiredPlan: Plan;
+  sections: MockSection[];
+  published: boolean;
+}
+
+export interface MockAttempt {
+  id: string;
+  uid: string;
+  testId: string;
+  ownerId: string;
+  startedAt: string;
+  submittedAt: string | null;
+  answers: Record<string, number>;
+  raw: number;
+  total: number;
+  sectionScores: { sectionId: string; raw: number; total: number }[];
+  scaled: number;
+  scaledLabel: string;
+  passed: boolean;
+  timedOut: boolean;
+}
+
 /** How strictly a program's player behaves (1.2, decision 0006): off for songs, standard for foundations, strict for exams. */
 export type ProctoringProfile = "off" | "standard" | "strict";
 export const PROFILES: ProctoringProfile[] = ["off", "standard", "strict"];
@@ -200,6 +284,8 @@ export interface UserProfile {
   /** what the learner wrote with the request (slip reference, school, phone) and what the admin noted back */
   planNote: string;
   planRequestedAt: string | null;
+  /** when a paid plan ends (1.3); null for free or not yet paid */
+  planExpiresAt: string | null;
   /** a teacher or parent opened every age band to this learner (override) */
   allowAllAges: boolean;
   /** a parent or guardian acknowledged the use of the platform (a first trace for PDPA; full consent flow comes with parent accounts) */
@@ -303,6 +389,9 @@ export interface OwnerSettings {
   /** what a visitor reads under "how to pay" when requesting a plan */
   paymentInstructions: Text2;
   integrity: IntegrityPolicy;
+  pricing: Pricing;
+  /** demo (the simulated gateway) | omise (Opn Payments, keys on the server) | manual (transfer + slip only) */
+  paymentProvider: PaymentProvider;
 }
 
 /** A chat between a visitor (not signed in yet) or a learner and the tenant's admins (1.1). */

@@ -77,6 +77,11 @@ The engine refuses a gated lesson with `PLAN_REQUIRED` (HTTP 402). Rules: `front
 A checkpoint is answered once; a right answer pays the tenant's `checkpointXp` (10 by default) as a quiz event. A timeout scores
 0 and the video continues. Checkpoints do not count toward the lesson's pass mark; the end-of-lesson quiz does.
 
+## Mock tests (1.3)
+
+A finished mock test pays 20 XP; a pass pays 50. Scores are estimates in the exam's scale: TOEIC `10 + fraction × 980` rounded to 5,
+IELTS `fraction × 9` rounded to a half band (floor 1.0), percent otherwise. Rules: `lib/commerce.ts`, `MockScoringRules.cs`.
+
 ## Demo-only shortcut
 
 In demo mode the lesson page has "Mark as watched (demo)", which sends `watchedPct = 100`. A timer also credits watch time while

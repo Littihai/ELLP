@@ -24,6 +24,11 @@ public sealed class InMemoryStore : IEllpStore
     private readonly ConcurrentDictionary<string, ChatThread> _chats = new();
     private readonly ConcurrentBag<Violation> _violations = new();
     private readonly ConcurrentDictionary<string, LearnerSession> _sessions = new();
+    private readonly ConcurrentDictionary<string, Payment> _payments = new();
+    private readonly ConcurrentDictionary<string, Certificate> _certificates = new();
+    private readonly ConcurrentDictionary<string, MockTest> _mockTests = new();
+    private readonly ConcurrentDictionary<string, MockAttempt> _mockAttempts = new();
+    private readonly ConcurrentDictionary<string, int> _receiptSeq = new();
 
     public InMemoryStore()
     {
@@ -38,6 +43,10 @@ public sealed class InMemoryStore : IEllpStore
         foreach (var x in Copy(SeedData.Settings)) _settings[x.OwnerId] = x;
         foreach (var x in Copy(SeedData.Messages)) _messages[x.Id] = x;
         foreach (var x in Copy(SeedData.Chats)) _chats[x.Id] = x;
+        foreach (var x in Copy(SeedData.Payments)) _payments[x.Id] = x;
+        foreach (var x in Copy(SeedData.Certificates)) _certificates[x.Id] = x;
+        foreach (var x in Copy(SeedData.MockTests)) _mockTests[x.Id] = x;
+        _receiptSeq["own_pro:2026"] = 1; _receiptSeq["own_sunshine:2026"] = 1;
     }
 
     private static readonly System.Text.Json.JsonSerializerOptions CloneJson = new(System.Text.Json.JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
@@ -115,4 +124,21 @@ public sealed class InMemoryStore : IEllpStore
         return L(_sessions.Values.Where(s => uids.Contains(s.Uid)));
     }
     public Task UpsertSessionAsync(LearnerSession s, CancellationToken ct) { _sessions[s.Id] = s; return Task.CompletedTask; }
+
+    public Task<List<Payment>> PaymentsAsync(string ownerId, CancellationToken ct) => L(_payments.Values.Where(p => p.OwnerId == ownerId).OrderByDescending(p => p.CreatedAt));
+    public Task<List<Payment>> PaymentsOfUserAsync(string uid, CancellationToken ct) => L(_payments.Values.Where(p => p.Uid == uid).OrderByDescending(p => p.CreatedAt));
+    public Task<Payment?> PaymentAsync(string id, CancellationToken ct) => Task.FromResult(_payments.GetValueOrDefault(id));
+    public Task<Payment?> PaymentByReferenceAsync(string reference, CancellationToken ct) => Task.FromResult(_payments.Values.FirstOrDefault(p => p.Reference == reference));
+    public Task UpsertPaymentAsync(Payment p, CancellationToken ct) { _payments[p.Id] = p; return Task.CompletedTask; }
+    public Task<int> NextReceiptSeqAsync(string ownerId, int year, CancellationToken ct) => Task.FromResult(_receiptSeq.AddOrUpdate($"{ownerId}:{year}", 1, (_, n) => n + 1));
+    public Task<List<Certificate>> CertificatesAsync(string ownerId, CancellationToken ct) => L(_certificates.Values.Where(c => c.OwnerId == ownerId).OrderByDescending(c => c.IssuedAt));
+    public Task<List<Certificate>> CertificatesOfUserAsync(string uid, CancellationToken ct) => L(_certificates.Values.Where(c => c.Uid == uid));
+    public Task<Certificate?> CertificateByCodeAsync(string code, CancellationToken ct) => Task.FromResult(_certificates.Values.FirstOrDefault(c => c.Code == code));
+    public Task UpsertCertificateAsync(Certificate c, CancellationToken ct) { _certificates[c.Id] = c; return Task.CompletedTask; }
+    public Task<List<MockTest>> MockTestsAsync(string ownerId, CancellationToken ct) => L(_mockTests.Values.Where(t => t.OwnerId == ownerId));
+    public Task UpsertMockTestAsync(MockTest t, CancellationToken ct) { _mockTests[t.Id] = t; return Task.CompletedTask; }
+    public Task DeleteMockTestAsync(string id, CancellationToken ct) { _mockTests.TryRemove(id, out _); return Task.CompletedTask; }
+    public Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct) => L(_mockAttempts.Values.Where(a => a.OwnerId == ownerId).OrderByDescending(a => a.StartedAt));
+    public Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct) => L(_mockAttempts.Values.Where(a => a.Uid == uid).OrderByDescending(a => a.StartedAt));
+    public Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct) { _mockAttempts[a.Id] = a; return Task.CompletedTask; }
 }

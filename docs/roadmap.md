@@ -18,6 +18,16 @@ Own player for self-hosted video, signed links, proctoring profiles, seek/speed 
 fullscreen, watermark, attention ladder (warn, warn, pause), session limit (warn, end old, refuse), integrity log and policy.
 Left for later: a streaming provider with DRM, a player library for HLS, and Playwright tests of the player.
 
+## 1.3.0 — done: payment, certificates, mock tests, HLS (decision 0007)
+
+Gateway interface (demo / Omise / manual), receipts and expiry, certificates with public verification, timed mock tests scored
+in the exam's scale, lazy hls.js for streaming providers.
+
+## 1.3.x — go live with money
+- Run the Omise path against a test account: PromptPay QR, card token via Omise.js, webhook endpoint reachable, refund API.
+- E-tax invoice fields (tax id, address) on receipts for tenants that need them.
+- Scheduled job for plan expiry and reminders (today they run when the learner visits).
+
 ## 1.2.x — hardening
 - HLS playback (hls.js) for Cloudflare Stream / Mux URLs; thumbnails from the stream.
 - Real fullscreen enforcement on mobile Safari (no Fullscreen API on iPhone: fall back to a "stay on this page" banner).

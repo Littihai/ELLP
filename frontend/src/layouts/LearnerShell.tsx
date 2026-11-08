@@ -15,7 +15,9 @@ const NAV: { to: string; key: string; icon: IconName; end?: boolean }[] = [
   { to: "/app/programs", key: "nav.programs", icon: "video" },
   { to: "/app/quests", key: "nav.quests", icon: "rocket" },
   { to: "/app/leaderboard", key: "nav.leaderboard", icon: "trophy" },
+  { to: "/app/mock", key: "nav.mock", icon: "checklist" },
   { to: "/app/plan", key: "nav.plan", icon: "star" },
+  { to: "/app/certificates", key: "nav.certificates", icon: "trophy" },
   { to: "/app/profile", key: "nav.profile", icon: "person" },
   { to: "/app/contact", key: "nav.contact", icon: "comment" },
 ];

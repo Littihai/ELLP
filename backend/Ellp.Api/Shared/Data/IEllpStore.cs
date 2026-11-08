@@ -66,4 +66,23 @@ public interface IEllpStore
     Task<List<LearnerSession>> SessionsAsync(string uid, CancellationToken ct);
     Task<List<LearnerSession>> SessionsOfOwnerAsync(string ownerId, CancellationToken ct);
     Task UpsertSessionAsync(LearnerSession s, CancellationToken ct);
+
+    // 1.3
+    Task<List<Payment>> PaymentsAsync(string ownerId, CancellationToken ct);
+    Task<List<Payment>> PaymentsOfUserAsync(string uid, CancellationToken ct);
+    Task<Payment?> PaymentAsync(string id, CancellationToken ct);
+    Task<Payment?> PaymentByReferenceAsync(string reference, CancellationToken ct);
+    Task UpsertPaymentAsync(Payment p, CancellationToken ct);
+    /// <summary>The next receipt number of a tenant in a year (1, 2, 3 …), atomically.</summary>
+    Task<int> NextReceiptSeqAsync(string ownerId, int year, CancellationToken ct);
+    Task<List<Certificate>> CertificatesAsync(string ownerId, CancellationToken ct);
+    Task<List<Certificate>> CertificatesOfUserAsync(string uid, CancellationToken ct);
+    Task<Certificate?> CertificateByCodeAsync(string code, CancellationToken ct);
+    Task UpsertCertificateAsync(Certificate c, CancellationToken ct);
+    Task<List<MockTest>> MockTestsAsync(string ownerId, CancellationToken ct);
+    Task UpsertMockTestAsync(MockTest t, CancellationToken ct);
+    Task DeleteMockTestAsync(string id, CancellationToken ct);
+    Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct);
+    Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct);
+    Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct);
 }

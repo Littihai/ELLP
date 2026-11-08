@@ -1,6 +1,6 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus,
-  Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
+  Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
+  OwnerSettings, Payment, PaymentMethod, PaymentStatus, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
 } from "@/types";
 import type { SessionDecision } from "@/lib/integrity";
 
@@ -24,6 +24,8 @@ export interface AdminStats {
   openMessages: number;
   pendingPlans: number;
   openChats: number;
+  /** THB paid this calendar month (1.3) */
+  revenueThisMonth: number;
   xpThisWeek: number;
   completionsThisWeek: number;
   /** XP per day for the last 14 days, oldest first */
@@ -90,6 +92,19 @@ export interface EllpApi {
   sendMessage(subject: string, body: string): Promise<InboxMessage>;
   enroll(programId: string): Promise<UserProfile>;
   requestPlan(plan: Plan, planTrack: Track | null, note: string): Promise<UserProfile>;
+  // 1.3: payments, certificates, mock tests
+  myPayments(): Promise<Payment[]>;
+  /** a checkout: PromptPay / card through the tenant's gateway, or a transfer the admin confirms */
+  createCheckout(plan: Plan, planTrack: Track | null, method: PaymentMethod, note: string): Promise<Payment>;
+  /** demo gateway only: what the provider's webhook does in live mode */
+  confirmDemoPayment(paymentId: string): Promise<Payment>;
+  myCertificates(): Promise<Certificate[]>;
+  issueCertificate(programId: string): Promise<Certificate>;
+  verifyCertificate(code: string): Promise<Certificate | null>;
+  mockTests(ownerId: string): Promise<MockTest[]>;
+  startMockAttempt(testId: string): Promise<MockAttempt>;
+  submitMockAttempt(attemptId: string, answers: Record<string, number>, timedOut: boolean): Promise<{ attempt: MockAttempt; result: ActivityResult }>;
+  myMockAttempts(): Promise<MockAttempt[]>;
 
   // owner admin
   members(ownerId: string): Promise<UserProfile[]>;
@@ -109,6 +124,12 @@ export interface EllpApi {
   settings(ownerId: string): Promise<OwnerSettings>;
   saveSettings(s: OwnerSettings): Promise<OwnerSettings>;
   adminStats(ownerId: string | null): Promise<AdminStats>;
+  payments(ownerId: string): Promise<Payment[]>;
+  setPaymentStatus(paymentId: string, status: Extract<PaymentStatus, "paid" | "refunded" | "failed">): Promise<Payment>;
+  certificates(ownerId: string): Promise<Certificate[]>;
+  saveMockTest(t: MockTest): Promise<MockTest>;
+  removeMockTest(id: string): Promise<void>;
+  mockAttempts(ownerId: string): Promise<MockAttempt[]>;
   violations(ownerId: string): Promise<Violation[]>;
   sessions(ownerId: string): Promise<LearnerSession[]>;
   liftPause(uid: string, lessonId: string): Promise<void>;

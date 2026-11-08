@@ -1,11 +1,14 @@
 import type {
-  Badge, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Plan, PlanStatus, Program, Quest,
-  QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
+  Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
+  OwnerSettings, Payment, PaymentMethod, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
 } from "@/types";
+import { DEFAULT_PRICING, MOCK_XP_DONE, MOCK_XP_PASS, certificateCode, demoQrPayload, expiryStatus, planExpiry, priceFor, programComplete, receiptNo, scoreMock } from "@/lib/commerce";
+import { PLAN_RANK, effectivePlan } from "@/lib/access";
 import { ATTENTION_TYPES, DEFAULT_POLICY, PROFILE_RULES, defaultProfileFor, ladderAction, sessionAlive, sessionDecision, type SessionDecision } from "@/lib/integrity";
 import { readSessionId, writeSessionId } from "./api";
 import {
-  BADGES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, OWNERS, OWNER_SETTINGS, PROGRAMS, PROGRESS, QUESTS, QUEST_PROGRESS, USERS, XP_EVENTS,
+  BADGES, CERTIFICATES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, MOCK_ATTEMPTS, MOCK_TESTS, OWNERS, OWNER_SETTINGS, PAYMENTS, PROGRAMS, PROGRESS, QUESTS,
+  QUEST_PROGRESS, USERS, XP_EVENTS,
 } from "@/data/seed";
 import { canAccessLesson } from "@/lib/access";
 import {
@@ -35,20 +38,26 @@ interface State {
   chats: ChatThread[];
   violations: Violation[];
   sessions: LearnerSession[];
+  payments: Payment[];
+  certificates: Certificate[];
+  mockTests: MockTest[];
+  mockAttempts: MockAttempt[];
+  /** receipt counters per tenant and year, "own_pro:2026" → 1 */
+  receiptSeq: Record<string, number>;
   /** passwords of accounts created on the sign-up page (seeded accounts all use DEMO_PASSWORD) */
   passwords: Record<string, string>;
   sessionUid: string | null;
 }
 
-// v5: 1.2 added the player fields, violations and sessions; an older saved state is replaced by a fresh seed
-const KEY = "ellp.demo.v5";
+// v6: 1.3 added payments, certificates and mock tests; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v6";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
   return {
     owners: clone(OWNERS), programs: clone(PROGRAMS), lessons: clone(LESSONS), quests: clone(QUESTS), badges: clone(BADGES), users: clone(USERS),
     progress: clone(PROGRESS), questProgress: clone(QUEST_PROGRESS), xpEvents: clone(XP_EVENTS), messages: clone(MESSAGES), mail: clone(MAIL_LOG),
-    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), violations: [], sessions: [], passwords: {}, sessionUid: null,
+    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), violations: [], sessions: [], payments: clone(PAYMENTS), certificates: clone(CERTIFICATES), mockTests: clone(MOCK_TESTS), mockAttempts: clone(MOCK_ATTEMPTS), receiptSeq: { "own_pro:2026": 1, "own_sunshine:2026": 1 }, passwords: {}, sessionUid: null,
   };
 }
 
@@ -83,6 +92,7 @@ class DemoStore implements EllpApi {
   // ── auth ──
   async signIn(email: string, password: string): Promise<UserProfile> {
     await delay(350);
+    this.expirePlans();
     const u = this.s.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
     const expected = u ? (this.s.passwords[u.uid] ?? DEMO_PASSWORD) : DEMO_PASSWORD;
     if (!u || password !== expected) throw new Error("INVALID_CREDENTIALS");
@@ -141,7 +151,7 @@ class DemoStore implements EllpApi {
       uid: newId("u"), displayName: input.displayName.trim() || email, email, role: "learner", ownerId: input.ownerId, enrolledProgramIds: [],
       birthYear: input.birthYear, track: input.track, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
       plan: input.plan, planStatus: wantsPaid ? "pending" : "active", planTrack: input.plan === "pro" ? (input.planTrack ?? input.track) : null,
-      planNote: input.note.trim(), planRequestedAt: wantsPaid ? nowIso() : null,
+      planNote: input.note.trim(), planRequestedAt: wantsPaid ? nowIso() : null, planExpiresAt: null,
       xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: ["#066fd1", "#2f7f86", "#b0566f", "#a8612a", "#6b5fb0"][Math.floor(Math.random() * 5)], active: true, createdAt: nowIso(),
     };
     // the free programs of the learner's track (and the foundation ones) are joined at once, so the home page has something to show
@@ -189,7 +199,27 @@ class DemoStore implements EllpApi {
     this.save();
     return structuredClone(c);
   }
-  async currentUser() { const u = this.s.users.find((x) => x.uid === this.s.sessionUid); return u ? structuredClone(u) : null; }
+  async currentUser() { this.expirePlans(); const u = this.s.users.find((x) => x.uid === this.s.sessionUid); return u ? structuredClone(u) : null; }
+
+  /** 1.3: a paid plan past its end becomes expired; one that ends within a week gets one reminder email (through the test-mode guard). */
+  private expirePlans() {
+    let changed = false;
+    for (const u of this.s.users) {
+      if (u.role !== "learner" || u.plan === "free" || u.planStatus !== "active") continue;
+      const st = expiryStatus(u.planExpiresAt);
+      if (st === "expired") { u.planStatus = "expired"; changed = true; }
+      if (st === "expiring") {
+        const subject = `แพ็กเกจ ${u.plan} ใกล้หมดอายุ (${u.planExpiresAt?.slice(0, 10)})`;
+        if (!this.s.mail.some((m) => m.to === u.email && m.subject === subject)) {
+          const cfg = this.s.settings.find((x) => x.ownerId === u.ownerId)?.email;
+          const status: MailLog["status"] = cfg?.testMode === false ? "sent" : (cfg?.allowedRecipients ?? []).length ? "redirected" : "suppressed";
+          this.s.mail.unshift({ id: newId("mail"), ownerId: u.ownerId ?? "", to: u.email, subject, body: `แพ็กเกจ ${u.plan} ของคุณจะหมดอายุในอีกไม่กี่วัน ต่ออายุได้ที่หน้าแพ็กเกจ`, status, testMode: cfg?.testMode ?? true, at: nowIso() });
+          changed = true;
+        }
+      }
+    }
+    if (changed) this.save();
+  }
   onAuthChange(cb: (u: UserProfile | null) => void) { this.listeners.add(cb); return () => { this.listeners.delete(cb); }; }
 
   // ── catalog ──
@@ -218,6 +248,129 @@ class DemoStore implements EllpApi {
     this.save(); this.emit();
     return structuredClone(me);
   }
+
+  // ── 1.3: payments ──
+  private settingsOf(ownerId: string | null) { return this.s.settings.find((x) => x.ownerId === ownerId); }
+  /** Join the learner to the programs the plan covers (pro: its track's pro programs; premium: everything). */
+  private enrollCovered(u: UserProfile) {
+    for (const p of this.s.programs) if (p.ownerId === u.ownerId && p.published && (u.plan === "premium" || (p.plan !== "premium" && p.track === u.planTrack)) && !u.enrolledProgramIds.includes(p.id)) u.enrolledProgramIds.push(p.id);
+  }
+  private nextReceipt(ownerId: string, when: string): string {
+    const owner = this.s.owners.find((o) => o.id === ownerId);
+    const year = new Date(when).getFullYear();
+    const key = `${ownerId}:${year}`;
+    const seq = (this.s.receiptSeq[key] ?? 0) + 1;
+    this.s.receiptSeq[key] = seq;
+    return receiptNo(owner?.code ?? "ELLP", year, seq);
+  }
+  /** A payment is in: the plan is active for `months`, programs joined, a receipt numbered and mailed (test-mode guard). */
+  private settlePayment(pay: Payment) {
+    const u = this.s.users.find((x) => x.uid === pay.uid);
+    if (!u) return;
+    const when = nowIso();
+    pay.status = "paid"; pay.paidAt = when; pay.receiptNo = pay.receiptNo ?? this.nextReceipt(pay.ownerId, when);
+    u.plan = pay.plan; u.planStatus = "active"; u.planTrack = pay.plan === "pro" ? (pay.planTrack ?? u.track) : null;
+    u.planExpiresAt = planExpiry(when, pay.months, u.planExpiresAt); u.planRequestedAt = null;
+    this.enrollCovered(u);
+    const cfg = this.settingsOf(u.ownerId)?.email;
+    const status: MailLog["status"] = cfg?.testMode === false ? "sent" : (cfg?.allowedRecipients ?? []).length ? "redirected" : "suppressed";
+    this.s.mail.unshift({ id: newId("mail"), ownerId: pay.ownerId, to: u.email, subject: `ใบเสร็จ ${pay.receiptNo} — ${pay.plan} ${pay.amount} ${pay.currency}`, body: `ขอบคุณที่ชำระเงิน แพ็กเกจ ${pay.plan} ใช้ได้ถึง ${u.planExpiresAt?.slice(0, 10)}`, status, testMode: cfg?.testMode ?? true, at: when });
+  }
+  async myPayments() { const me = this.me(); return structuredClone(this.s.payments.filter((p) => p.uid === me.uid).sort((a, b) => b.createdAt.localeCompare(a.createdAt))); }
+  async createCheckout(plan: Plan, planTrack: Track | null, method: PaymentMethod, note: string): Promise<Payment> {
+    await delay(300);
+    const me = this.me();
+    if (plan === "free") throw new Error("VALIDATION");
+    const st = this.settingsOf(me.ownerId);
+    const pricing = st?.pricing ?? DEFAULT_PRICING;
+    const provider = method === "transfer" ? "manual" : (st?.paymentProvider ?? "demo");
+    if (provider === "manual" && method !== "transfer") throw new Error("GATEWAY_OFF");
+    const pay: Payment = {
+      id: newId("pay"), uid: me.uid, ownerId: me.ownerId ?? "", plan, planTrack: plan === "pro" ? (planTrack ?? me.track) : null, amount: priceFor(pricing, plan), currency: "THB", months: pricing.months,
+      method, provider, status: "pending", reference: method === "transfer" ? note.trim() : `chrg_${provider}_${newId("x").slice(2)}`, qrPayload: null, receiptNo: null, note: note.trim(), createdAt: nowIso(), paidAt: null,
+    };
+    if (method === "promptpay") pay.qrPayload = demoQrPayload(pay.id, pay.amount);
+    this.s.payments.unshift(pay);
+    // a transfer is the 1.1 flow: the plan waits for the admin
+    if (method === "transfer") { me.plan = plan; me.planStatus = "pending"; me.planTrack = pay.planTrack; me.planNote = note.trim(); me.planRequestedAt = nowIso(); }
+    this.save(); this.emit();
+    return structuredClone(pay);
+  }
+  /** The demo gateway's "payment received": in live mode the provider's webhook does this. */
+  async confirmDemoPayment(paymentId: string) {
+    await delay(600);
+    const me = this.me();
+    const pay = this.s.payments.find((p) => p.id === paymentId && p.uid === me.uid);
+    if (!pay) throw new Error("PAYMENT_NOT_FOUND");
+    if (pay.provider !== "demo") throw new Error("NOT_DEMO");
+    if (pay.status === "pending") this.settlePayment(pay);
+    this.save(); this.emit();
+    return structuredClone(pay);
+  }
+
+  // ── 1.3: certificates ──
+  async myCertificates() { const me = this.me(); return structuredClone(this.s.certificates.filter((c) => c.uid === me.uid)); }
+  async issueCertificate(programId: string): Promise<Certificate> {
+    await delay(300);
+    const me = this.me();
+    const existing = this.s.certificates.find((c) => c.uid === me.uid && c.programId === programId);
+    if (existing) return structuredClone(existing);
+    const program = this.s.programs.find((p) => p.id === programId);
+    if (!program) throw new Error("PROGRAM_NOT_FOUND");
+    const lessons = this.s.lessons.filter((l) => l.programId === programId);
+    if (!programComplete(lessons, this.s.progress.filter((p) => p.uid === me.uid))) throw new Error("PROGRAM_NOT_COMPLETE");
+    const owner = this.s.owners.find((o) => o.id === program.ownerId);
+    let code = certificateCode();
+    while (this.s.certificates.some((c) => c.code === code)) code = certificateCode();
+    const cert: Certificate = {
+      id: newId("cert"), code, uid: me.uid, learnerName: me.displayName, ownerId: program.ownerId, ownerName: owner?.name ?? { th: "", en: "" }, programId, programTitle: program.title, track: program.track, cefr: program.cefr,
+      lessons: lessons.filter((l) => l.published).length, xpEarned: this.s.xpEvents.filter((e) => e.uid === me.uid && e.programId === programId).reduce((n, e) => n + e.xp, 0), issuedAt: nowIso(),
+    };
+    this.s.certificates.unshift(cert);
+    this.save();
+    return structuredClone(cert);
+  }
+  async verifyCertificate(code: string) { const c = this.s.certificates.find((x) => x.code.toUpperCase() === code.trim().toUpperCase()); return c ? structuredClone(c) : null; }
+
+  // ── 1.3: mock tests ──
+  async mockTests(ownerId: string) {
+    const me = this.s.users.find((x) => x.uid === this.s.sessionUid);
+    const all = this.s.mockTests.filter((t) => t.ownerId === ownerId);
+    return structuredClone(me && me.role !== "learner" ? all : all.filter((t) => t.published));
+  }
+  async startMockAttempt(testId: string): Promise<MockAttempt> {
+    await delay(200);
+    const me = this.me();
+    const test = this.s.mockTests.find((t) => t.id === testId && t.published);
+    if (!test) throw new Error("TEST_NOT_FOUND");
+    if (me.role === "learner" && PLAN_RANK[effectivePlan(me)] < PLAN_RANK[test.requiredPlan]) throw new Error("PLAN_REQUIRED");
+    const open = this.s.mockAttempts.find((a) => a.uid === me.uid && a.testId === testId && !a.submittedAt);
+    if (open) return structuredClone(open);
+    const att: MockAttempt = { id: newId("att"), uid: me.uid, testId, ownerId: test.ownerId, startedAt: nowIso(), submittedAt: null, answers: {}, raw: 0, total: test.sections.reduce((n, s) => n + s.questions.length, 0), sectionScores: [], scaled: 0, scaledLabel: "", passed: false, timedOut: false };
+    this.s.mockAttempts.unshift(att);
+    this.save();
+    return structuredClone(att);
+  }
+  async submitMockAttempt(attemptId: string, answers: Record<string, number>, timedOut: boolean) {
+    await delay(300);
+    const me = this.me();
+    const att = this.s.mockAttempts.find((a) => a.id === attemptId && a.uid === me.uid);
+    if (!att) throw new Error("ATTEMPT_NOT_FOUND");
+    const test = this.s.mockTests.find((t) => t.id === att.testId);
+    if (!test) throw new Error("TEST_NOT_FOUND");
+    const p = this.progressOf(me.uid, `mock:${test.id}`);
+    const out = this.newResult(p, me);
+    if (!att.submittedAt) {
+      const sc = scoreMock(test, answers);
+      Object.assign(att, { answers, submittedAt: nowIso(), timedOut, ...sc });
+      this.touchDay(me, out);
+      this.addXp(me, null, "quiz", sc.passed ? MOCK_XP_PASS : MOCK_XP_DONE, `${test.title.en}: ${sc.scaledLabel}`, out);
+    }
+    out.levelAfter = levelFor(me.xp);
+    this.save(); this.emit();
+    return { attempt: structuredClone(att), result: out };
+  }
+  async myMockAttempts() { const me = this.me(); return structuredClone(this.s.mockAttempts.filter((a) => a.uid === me.uid).sort((a, b) => b.startedAt.localeCompare(a.startedAt))); }
 
   async enroll(programId: string) {
     const me = this.me();
@@ -466,12 +619,38 @@ class DemoStore implements EllpApi {
     if (!u) throw new Error("MEMBER_NOT_FOUND");
     u.plan = plan; u.planStatus = plan === "free" ? "active" : status; u.planTrack = plan === "pro" ? (planTrack ?? u.track) : null; u.planNote = note;
     if (status === "active" && plan !== "free") {
-      // an approved plan joins the learner to the programs it covers
-      for (const p of this.s.programs) if (p.ownerId === u.ownerId && p.published && (plan === "premium" || (p.plan !== "premium" && p.track === u.planTrack)) && !u.enrolledProgramIds.includes(p.id)) u.enrolledProgramIds.push(p.id);
+      // an approved plan joins the learner to the programs it covers and runs for the tenant's months; a pending transfer becomes a paid payment with a receipt
+      const months = this.settingsOf(u.ownerId)?.pricing.months ?? 1;
+      if (!u.planExpiresAt || expiryStatus(u.planExpiresAt) === "expired") u.planExpiresAt = planExpiry(nowIso(), months, null);
+      this.enrollCovered(u);
+      const pending = this.s.payments.find((p) => p.uid === uid && p.status === "pending" && p.plan === plan);
+      if (pending) this.settlePayment(pending);
     }
+    if (plan === "free" || status === "expired") { if (plan === "free") u.planExpiresAt = null; }
     this.save(); this.emit();
     return structuredClone(u);
   }
+  async payments(ownerId: string) { return structuredClone(this.s.payments.filter((p) => p.ownerId === ownerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))); }
+  async setPaymentStatus(paymentId: string, status: "paid" | "refunded" | "failed") {
+    const pay = this.s.payments.find((p) => p.id === paymentId);
+    if (!pay) throw new Error("PAYMENT_NOT_FOUND");
+    const u = this.s.users.find((x) => x.uid === pay.uid);
+    if (status === "paid" && pay.status !== "paid") this.settlePayment(pay);
+    else if (status === "refunded") { pay.status = "refunded"; if (u && u.plan === pay.plan) { u.plan = "free"; u.planStatus = "active"; u.planTrack = null; u.planExpiresAt = null; } }
+    else if (status === "failed") { pay.status = "failed"; if (u && u.planStatus === "pending" && u.plan === pay.plan) { u.plan = "free"; u.planStatus = "active"; u.planTrack = null; u.planRequestedAt = null; } }
+    this.save(); this.emit();
+    return structuredClone(pay);
+  }
+  async certificates(ownerId: string) { return structuredClone(this.s.certificates.filter((c) => c.ownerId === ownerId)); }
+  async saveMockTest(t: MockTest) {
+    const i = this.s.mockTests.findIndex((x) => x.id === t.id);
+    const saved = { ...t, id: t.id || newId("mock") };
+    if (i >= 0) this.s.mockTests[i] = saved; else this.s.mockTests.push(saved);
+    this.save();
+    return structuredClone(saved);
+  }
+  async removeMockTest(id: string) { this.s.mockTests = this.s.mockTests.filter((t) => t.id !== id); this.save(); }
+  async mockAttempts(ownerId: string) { return structuredClone(this.s.mockAttempts.filter((a) => a.ownerId === ownerId).sort((a, b) => b.startedAt.localeCompare(a.startedAt))); }
   async violations(ownerId: string) { return structuredClone(this.s.violations.filter((v) => v.ownerId === ownerId)); }
   async sessions(ownerId: string) { const uids = new Set(this.s.users.filter((u) => u.ownerId === ownerId).map((u) => u.uid)); return structuredClone(this.s.sessions.filter((s) => uids.has(s.uid) && s.active && sessionAlive(s.lastSeenAt))); }
   async liftPause(uid: string, lessonId: string) { const p = this.s.progress.find((x) => x.uid === uid && x.lessonId === lessonId); if (p) p.pausedUntil = null; this.save(); }
@@ -553,7 +732,7 @@ class DemoStore implements EllpApi {
   async mailLog(ownerId: string) { return structuredClone(this.s.mail.filter((m) => m.ownerId === ownerId).sort((a, b) => b.at.localeCompare(a.at))); }
   async settings(ownerId: string) {
     let s = this.s.settings.find((x) => x.ownerId === ownerId);
-    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" }, integrity: { ...DEFAULT_POLICY } }; this.s.settings.push(s); }
+    if (!s) { s = { ownerId, email: { fromName: "ELLP", fromAddress: "no-reply@example.com", replyTo: "", testMode: true, allowedRecipients: [] }, leaderboard: { visible: true, size: 10 }, ageRules: { ...DEFAULT_AGE_RULES }, lineUrl: "", paymentInstructions: { th: "", en: "" }, integrity: { ...DEFAULT_POLICY }, pricing: { ...DEFAULT_PRICING }, paymentProvider: "demo" }; this.s.settings.push(s); }
     return structuredClone(s);
   }
   async saveSettings(s: OwnerSettings) {
@@ -581,6 +760,7 @@ class DemoStore implements EllpApi {
       lessons: lessons.length,
       openMessages: inOwner(this.s.messages).filter((m) => m.status === "open").length,
       pendingPlans: learners.filter((u) => u.planStatus === "pending").length,
+      revenueThisMonth: inOwner(this.s.payments).filter((p) => p.status === "paid" && p.paidAt && p.paidAt.slice(0, 7) === dayKey().slice(0, 7)).reduce((n, p) => n + p.amount, 0),
       openChats: inOwner(this.s.chats).filter((c) => c.status === "open").length,
       xpThisWeek: events.filter((e) => weekKey(new Date(e.at)) === wk).reduce((n, e) => n + e.xp, 0),
       completionsThisWeek: completions.filter((p) => p.completedAt && weekKey(new Date(p.completedAt)) === wk).length,
@@ -607,6 +787,9 @@ class DemoStore implements EllpApi {
     this.s.messages = this.s.messages.filter((m) => m.ownerId !== id);
     this.s.chats = this.s.chats.filter((c) => c.ownerId !== id);
     this.s.violations = this.s.violations.filter((v) => v.ownerId !== id);
+    this.s.payments = this.s.payments.filter((p) => p.ownerId !== id);
+    this.s.certificates = this.s.certificates.filter((c) => c.ownerId !== id);
+    this.s.mockTests = this.s.mockTests.filter((t) => t.ownerId !== id);
     this.save();
   }
   async resetDemo() { this.s = seed(); this.save(); this.emit(); }

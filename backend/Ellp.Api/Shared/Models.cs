@@ -140,6 +140,8 @@ public sealed class UserProfile
     public string? PlanTrack { get; set; }
     public string PlanNote { get; set; } = "";
     public string? PlanRequestedAt { get; set; }
+    /// <summary>When a paid plan ends (1.3); null for free or not yet paid.</summary>
+    public string? PlanExpiresAt { get; set; }
     /// <summary>A teacher or parent opened every age band to this learner.</summary>
     public bool AllowAllAges { get; set; }
     public ParentConsent ParentConsent { get; set; } = new();
@@ -302,6 +304,116 @@ public sealed class OwnerSettings
     public string LineUrl { get; set; } = "";
     public Text2 PaymentInstructions { get; set; } = new("", "");
     public IntegrityPolicy Integrity { get; set; } = new();
+    public Pricing Pricing { get; set; } = new();
+    /// <summary>demo | omise | manual</summary>
+    public string PaymentProvider { get; set; } = "demo";
+}
+
+// ── 1.3 (decision 0007): payments, certificates, mock tests ──
+
+public sealed class Pricing
+{
+    public int Pro { get; set; } = 1290;
+    public int Premium { get; set; } = 2490;
+    public string Currency { get; set; } = "THB";
+    public int Months { get; set; } = 1;
+}
+
+public sealed class Payment
+{
+    public string Id { get; set; } = "";
+    public string Uid { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string Plan { get; set; } = "pro";
+    public string? PlanTrack { get; set; }
+    public int Amount { get; set; }
+    public string Currency { get; set; } = "THB";
+    public int Months { get; set; } = 1;
+    /// <summary>promptpay | card | transfer</summary>
+    public string Method { get; set; } = "promptpay";
+    /// <summary>demo | omise | manual</summary>
+    public string Provider { get; set; } = "demo";
+    /// <summary>pending | paid | failed | expired | refunded</summary>
+    public string Status { get; set; } = "pending";
+    public string Reference { get; set; } = "";
+    public string? QrPayload { get; set; }
+    public string? ReceiptNo { get; set; }
+    public string Note { get; set; } = "";
+    public string CreatedAt { get; set; } = "";
+    public string? PaidAt { get; set; }
+}
+
+public sealed class Certificate
+{
+    public string Id { get; set; } = "";
+    public string Code { get; set; } = "";
+    public string Uid { get; set; } = "";
+    public string LearnerName { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public Text2 OwnerName { get; set; } = new("", "");
+    public string ProgramId { get; set; } = "";
+    public Text2 ProgramTitle { get; set; } = new("", "");
+    public string Track { get; set; } = "";
+    public string Cefr { get; set; } = "";
+    public int Lessons { get; set; }
+    public int XpEarned { get; set; }
+    public string IssuedAt { get; set; } = "";
+}
+
+public sealed class MockQuestion
+{
+    public string Id { get; set; } = "";
+    public Text2 Prompt { get; set; } = new("", "");
+    public List<string> Choices { get; set; } = new();
+    public int Answer { get; set; }
+}
+
+public sealed class MockSection
+{
+    public string Id { get; set; } = "";
+    public Text2 Title { get; set; } = new("", "");
+    public List<MockQuestion> Questions { get; set; } = new();
+}
+
+public sealed class MockTest
+{
+    public string Id { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string Track { get; set; } = "toeic";
+    public Text2 Title { get; set; } = new("", "");
+    public Text2 Description { get; set; } = new("", "");
+    public int DurationMin { get; set; } = 10;
+    /// <summary>toeic | ielts | percent</summary>
+    public string Scoring { get; set; } = "percent";
+    public double PassMark { get; set; } = 60;
+    public string RequiredPlan { get; set; } = "premium";
+    public List<MockSection> Sections { get; set; } = new();
+    public bool Published { get; set; }
+}
+
+public sealed class SectionScore
+{
+    public string SectionId { get; set; } = "";
+    public int Raw { get; set; }
+    public int Total { get; set; }
+}
+
+public sealed class MockAttempt
+{
+    public string Id { get; set; } = "";
+    public string Uid { get; set; } = "";
+    public string TestId { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string StartedAt { get; set; } = "";
+    public string? SubmittedAt { get; set; }
+    public Dictionary<string, int> Answers { get; set; } = new();
+    public int Raw { get; set; }
+    public int Total { get; set; }
+    public List<SectionScore> SectionScores { get; set; } = new();
+    public double Scaled { get; set; }
+    public string ScaledLabel { get; set; } = "";
+    public bool Passed { get; set; }
+    public bool TimedOut { get; set; }
 }
 
 public sealed class ChatMessage

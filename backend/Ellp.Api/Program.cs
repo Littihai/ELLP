@@ -33,6 +33,16 @@ builder.Services.AddSingleton(email);
 var media = builder.Configuration.GetSection("Media").Get<Ellp.Api.Modules.Integrity.MediaOptions>() ?? new Ellp.Api.Modules.Integrity.MediaOptions();
 media.SigningKey = Ellp.Api.Modules.Integrity.VideoTokenRules.ResolveKey(Environment.GetEnvironmentVariable("MEDIA_SIGNING_KEY") ?? media.SigningKey, builder.Environment.IsDevelopment());
 builder.Services.AddSingleton(media);
+// 1.3: payment gateways (OMISE_SECRET_KEY / OMISE_PUBLIC_KEY in the environment); the demo gateway moves no money
+var omise = builder.Configuration.GetSection("Omise").Get<Ellp.Api.Modules.Commerce.OmiseOptions>() ?? new Ellp.Api.Modules.Commerce.OmiseOptions();
+omise.SecretKey = Environment.GetEnvironmentVariable("OMISE_SECRET_KEY") ?? omise.SecretKey;
+omise.PublicKey = Environment.GetEnvironmentVariable("OMISE_PUBLIC_KEY") ?? omise.PublicKey;
+builder.Services.AddSingleton(omise);
+builder.Services.AddSingleton<Ellp.Api.Modules.Commerce.IPaymentGateway, Ellp.Api.Modules.Commerce.DemoGateway>();
+builder.Services.AddSingleton<Ellp.Api.Modules.Commerce.IPaymentGateway, Ellp.Api.Modules.Commerce.ManualGateway>();
+builder.Services.AddHttpClient<Ellp.Api.Modules.Commerce.OmiseGateway>();
+builder.Services.AddSingleton<Ellp.Api.Modules.Commerce.IPaymentGateway>(sp => sp.GetRequiredService<Ellp.Api.Modules.Commerce.OmiseGateway>());
+builder.Services.AddSingleton<Ellp.Api.Modules.Commerce.GatewayDirectory>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 builder.Services.AddScoped<IProgressService, ProgressService>();
