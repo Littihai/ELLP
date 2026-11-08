@@ -1,0 +1,46 @@
+# ── Secrets / environment (never commit) ──
+**/appsettings.Production.json
+**/appsettings.Development.json
+**/appsettings.*.local.json
+*.env
+.env
+.env.*
+!.env.example
+firebase/.firebaserc
+**/service-account*.json
+**/*-firebase-adminsdk-*.json
+
+# ── .NET build output ──
+[Bb]in/
+[Oo]bj/
+*.user
+.vs/
+publish/
+publish-out/
+TestResults/
+
+# ── SPA build copied into the API ──
+backend/Ellp.Api/wwwroot/
+
+# ── Node / frontend build ──
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+*.local
+
+# ── Firebase tooling ──
+firebase/.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# ── Logs / OS ──
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+# ── Tooling ──
+.claude/
+scratchpad/

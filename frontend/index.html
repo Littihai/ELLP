@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#182433" />
+    <script src="/theme-init.js"></script>
+    <title>ELLP — English Learning Language Platform</title>
+    <style>
+      /* loading screen until the app bundle is ready (lib/boot.ts finishes it) */
+      #boot {
+        position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        background: var(--color-bg, #f6f8fb); color: var(--color-neutral-700, #475467);
+        font: 500 14px/1.4 Inter, "Noto Sans Thai", system-ui, sans-serif;
+        transition: opacity 0.25s ease;
+      }
+      #boot.boot-out { opacity: 0; pointer-events: none; }
+      html[data-theme="dark"] #boot { background: #121b27; color: #c4ccd8; }
+      #boot .boot-track { box-sizing: border-box; width: min(320px, 80vw); height: 34px; padding: 4px; border: 3px solid currentColor; border-radius: 999px; }
+      #boot .boot-fill { height: 100%; width: 8%; border-radius: 999px; background: currentColor; animation: boot-creep 20s linear forwards; }
+      @keyframes boot-creep { 0% { width: 8%; } 10% { width: 40%; } 30% { width: 65%; } 60% { width: 82%; } 100% { width: 92%; } }
+      html[lang="th"] #boot .boot-en, html:not([lang="th"]) #boot .boot-th { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="boot-track" aria-hidden="true"><div class="boot-fill"></div></div>
+      <span class="boot-th">กำลังโหลด ELLP…</span>
+      <span class="boot-en">Loading ELLP…</span>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
