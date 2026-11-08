@@ -164,4 +164,13 @@ public sealed class FirestoreStore : IEllpStore
     public async Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct) => (await All<MockAttempt>(Where("mockAttempts", "ownerId", ownerId), ct)).OrderByDescending(a => a.StartedAt).ToList();
     public async Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct) => (await All<MockAttempt>(Where("mockAttempts", "uid", uid), ct)).OrderByDescending(a => a.StartedAt).ToList();
     public Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct) => Set("mockAttempts", a.Id, a, ct);
+
+    public Task<List<PlacementTest>> PlacementTestsAsync(string ownerId, CancellationToken ct) => All<PlacementTest>(Where("placementTests", "ownerId", ownerId), ct);
+    public Task UpsertPlacementTestAsync(PlacementTest t, CancellationToken ct) => Set("placementTests", t.Id, t, ct);
+    public Task DeletePlacementTestAsync(string id, CancellationToken ct) => Del("placementTests", id, ct);
+    public async Task<List<PlacementResult>> PlacementResultsAsync(string ownerId, CancellationToken ct) => (await All<PlacementResult>(Where("placementResults", "ownerId", ownerId), ct)).OrderByDescending(r => r.SubmittedAt).ToList();
+    public async Task<PlacementResult?> PlacementResultOfUserAsync(string uid, CancellationToken ct) => (await All<PlacementResult>(Where("placementResults", "uid", uid), ct)).OrderByDescending(r => r.SubmittedAt).FirstOrDefault();
+    public Task<List<PlacementResult>> PlacementResultsOfVisitorAsync(string visitorKey, CancellationToken ct) => All<PlacementResult>(Where("placementResults", "visitorKey", visitorKey), ct);
+    public Task UpsertPlacementResultAsync(PlacementResult r, CancellationToken ct) => Set("placementResults", r.Id, r, ct);
+    public Task DeletePlacementResultAsync(string id, CancellationToken ct) => Del("placementResults", id, ct);
 }

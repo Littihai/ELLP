@@ -4,7 +4,7 @@ import { isStaff, useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { Button, Card, ErrorBox, Field, Icon, Loading } from "@/components/ui/kit";
 import { useAsync } from "@/hooks/useAsync";
-import { api } from "@/services";
+import { api, visitorKey } from "@/services";
 import { ageOf } from "@/lib/gamification";
 import { PLANS, TRACKS, type Plan, type Track } from "@/types";
 
@@ -36,7 +36,7 @@ export function SignupPage() {
     if (minor && !form.consent) { setError(t("su.consentNeeded")); return; }
     setBusy(true);
     try {
-      await api.signUp({ displayName: form.displayName, email: form.email, password: form.password, birthYear, track: form.track, ownerId, plan: form.plan, planTrack: form.plan === "pro" ? (form.planTrack ?? form.track) : null, note: form.note });
+      await api.signUp({ displayName: form.displayName, email: form.email, password: form.password, birthYear, track: form.track, ownerId, plan: form.plan, planTrack: form.plan === "pro" ? (form.planTrack ?? form.track) : null, note: form.note, visitorKey: visitorKey() });
       await refresh();
       nav("/app", { replace: true });
     } catch (err) {

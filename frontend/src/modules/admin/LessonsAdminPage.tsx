@@ -8,11 +8,11 @@ import { NeedOwner, useScope } from "@/layouts/AdminShell";
 import { api } from "@/services";
 import { fmtDuration, newId } from "@/lib/format";
 import { ytThumb } from "@/modules/learn/shared";
-import type { AgeBand, Lesson, Program, Quest, QuizQuestion, UnlockRule } from "@/types";
+import { SKILLS, type AgeBand, type Lesson, type Program, type Quest, type QuizQuestion, type UnlockRule } from "@/types";
 import { AGE_BANDS } from "@/lib/gamification";
 
 const blank = (programId: string, order: number): Lesson => ({
-  id: "", programId, order, title: { th: "", en: "" }, summary: { th: "", en: "" }, youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 120, xpReward: 50, vocabulary: [], quiz: [], unlock: [], published: false,
+  id: "", programId, order, title: { th: "", en: "" }, summary: { th: "", en: "" }, youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 120, xpReward: 50, vocabulary: [], skills: [], quiz: [], unlock: [], published: false,
 });
 
 /** Lessons of one program: the video, its XP, the words, the quiz and the unlock conditions, all in one form. */
@@ -66,7 +66,7 @@ function Inner() {
                       <tr key={l.id}>
                         <td>{l.order}</td>
                         <td>{l.youtubeId ? <img src={ytThumb(l.youtubeId)} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 4, display: "block" }} /> : <span style={{ display: "grid", placeItems: "center", width: 64, height: 40, borderRadius: 4, background: "var(--color-neutral-200)" }}><Icon name="video" size={16} /></span>}</td>
-                        <td><b>{pick(l.title)}</b><div className="small muted">{fmtDuration(l.durationSec)} · {l.vocabulary.length} {t("les.vocab").split(" ")[0]}</div></td>
+                        <td><b>{pick(l.title)}</b><div className="small muted">{fmtDuration(l.durationSec)} · {l.vocabulary.length} {t("les.vocab").split(" ")[0]}{(l.skills ?? []).length > 0 && <> · {l.skills.map((sk) => t(`skill.${sk}`)).join(", ")}</>}</div></td>
                         <td><code className="small">{l.youtubeId || (l.videoUrl ? "mp4" : "—")}</code>{l.checkpoints.length > 0 && <div className="small muted">{l.checkpoints.length} cp</div>}</td>
                         <td>{l.xpReward}</td>
                         <td>{l.quiz.length}</td>
@@ -141,6 +141,9 @@ function LessonForm({ lesson, setLesson, programs, lessons, quests, onClose, onS
         <Field label={t("les.duration")}><input className="input" type="number" min={10} value={l.durationSec} onChange={(e) => set({ durationSec: num(e.target.value, 10) })} /></Field>
         <Field label={t("les.xp")}><input className="input" type="number" min={0} value={l.xpReward} onChange={(e) => set({ xpReward: num(e.target.value, 0) })} /></Field>
         <Field label={t("les.vocab")}><input className="input" value={l.vocabulary.join(", ")} onChange={(e) => set({ vocabulary: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} /></Field>
+        <Field label={t("les.skills")} span2>
+          <div className="row" style={{ gap: 6 }}>{SKILLS.map((sk) => <button key={sk} type="button" className="chip" aria-pressed={(l.skills ?? []).includes(sk)} onClick={() => set({ skills: (l.skills ?? []).includes(sk) ? l.skills.filter((x) => x !== sk) : [...(l.skills ?? []), sk] })}>{t(`skill.${sk}`)}</button>)}</div>
+        </Field>
         <div className="row span-2"><Switch checked={l.published} onChange={(v) => set({ published: v })} /> {t("app.published")}</div>
       </div>
 

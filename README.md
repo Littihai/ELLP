@@ -1,7 +1,7 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.3.0** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.4.0** is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
@@ -20,6 +20,16 @@ that must be answered to continue, a replay limit, fullscreen, a watermark, and 
 leaving fullscreen are recorded and climb a **ladder** (warn, warn, pause the lesson); a second device warns, then ends the old
 session, then is refused. Teachers see every event and lift pauses. A web page cannot stop screenshots or recordings, and the
 admin pages say so. Decision: [docs/decisions/0006-player-and-learning-integrity.md](docs/decisions/0006-player-and-learning-integrity.md).
+
+## Where to start, what improves, what a parent sees (1.4)
+
+A **placement test** per provider: questions tagged by skill and CEFR level, scored as a ladder (a level passes at 60 % with
+every lower level passed), ending in an estimated level and up to three recommended programs. It is public (`/placement`), a
+visitor's result follows them into the account at sign-up, and a learner's is saved to the profile. Lessons carry **skill
+tags** (listening, speaking, reading, writing, grammar, vocabulary) that add up to a per-skill profile on Home and Profile, with
+the placement result as the "before" marker. **Parent accounts** see their children's week next to the week before, the
+skills, the recent activity, and a **weekly report** in plain sentences built from the numbers, emailed through the test-mode
+guard; the parent can confirm the consent record. Decision 0008.
 
 ## Paying, proving, practising (1.3)
 

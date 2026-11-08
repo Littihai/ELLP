@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useI18n } from "@/app/providers/I18nProvider";
-import { Button, Icon, Modal } from "@/components/ui/kit";
+import { Bar, Button, Icon, Modal } from "@/components/ui/kit";
 import type { ActivityResult } from "@/services";
-import type { Lesson, LessonProgress, Quest, QuestProgress, UnlockRule, UserProfile } from "@/types";
+import type { Lesson, LessonProgress, Quest, QuestProgress, Skill, SkillProfileRow, SkillScore, UnlockRule, UserProfile } from "@/types";
 import { checkUnlock, levelFor, periodKeyFor, rulePasses } from "@/lib/gamification";
 import type { IconName } from "@/constants/icons";
 
@@ -80,6 +80,44 @@ export function CheerModal({ result, onClose }: { result: ActivityResult; onClos
         </ul>
       </div>
     </Modal>
+  );
+}
+
+/** The skills of a lesson or program as small chips (1.4). */
+export function SkillChips({ skills, small = false }: { skills: Skill[]; small?: boolean }) {
+  const { t } = useI18n();
+  if (!skills || skills.length === 0) return null;
+  return (
+    <span className="row" style={{ gap: 4 }} aria-label={t("skill.covers")}>
+      {skills.map((s) => <span key={s} className="chip chip-static" style={small ? { fontSize: 11, padding: "1px 8px", minHeight: 0 } : undefined}><Icon name="tag" size={small ? 10 : 12} />{t(`skill.${s}`)}</span>)}
+    </span>
+  );
+}
+
+/** The skill profile as bars; `before` (a placement result's skill scores) draws a faint marker where the person started. */
+export function SkillBars({ rows, before = null }: { rows: SkillProfileRow[]; before?: SkillScore[] | null }) {
+  const { t } = useI18n();
+  const live = rows.filter((r) => r.lessonsTotal > 0);
+  if (live.length === 0) return <div className="muted small">{t("skill.noLessons")}</div>;
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      {live.map((r) => {
+        const b = before?.find((x) => x.skill === r.skill);
+        const bPct = b && b.total > 0 ? Math.round((b.raw / b.total) * 100) : null;
+        return (
+          <div key={r.skill}>
+            <div className="row small" style={{ justifyContent: "space-between", marginBottom: 3 }}>
+              <b>{t(`skill.${r.skill}`)}</b>
+              <span className="muted">{t("skill.done", { done: r.lessonsDone, total: r.lessonsTotal })}{r.accuracy !== null && <> · {t("skill.accuracy", { pct: r.accuracy })}</>}{bPct !== null && <> · {t("skill.before")} {bPct} %</>}</span>
+            </div>
+            <div style={{ position: "relative" }}>
+              <Bar pct={r.pct} tone={r.pct >= 100 ? "ok" : undefined} label={t(`skill.${r.skill}`)} />
+              {bPct !== null && <span aria-hidden style={{ position: "absolute", top: -3, bottom: -3, left: `${bPct}%`, width: 2, background: "var(--color-neutral-500)", borderRadius: 1 }} />}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

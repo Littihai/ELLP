@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useI18n } from "@/app/providers/I18nProvider";
 import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading } from "@/components/ui/kit";
@@ -6,28 +6,33 @@ import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
 import { checkUnlock, levelInfo, programVisible } from "@/lib/gamification";
 import { fmtDate } from "@/lib/format";
-import { QUEST_ICON, Thumb, currentQuestProgress } from "./shared";
+import { QUEST_ICON, SkillBars, Thumb, currentQuestProgress } from "./shared";
 import { canAccessLesson } from "@/lib/access";
+import { skillProfile } from "@/lib/skills";
 
 /** The learner's dashboard: level and XP, what to do next, today's quests, badges and the latest XP. */
 export function HomePage() {
   const { user } = useAuth();
   const { t, pick, lang } = useI18n();
   const u = user!;
+  const parent = u.role === "parent";
   const { data, error, loading, reload } = useAsync(async () => {
+    if (parent) return null;
     const [programs, lessons, progress, quests, questRows, badges, xp, board] = await Promise.all([
       api.programs(u.ownerId), api.lessons(), api.myProgress(), u.ownerId ? api.quests(u.ownerId) : Promise.resolve([]), api.myQuests(), api.badges(), api.myXpEvents(),
       api.leaderboard(null, "all"),
     ]);
     return { programs, lessons, progress, quests, questRows, badges, xp, board };
-  }, [u.uid, u.xp]);
+  }, [u.uid, u.xp, parent]);
 
+  if (parent) return <Navigate to="/app/family" replace />;
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
 
   const lv = levelInfo(u.xp);
   const myPrograms = data.programs.filter((p) => p.published && u.enrolledProgramIds.includes(p.id) && programVisible(p, u));
   const openLessons = data.lessons.filter((l) => l.published && myPrograms.some((p) => p.id === l.programId));
+  const skills = skillProfile(openLessons, data.progress);
   const next = openLessons
     .filter((l) => !data.progress.find((p) => p.lessonId === l.id)?.completed)
     .map((l) => ({ l, unlocked: canAccessLesson(u, myPrograms.find((p) => p.id === l.programId)!, l, data.lessons) && checkUnlock(l, u, data.progress, data.questRows).ok, p: data.progress.find((p) => p.lessonId === l.id) }))
@@ -100,6 +105,10 @@ export function HomePage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+        <Card title={t("skill.title")} actions={u.placementCefr ? <Badge tone="accent"><Icon name="goal" size={11} />{t("plc.yourLevel")}: {u.placementCefr}</Badge> : <Link to="/app/placement" className="btn btn-ghost">{t("plc.take")}</Link>}>
+          {!u.placementCefr && <div className="small muted" style={{ marginBottom: 10 }}><Icon name="lightBulb" size={13} /> {t("plc.homeCta")}</div>}
+          <SkillBars rows={skills} />
+        </Card>
         <Card title={t("home.badges")} actions={<Link to="/app/profile" className="btn btn-ghost">{t("home.seeAll")}</Link>}>
           <div className="row" style={{ gap: 14 }}>
             {data.badges.map((b) => {

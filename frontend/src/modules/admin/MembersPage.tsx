@@ -15,7 +15,7 @@ import { TRACKS, type Role, type Track, type UserProfile } from "@/types";
 const COLORS = ["#f59f00", "#4c58c4", "#2fb344", "#0b78a8", "#b0566f", "#2f7f86", "#a8612a", "#6b5fb0"];
 const blank = (ownerId: string): UserProfile => ({
   uid: "", displayName: "", email: "", role: "learner", ownerId, enrolledProgramIds: [], birthYear: null, track: null, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
-  plan: "free", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: null, planExpiresAt: null,
+  plan: "free", planStatus: "active", planTrack: null, planNote: "", planRequestedAt: null, planExpiresAt: null, childUids: [], placementCefr: null, placementAt: null,
   xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)], active: true, createdAt: "",
 });
 
@@ -50,7 +50,9 @@ function Inner() {
   if (loading && !data) return <Loading />;
   if (error || !data) return <ErrorBox message={error ?? "?"} onRetry={reload} />;
   const canMakeAdmin = user?.role === "superadmin" || user?.role === "owner";
-  const roles: Role[] = canMakeAdmin ? ["learner", "admin", "owner"] : ["learner"];
+  const roles: Role[] = canMakeAdmin ? ["learner", "parent", "admin", "owner"] : ["learner", "parent"];
+  const learners = data.members.filter((m) => m.role === "learner");
+  const toggleChild = (uid: string) => { if (!edit) return; const has = edit.childUids.includes(uid); setEdit({ ...edit, childUids: has ? edit.childUids.filter((x) => x !== uid) : [...edit.childUids, uid] }); };
   const rows = data.members.filter((m) => filter === "all" || m.role === filter);
 
   const save = async () => {
@@ -67,7 +69,7 @@ function Inner() {
       <PageHeader pretitle={t("adm.console")} title={t("mem.title")} sub={t("mem.sub")} actions={<Button icon="plus" onClick={() => setEdit(blank(oid))}>{t("mem.add")}</Button>} />
       <div className="row" style={{ marginBottom: 12, gap: 6 }}>
         <button type="button" className="chip" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>{t("mem.filter.all")} ({data.members.length})</button>
-        {(["learner", "admin", "owner"] as Role[]).map((r) => <button key={r} type="button" className="chip" aria-pressed={filter === r} onClick={() => setFilter(r)}>{t(`role.${r}`)} ({data.members.filter((m) => m.role === r).length})</button>)}
+        {(["learner", "parent", "admin", "owner"] as Role[]).map((r) => <button key={r} type="button" className="chip" aria-pressed={filter === r} onClick={() => setFilter(r)}>{t(`role.${r}`)} ({data.members.filter((m) => m.role === r).length})</button>)}
       </div>
       <Card pad="0">
         <div className="table-wrap">
@@ -78,7 +80,7 @@ function Inner() {
                 <tr key={m.uid}>
                   <td><Avatar name={m.displayName} color={m.avatarColor} size={32} /></td>
                   <td><b>{m.displayName}</b><div className="small muted">{m.email}</div></td>
-                  <td><Badge tone={m.role === "learner" ? "accent" : m.role === "owner" ? "warn" : "neutral"}>{t(`role.${m.role}`)}</Badge></td>
+                  <td><Badge tone={m.role === "learner" ? "accent" : m.role === "owner" ? "warn" : m.role === "parent" ? "ok" : "neutral"}>{t(`role.${m.role}`)}</Badge></td>
                   <td className="small">
                     {m.role !== "learner" ? "—" : (
                       <span className="row" style={{ gap: 4, flexWrap: "nowrap" }}>
@@ -90,7 +92,7 @@ function Inner() {
                   </td>
                   <td className="small">{m.role === "learner" && m.track ? t(`track.${m.track}`) : "—"}</td>
                   <td className="small">{m.role === "learner" ? <Badge tone={m.planStatus === "pending" ? "warn" : m.plan === "free" ? "ok" : m.plan === "pro" ? "accent" : "warn"}>{t(`plan.${m.plan}`)}{m.planStatus !== "active" && ` · ${t(`plan.status.${m.planStatus}`)}`}</Badge> : "—"}</td>
-                  <td className="small">{m.role === "learner" ? m.enrolledProgramIds.map((id) => pick(data.programs.find((p) => p.id === id)?.title)).filter(Boolean).join(", ") || "—" : "—"}</td>
+                  <td className="small">{m.role === "learner" ? m.enrolledProgramIds.map((id) => pick(data.programs.find((p) => p.id === id)?.title)).filter(Boolean).join(", ") || "—" : m.role === "parent" ? <><Icon name="heart" size={11} /> {t("fam.parentOf")} {m.childUids.map((id) => data.members.find((x) => x.uid === id)?.displayName ?? id).join(", ") || "—"}</> : "—"}</td>
                   <td>{m.role === "learner" ? <>{m.xp} <span className="small muted">L{levelFor(m.xp)}</span></> : "—"}</td>
                   <td>{m.role === "learner" ? m.streakDays : "—"}</td>
                   <td className="small muted">{m.lastActiveDate ? fmtDate(m.lastActiveDate, lang) : "—"}</td>
@@ -116,6 +118,11 @@ function Inner() {
             <Field label={t("prg.color")}>
               <div className="row" style={{ gap: 6 }}>{COLORS.map((c) => <button key={c} type="button" aria-label={c} aria-pressed={edit.avatarColor === c} onClick={() => setEdit({ ...edit, avatarColor: c })} style={{ width: 26, height: 26, borderRadius: "50%", background: c, border: edit.avatarColor === c ? "3px solid var(--color-text)" : "3px solid transparent" }} />)}</div>
             </Field>
+            {edit.role === "parent" && (
+              <Field label={t("mem.children")} hint={t("mem.childrenHint")} span2>
+                <div className="row">{learners.map((c) => <button key={c.uid} type="button" className="chip" aria-pressed={edit.childUids.includes(c.uid)} onClick={() => toggleChild(c.uid)}>{c.displayName}</button>)}</div>
+              </Field>
+            )}
             {edit.role === "learner" && (
               <>
                 <Field label={t("mem.programs")} span2>

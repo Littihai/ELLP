@@ -1,13 +1,15 @@
 import type {
   Badge, Certificate, ChatThread, InboxMessage, LeaderboardRow, LearnerSession, Lesson, LessonProgress, MailLog, MessageReply, MockAttempt, MockTest, Owner,
-  OwnerSettings, Payment, PaymentMethod, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
+  OwnerSettings, Payment, PaymentMethod, PlacementResult, PlacementTest, Plan, PlanStatus, Program, Quest, QuestProgress, SignUpInput, Track, UserProfile, Violation, ViolationType, XpEvent,
 } from "@/types";
+import { recommendPrograms, scorePlacement, stripPlacementAnswers } from "@/lib/placement";
+import { buildWeeklyReport, canViewChild, recentWeeks } from "@/lib/family";
 import { DEFAULT_PRICING, MOCK_XP_DONE, MOCK_XP_PASS, certificateCode, demoQrPayload, expiryStatus, planExpiry, priceFor, programComplete, receiptNo, scoreMock } from "@/lib/commerce";
 import { PLAN_RANK, effectivePlan } from "@/lib/access";
 import { ATTENTION_TYPES, DEFAULT_POLICY, PROFILE_RULES, defaultProfileFor, ladderAction, sessionAlive, sessionDecision, type SessionDecision } from "@/lib/integrity";
 import { readSessionId, writeSessionId } from "./api";
 import {
-  BADGES, CERTIFICATES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, MOCK_ATTEMPTS, MOCK_TESTS, OWNERS, OWNER_SETTINGS, PAYMENTS, PROGRAMS, PROGRESS, QUESTS,
+  BADGES, CERTIFICATES, CHATS, DEMO_PASSWORD, LESSONS, MAIL_LOG, MESSAGES, MOCK_ATTEMPTS, MOCK_TESTS, OWNERS, OWNER_SETTINGS, PAYMENTS, PLACEMENT_RESULTS, PLACEMENT_TESTS, PROGRAMS, PROGRESS, QUESTS,
   QUEST_PROGRESS, USERS, XP_EVENTS,
 } from "@/data/seed";
 import { canAccessLesson } from "@/lib/access";
@@ -15,7 +17,7 @@ import {
   DEFAULT_AGE_RULES, WATCH_COMPLETE_PCT, ageRuleFor, dayKey, levelFor, lessonComplete, nextStreak, periodKeyFor, quizPassed, quizXp, streakBonus, weekKey,
 } from "@/lib/gamification";
 import { newId, nowIso } from "@/lib/format";
-import type { ActivityResult, AdminStats, EllpApi, LeaderboardPeriod, PublicProgram } from "./api";
+import type { ActivityResult, AdminStats, ChildOverview, EllpApi, LeaderboardPeriod, PublicProgram } from "./api";
 
 /**
  * The demo back end: every collection in one object, saved to localStorage after each change, so a visitor can click
@@ -42,6 +44,8 @@ interface State {
   certificates: Certificate[];
   mockTests: MockTest[];
   mockAttempts: MockAttempt[];
+  placementTests: PlacementTest[];
+  placementResults: PlacementResult[];
   /** receipt counters per tenant and year, "own_pro:2026" → 1 */
   receiptSeq: Record<string, number>;
   /** passwords of accounts created on the sign-up page (seeded accounts all use DEMO_PASSWORD) */
@@ -49,15 +53,15 @@ interface State {
   sessionUid: string | null;
 }
 
-// v6: 1.3 added payments, certificates and mock tests; an older saved state is replaced by a fresh seed
-const KEY = "ellp.demo.v6";
+// v7: 1.4 added skills, placement tests and parent accounts; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v7";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
   return {
     owners: clone(OWNERS), programs: clone(PROGRAMS), lessons: clone(LESSONS), quests: clone(QUESTS), badges: clone(BADGES), users: clone(USERS),
     progress: clone(PROGRESS), questProgress: clone(QUEST_PROGRESS), xpEvents: clone(XP_EVENTS), messages: clone(MESSAGES), mail: clone(MAIL_LOG),
-    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), violations: [], sessions: [], payments: clone(PAYMENTS), certificates: clone(CERTIFICATES), mockTests: clone(MOCK_TESTS), mockAttempts: clone(MOCK_ATTEMPTS), receiptSeq: { "own_pro:2026": 1, "own_sunshine:2026": 1 }, passwords: {}, sessionUid: null,
+    settings: clone(OWNER_SETTINGS), chats: clone(CHATS), violations: [], sessions: [], payments: clone(PAYMENTS), certificates: clone(CERTIFICATES), mockTests: clone(MOCK_TESTS), mockAttempts: clone(MOCK_ATTEMPTS), placementTests: clone(PLACEMENT_TESTS), placementResults: clone(PLACEMENT_RESULTS), receiptSeq: { "own_pro:2026": 1, "own_sunshine:2026": 1 }, passwords: {}, sessionUid: null,
   };
 }
 
@@ -149,7 +153,7 @@ class DemoStore implements EllpApi {
     const wantsPaid = input.plan !== "free";
     const u: UserProfile = {
       uid: newId("u"), displayName: input.displayName.trim() || email, email, role: "learner", ownerId: input.ownerId, enrolledProgramIds: [],
-      birthYear: input.birthYear, track: input.track, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" },
+      birthYear: input.birthYear, track: input.track, allowAllAges: false, parentConsent: { acknowledged: false, at: null, note: "" }, childUids: [], placementCefr: null, placementAt: null,
       plan: input.plan, planStatus: wantsPaid ? "pending" : "active", planTrack: input.plan === "pro" ? (input.planTrack ?? input.track) : null,
       planNote: input.note.trim(), planRequestedAt: wantsPaid ? nowIso() : null, planExpiresAt: null,
       xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: ["#066fd1", "#2f7f86", "#b0566f", "#a8612a", "#6b5fb0"][Math.floor(Math.random() * 5)], active: true, createdAt: nowIso(),
@@ -158,9 +162,10 @@ class DemoStore implements EllpApi {
     u.enrolledProgramIds = this.s.programs.filter((p) => p.ownerId === u.ownerId && p.published && (p.track === u.track || p.track === "foundation")).map((p) => p.id);
     this.s.users.push(u);
     this.s.passwords[u.uid] = input.password;
-    // a chat begun as a visitor follows the person into their account
-    const vk = (() => { try { return localStorage.getItem("ellp.visitor"); } catch { return null; } })();
+    // a chat or a placement result made as a visitor follows the person into their account
+    const vk = input.visitorKey ?? (() => { try { return localStorage.getItem("ellp.visitor"); } catch { return null; } })();
     for (const c of this.s.chats) if (vk && c.visitorKey === vk && c.ownerId === u.ownerId && !c.uid) { c.uid = u.uid; c.email = u.email; c.name = u.displayName; }
+    for (const r of this.s.placementResults) if (vk && r.visitorKey === vk && r.ownerId === u.ownerId && !r.uid) { r.uid = u.uid; r.visitorKey = null; u.placementCefr = r.cefr; u.placementAt = r.submittedAt; }
     this.s.sessionUid = u.uid;
     this.save(); this.emit();
     return structuredClone(u);
@@ -306,6 +311,79 @@ class DemoStore implements EllpApi {
     if (pay.status === "pending") this.settlePayment(pay);
     this.save(); this.emit();
     return structuredClone(pay);
+  }
+
+  // ── 1.4: placement test (public, answers stripped; scored here as the server would) ──
+  async publicPlacementTest(ownerId: string) {
+    const t = this.s.placementTests.find((x) => x.ownerId === ownerId && x.published);
+    return t ? stripPlacementAnswers(structuredClone(t)) : null;
+  }
+  async submitPlacement(ownerId: string, testId: string, answers: Record<string, number>, visitorKey: string | null): Promise<PlacementResult> {
+    await delay(400);
+    const test = this.s.placementTests.find((x) => x.id === testId && x.ownerId === ownerId && x.published);
+    if (!test) throw new Error("TEST_NOT_FOUND");
+    const me = this.s.users.find((x) => x.uid === this.s.sessionUid) ?? null;
+    const sc = scorePlacement(test, answers);
+    const r: PlacementResult = {
+      id: newId("plr"), ownerId, testId, uid: me?.uid ?? null, visitorKey: me ? null : visitorKey, answers, ...sc,
+      recommendedProgramIds: recommendPrograms(sc.cefr, this.s.programs.filter((p) => p.ownerId === ownerId), me?.track ?? null), submittedAt: nowIso(),
+    };
+    // one result per person per tenant: the newest replaces the older
+    this.s.placementResults = this.s.placementResults.filter((x) => !(x.ownerId === ownerId && ((me && x.uid === me.uid) || (!me && visitorKey && x.visitorKey === visitorKey))));
+    this.s.placementResults.unshift(r);
+    if (me) { me.placementCefr = r.cefr; me.placementAt = r.submittedAt; }
+    this.save(); if (me) this.emit();
+    return structuredClone(r);
+  }
+  async myPlacement() { const me = this.me(); const r = this.s.placementResults.find((x) => x.uid === me.uid); return r ? structuredClone(r) : null; }
+
+  // ── 1.4: parent accounts ──
+  private childOf(parent: UserProfile, uid: string): UserProfile {
+    const child = this.s.users.find((x) => x.uid === uid);
+    if (!child || !canViewChild(parent, child)) throw new Error("FORBIDDEN");
+    return child;
+  }
+  async myChildren() { const me = this.me(); return structuredClone(this.s.users.filter((u) => canViewChild(me, u))); }
+  async childOverview(uid: string, weekKey: string): Promise<ChildOverview> {
+    const me = this.me();
+    const child = this.childOf(me, uid);
+    const programs = this.s.programs.filter((p) => p.ownerId === child.ownerId && child.enrolledProgramIds.includes(p.id));
+    const lessons = this.s.lessons.filter((l) => programs.some((p) => p.id === l.programId));
+    const progress = this.s.progress.filter((p) => p.uid === uid);
+    const xp = this.s.xpEvents.filter((e) => e.uid === uid);
+    const weeks = recentWeeks(8);
+    const i = Math.max(0, weeks.indexOf(weekKey));
+    return structuredClone({
+      child, report: buildWeeklyReport(child, lessons, progress, xp, weeks[i]), previous: buildWeeklyReport(child, lessons, progress, xp, weeks[i + 1] ?? weeks[i]),
+      programs, lessons, progress, xp: xp.sort((a, b) => b.at.localeCompare(a.at)), placement: this.s.placementResults.find((r) => r.uid === uid) ?? null, certificates: this.s.certificates.filter((c) => c.uid === uid),
+    });
+  }
+  /** The weekly email: the report's sentences to the parent's address, through the tenant's test-mode guard. */
+  private mailReport(parent: UserProfile, child: UserProfile, weekKey: string): MailLog {
+    const programs = this.s.programs.filter((p) => p.ownerId === child.ownerId && child.enrolledProgramIds.includes(p.id));
+    const lessons = this.s.lessons.filter((l) => programs.some((p) => p.id === l.programId));
+    const r = buildWeeklyReport(child, lessons, this.s.progress.filter((p) => p.uid === child.uid), this.s.xpEvents.filter((e) => e.uid === child.uid), weekKey);
+    const cfg = this.settingsOf(parent.ownerId)?.email;
+    const allowed = (cfg?.allowedRecipients ?? []).map((a) => a.toLowerCase());
+    const status: MailLog["status"] = cfg?.testMode === false ? "sent" : allowed.length === 0 ? "suppressed" : allowed.includes(parent.email.toLowerCase()) ? "sent" : "redirected";
+    const mail: MailLog = { id: newId("mail"), ownerId: parent.ownerId ?? "", to: parent.email, subject: `รายงานประจำสัปดาห์ของ ${child.displayName} (${r.from} – ${r.to})`, body: `${r.summary.th}\n\n${r.summary.en}`, status, testMode: cfg?.testMode ?? true, at: nowIso() };
+    this.s.mail.unshift(mail);
+    return mail;
+  }
+  async emailChildReport(uid: string, weekKey: string) {
+    await delay(300);
+    const me = this.me();
+    const mail = this.mailReport(me, this.childOf(me, uid), weekKey);
+    this.save();
+    return structuredClone(mail);
+  }
+  /** The parent confirms the acknowledgement on the child's record (a record of who confirmed, still not verified identity: decision 0004/0008). */
+  async confirmChildConsent(uid: string) {
+    const me = this.me();
+    const child = this.childOf(me, uid);
+    child.parentConsent = { acknowledged: true, at: nowIso(), note: `parent:${me.email}` };
+    this.save();
+    return structuredClone(child);
   }
 
   // ── 1.3: certificates ──
@@ -613,7 +691,7 @@ class DemoStore implements EllpApi {
     this.save(); this.emit();
     return structuredClone(this.s.users.find((x) => x.uid === u.uid) ?? this.s.users[this.s.users.length - 1]);
   }
-  async removeMember(uid: string) { this.s.users = this.s.users.filter((u) => u.uid !== uid); this.save(); }
+  async removeMember(uid: string) { this.s.users = this.s.users.filter((u) => u.uid !== uid); for (const u of this.s.users) u.childUids = u.childUids.filter((c) => c !== uid); this.save(); }
   async setMemberPlan(uid: string, plan: Plan, status: PlanStatus, planTrack: Track | null, note: string) {
     const u = this.s.users.find((x) => x.uid === uid);
     if (!u) throw new Error("MEMBER_NOT_FOUND");
@@ -651,6 +729,26 @@ class DemoStore implements EllpApi {
   }
   async removeMockTest(id: string) { this.s.mockTests = this.s.mockTests.filter((t) => t.id !== id); this.save(); }
   async mockAttempts(ownerId: string) { return structuredClone(this.s.mockAttempts.filter((a) => a.ownerId === ownerId).sort((a, b) => b.startedAt.localeCompare(a.startedAt))); }
+  async placementTests(ownerId: string) { return structuredClone(this.s.placementTests.filter((t) => t.ownerId === ownerId)); }
+  async savePlacementTest(t: PlacementTest) {
+    const i = this.s.placementTests.findIndex((x) => x.id === t.id);
+    const saved = { ...t, id: t.id || newId("plc") };
+    if (i >= 0) this.s.placementTests[i] = saved; else this.s.placementTests.push(saved);
+    this.save();
+    return structuredClone(saved);
+  }
+  async removePlacementTest(id: string) { this.s.placementTests = this.s.placementTests.filter((t) => t.id !== id); this.save(); }
+  async placementResults(ownerId: string) { return structuredClone(this.s.placementResults.filter((r) => r.ownerId === ownerId)); }
+  async sendWeeklyReports(ownerId: string) {
+    await delay(500);
+    const week = recentWeeks(0)[0];
+    const out: MailLog[] = [];
+    for (const parent of this.s.users.filter((u) => u.role === "parent" && u.ownerId === ownerId && u.active)) {
+      for (const uid of parent.childUids) { const child = this.s.users.find((x) => x.uid === uid); if (child && canViewChild(parent, child)) out.push(this.mailReport(parent, child, week)); }
+    }
+    this.save();
+    return structuredClone(out);
+  }
   async violations(ownerId: string) { return structuredClone(this.s.violations.filter((v) => v.ownerId === ownerId)); }
   async sessions(ownerId: string) { const uids = new Set(this.s.users.filter((u) => u.ownerId === ownerId).map((u) => u.uid)); return structuredClone(this.s.sessions.filter((s) => uids.has(s.uid) && s.active && sessionAlive(s.lastSeenAt))); }
   async liftPause(uid: string, lessonId: string) { const p = this.s.progress.find((x) => x.uid === uid && x.lessonId === lessonId); if (p) p.pausedUntil = null; this.save(); }
@@ -790,6 +888,8 @@ class DemoStore implements EllpApi {
     this.s.payments = this.s.payments.filter((p) => p.ownerId !== id);
     this.s.certificates = this.s.certificates.filter((c) => c.ownerId !== id);
     this.s.mockTests = this.s.mockTests.filter((t) => t.ownerId !== id);
+    this.s.placementTests = this.s.placementTests.filter((t) => t.ownerId !== id);
+    this.s.placementResults = this.s.placementResults.filter((r) => r.ownerId !== id);
     this.save();
   }
   async resetDemo() { this.s = seed(); this.save(); this.emit(); }

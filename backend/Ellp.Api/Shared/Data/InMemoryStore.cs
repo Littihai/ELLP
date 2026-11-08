@@ -29,6 +29,8 @@ public sealed class InMemoryStore : IEllpStore
     private readonly ConcurrentDictionary<string, MockTest> _mockTests = new();
     private readonly ConcurrentDictionary<string, MockAttempt> _mockAttempts = new();
     private readonly ConcurrentDictionary<string, int> _receiptSeq = new();
+    private readonly ConcurrentDictionary<string, PlacementTest> _placementTests = new();
+    private readonly ConcurrentDictionary<string, PlacementResult> _placementResults = new();
 
     public InMemoryStore()
     {
@@ -46,6 +48,8 @@ public sealed class InMemoryStore : IEllpStore
         foreach (var x in Copy(SeedData.Payments)) _payments[x.Id] = x;
         foreach (var x in Copy(SeedData.Certificates)) _certificates[x.Id] = x;
         foreach (var x in Copy(SeedData.MockTests)) _mockTests[x.Id] = x;
+        foreach (var x in Copy(SeedData.PlacementTests)) _placementTests[x.Id] = x;
+        foreach (var x in Copy(SeedData.PlacementResults)) _placementResults[x.Id] = x;
         _receiptSeq["own_pro:2026"] = 1; _receiptSeq["own_sunshine:2026"] = 1;
     }
 
@@ -141,4 +145,13 @@ public sealed class InMemoryStore : IEllpStore
     public Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct) => L(_mockAttempts.Values.Where(a => a.OwnerId == ownerId).OrderByDescending(a => a.StartedAt));
     public Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct) => L(_mockAttempts.Values.Where(a => a.Uid == uid).OrderByDescending(a => a.StartedAt));
     public Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct) { _mockAttempts[a.Id] = a; return Task.CompletedTask; }
+
+    public Task<List<PlacementTest>> PlacementTestsAsync(string ownerId, CancellationToken ct) => L(_placementTests.Values.Where(t => t.OwnerId == ownerId));
+    public Task UpsertPlacementTestAsync(PlacementTest t, CancellationToken ct) { _placementTests[t.Id] = t; return Task.CompletedTask; }
+    public Task DeletePlacementTestAsync(string id, CancellationToken ct) { _placementTests.TryRemove(id, out _); return Task.CompletedTask; }
+    public Task<List<PlacementResult>> PlacementResultsAsync(string ownerId, CancellationToken ct) => L(_placementResults.Values.Where(r => r.OwnerId == ownerId).OrderByDescending(r => r.SubmittedAt));
+    public Task<PlacementResult?> PlacementResultOfUserAsync(string uid, CancellationToken ct) => Task.FromResult(_placementResults.Values.Where(r => r.Uid == uid).OrderByDescending(r => r.SubmittedAt).FirstOrDefault());
+    public Task<List<PlacementResult>> PlacementResultsOfVisitorAsync(string visitorKey, CancellationToken ct) => L(_placementResults.Values.Where(r => r.VisitorKey == visitorKey));
+    public Task UpsertPlacementResultAsync(PlacementResult r, CancellationToken ct) { _placementResults[r.Id] = r; return Task.CompletedTask; }
+    public Task DeletePlacementResultAsync(string id, CancellationToken ct) { _placementResults.TryRemove(id, out _); return Task.CompletedTask; }
 }

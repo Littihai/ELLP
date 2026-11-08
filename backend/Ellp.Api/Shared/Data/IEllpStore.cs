@@ -85,4 +85,14 @@ public interface IEllpStore
     Task<List<MockAttempt>> MockAttemptsAsync(string ownerId, CancellationToken ct);
     Task<List<MockAttempt>> MockAttemptsOfUserAsync(string uid, CancellationToken ct);
     Task UpsertMockAttemptAsync(MockAttempt a, CancellationToken ct);
+
+    // 1.4
+    Task<List<PlacementTest>> PlacementTestsAsync(string ownerId, CancellationToken ct);
+    Task UpsertPlacementTestAsync(PlacementTest t, CancellationToken ct);
+    Task DeletePlacementTestAsync(string id, CancellationToken ct);
+    Task<List<PlacementResult>> PlacementResultsAsync(string ownerId, CancellationToken ct);
+    Task<PlacementResult?> PlacementResultOfUserAsync(string uid, CancellationToken ct);
+    Task<List<PlacementResult>> PlacementResultsOfVisitorAsync(string visitorKey, CancellationToken ct);
+    Task UpsertPlacementResultAsync(PlacementResult r, CancellationToken ct);
+    Task DeletePlacementResultAsync(string id, CancellationToken ct);
 }

@@ -27,6 +27,7 @@ export function LandingPage({ catalogOnly = false }: { catalogOnly?: boolean }) 
               <p style={{ fontSize: "var(--text-lg)", opacity: 0.9, margin: "14px 0 24px" }}>{t("pub.heroSub")}</p>
               <div className="row">
                 <Link to="/signup" className="btn btn-primary btn-lg" style={{ background: "#fff", color: "var(--color-brand-deep)" }}>{t("pub.signUp")} <Icon name="arrowRight" size={16} /></Link>
+                <Link to="/placement" className="btn btn-secondary btn-lg" style={{ background: "transparent", color: "#fff", borderColor: "rgba(255,255,255,.5)" }}><Icon name="goal" size={16} /> {t("plc.heroCta")}</Link>
                 <a href="#catalog" className="btn btn-secondary btn-lg" style={{ background: "transparent", color: "#fff", borderColor: "rgba(255,255,255,.5)" }}>{t("pub.browse")}</a>
               </div>
             </div>
