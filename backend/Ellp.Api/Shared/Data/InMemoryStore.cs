@@ -21,6 +21,7 @@ public sealed class InMemoryStore : IEllpStore
     private readonly ConcurrentDictionary<string, InboxMessage> _messages = new();
     private readonly ConcurrentBag<MailLog> _mail = new();
     private readonly ConcurrentDictionary<string, OwnerSettings> _settings = new();
+    private readonly ConcurrentDictionary<string, ChatThread> _chats = new();
 
     public InMemoryStore()
     {
@@ -34,6 +35,7 @@ public sealed class InMemoryStore : IEllpStore
         foreach (var x in Copy(SeedData.Progress)) _progress[$"{x.Uid}|{x.LessonId}"] = x;
         foreach (var x in Copy(SeedData.Settings)) _settings[x.OwnerId] = x;
         foreach (var x in Copy(SeedData.Messages)) _messages[x.Id] = x;
+        foreach (var x in Copy(SeedData.Chats)) _chats[x.Id] = x;
     }
 
     private static readonly System.Text.Json.JsonSerializerOptions CloneJson = new(System.Text.Json.JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
@@ -51,6 +53,7 @@ public sealed class InMemoryStore : IEllpStore
         foreach (var q in _quests.Values.Where(q => q.OwnerId == id).ToList()) _quests.TryRemove(q.Id, out _);
         foreach (var u in _users.Values.Where(u => u.OwnerId == id).ToList()) _users.TryRemove(u.Uid, out _);
         foreach (var m in _messages.Values.Where(m => m.OwnerId == id).ToList()) _messages.TryRemove(m.Id, out _);
+        foreach (var c in _chats.Values.Where(c => c.OwnerId == id).ToList()) _chats.TryRemove(c.Id, out _);
         return Task.CompletedTask;
     }
 
@@ -94,4 +97,10 @@ public sealed class InMemoryStore : IEllpStore
 
     public Task<OwnerSettings> SettingsAsync(string ownerId, CancellationToken ct) => Task.FromResult(_settings.GetOrAdd(ownerId, id => new OwnerSettings { OwnerId = id }));
     public Task UpsertSettingsAsync(OwnerSettings s, CancellationToken ct) { _settings[s.OwnerId] = s; return Task.CompletedTask; }
+
+    public Task<List<ChatThread>> ChatsAsync(string ownerId, CancellationToken ct) => L(_chats.Values.Where(c => c.OwnerId == ownerId).OrderByDescending(c => c.UpdatedAt));
+    public Task<ChatThread?> ChatAsync(string id, CancellationToken ct) => Task.FromResult(_chats.GetValueOrDefault(id));
+    public Task<ChatThread?> FindChatAsync(string ownerId, string? uid, string? visitorKey, CancellationToken ct) =>
+        Task.FromResult(_chats.Values.Where(c => c.OwnerId == ownerId && c.Status == "open").FirstOrDefault(c => (uid is not null && c.Uid == uid) || (visitorKey is not null && c.VisitorKey == visitorKey)));
+    public Task UpsertChatAsync(ChatThread c, CancellationToken ct) { _chats[c.Id] = c; return Task.CompletedTask; }
 }

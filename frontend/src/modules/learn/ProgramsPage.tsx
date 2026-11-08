@@ -5,8 +5,10 @@ import { Badge, Bar, Button, Card, ErrorBox, Icon, Loading, PageHeader } from "@
 import { useAsync } from "@/hooks/useAsync";
 import { api } from "@/services";
 import { ageBandOf, checkUnlock, programVisible } from "@/lib/gamification";
-import { fmtDuration } from "@/lib/format";
-import { ytThumb } from "./shared";
+import { canAccessLesson, planCoversProgram } from "@/lib/access";
+import { Link as RLink } from "react-router-dom";
+
+import { Thumb } from "./shared";
 
 /** All programs of the learner's owner, with how far they got in each. */
 export function ProgramsPage() {
@@ -39,8 +41,8 @@ export function ProgramsPage() {
               <div style={{ padding: "14px 16px" }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
                   <span className="row" style={{ gap: 6 }}>
-                    <Badge tone="neutral">{t(`programs.level.${p.level}`)}</Badge>
-                    <Badge tone="accent">{p.ageBands.length === 0 ? t("age.forAll") : p.ageBands.map((b) => b.replace("-", "–")).join(", ")}</Badge>
+                    <Badge tone="neutral">{t(`track.${p.track}`)} · {p.cefr}</Badge>
+                    <Badge tone={p.plan === "free" ? "ok" : planCoversProgram(u, p) ? "ok" : "warn"}>{t(`plan.${p.plan}`)}{p.plan !== "free" && !planCoversProgram(u, p) && ` · ${t("plan.preview")}`}</Badge>
                   </span>
                   <span className="small muted">{t("programs.lessonsN", { n: ls.length })}</span>
                 </div>
@@ -79,24 +81,22 @@ export function ProgramPage() {
   return (
     <>
       <Link to="/app/programs" className="btn btn-ghost" style={{ marginBottom: 10 }}><Icon name="arrowLeft" size={14} /> {t("app.back")}</Link>
-      <PageHeader pretitle={t(`programs.level.${data.program.level}`)} title={pick(data.program.title)} sub={pick(data.program.description)} />
+      <PageHeader pretitle={<>{t(`track.${data.program.track}`)} · {data.program.cefr}{data.program.targetScore && <> · {data.program.targetScore}</>}</>} title={pick(data.program.title)} sub={pick(data.program.description)}
+        actions={!planCoversProgram(u, data.program) && <RLink to="/app/plan" className="btn btn-secondary btn-sm"><Icon name="lock" size={14} /> {t("plan.needed", { plan: t(`plan.${data.program.plan}`) })} · {t("plan.upgrade")}</RLink>} />
       <div className="stack" style={{ gap: 12 }}>
         {data.lessons.map((l) => {
           const p = data.progress.find((x) => x.lessonId === l.id);
-          const unlocked = checkUnlock(l, u, data.progress, data.questRows).ok;
+          const allowed = canAccessLesson(u, data.program!, l, data.lessons);
+          const unlocked = allowed && checkUnlock(l, u, data.progress, data.questRows).ok;
           const status = p?.completed ? "done" : p && p.watchedPct > 0 ? "inProgress" : "notStarted";
           return (
             <Link key={l.id} to={`/app/lessons/${l.id}`} className="lesson-card" data-locked={!unlocked}>
-              <div className="thumb">
-                <img src={ytThumb(l.youtubeId)} alt="" loading="lazy" />
-                <span className="ov"><Icon name={p?.completed ? "checkCircleFill" : unlocked ? "play" : "lock"} size={26} /></span>
-                <span className="dur">{fmtDuration(l.durationSec)}</span>
-              </div>
+              <Thumb youtubeId={l.youtubeId} color={data.program!.color} duration={l.durationSec} locked={!unlocked} done={p?.completed} />
               <div style={{ minWidth: 0 }}>
                 <div className="row" style={{ justifyContent: "space-between" }}>
                   <span className="eyebrow">{l.order}. {t("programs.lessons")}</span>
                   <Badge tone={!unlocked ? "neutral" : status === "done" ? "ok" : status === "inProgress" ? "warn" : "accent"}>
-                    {!unlocked ? <><Icon name="lock" size={11} />{t("programs.locked")}</> : t(`programs.${status}`)}
+                    {!allowed ? <><Icon name="lock" size={11} />{t(`plan.${data.program!.plan}`)}</> : !unlocked ? <><Icon name="lock" size={11} />{t("programs.locked")}</> : t(`programs.${status}`)}
                   </Badge>
                 </div>
                 <h3>{pick(l.title)}</h3>

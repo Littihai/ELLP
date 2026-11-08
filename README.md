@@ -1,20 +1,27 @@
 # ELLP — English Learning Language Platform
 
 Gamified English learning through video: watch a song, pass a short quiz, earn XP, climb levels, finish quests, and unlock
-the next video. Built for young learners and the teachers who guide them. **Version 1.0.1** is a click-through demo for
+the next video. Built for young learners and the teachers who guide them. **Version 1.1.0** is a click-through demo for
 evaluation and handover: every screen works on fictional data, no account or server needed.
 
 Thai version: [README.th.md](README.th.md) · Handover notes for developers: [docs/handover.md](docs/handover.md)
 
+## Who it is for (1.1)
+
+Six **tracks**: children's songs, upper-secondary / university entrance (TGAT, A-Level), TOEIC, IELTS, the Thai civil-service
+exam (ก.พ.) and foundations. Programs carry a CEFR level and, for exams, a target score. Anyone can read the **catalog** and watch
+the first lesson of every program; **sign-up** is self-service (or an admin signs the person up from the **chat**); **Free / Pro /
+Premium** plans open the rest, with payment confirmed by an admin in 1.1. Decision: [docs/decisions/0005-tracks-plans-signup-chat.md](docs/decisions/0005-tracks-plans-signup-chat.md).
+
 ## Two worlds, two doors
 
-| | Learner (`/login` → `/app`) | Admin console (`/admin/login` → `/admin`) |
-|---|---|---|
-| Who | Children (and parents on their account) | Platform admin, owners, teachers |
-| Home | Level, XP bar, streak, next lesson, today's quests, badges | Dashboard: learners, active today, open messages, XP over 14 days |
-| Content | Programs → lessons → YouTube player, vocabulary chips, quiz | Owners (tenants), programs, lessons with quiz and unlock-rule editor, quests |
-| Game | Quests (daily / weekly / long-term), leaderboard, profile with badges and XP history | Members (roles, enrolment), settings (email, leaderboard) |
-| Contact | Write to the teacher; read replies | Inbox: reply by email; mail log shows what was sent, redirected or suppressed |
+| | Visitor (`/`, `/catalog`, `/signup`) | Learner (`/login` → `/app`) | Admin console (`/admin/login` → `/admin`) |
+|---|---|---|---|
+| Who | Anyone | Children, students, adults | Platform admin, owners, teachers |
+| Home | Landing, catalog by track, program details, preview lesson | Level, XP bar, streak, next lesson, today's quests, badges | Dashboard: learners, pending plans, open chats, XP over 14 days |
+| Content | — | Programs → lessons → player, vocabulary chips, quiz; plan page | Owners (tenants), programs (track, CEFR, plan), lessons with quiz and unlock-rule editor, quests |
+| Game | — | Quests, leaderboard, profile with badges and XP history | Members (roles, age, track, plan), approvals, settings (email, age rules, LINE, payment) |
+| Contact | Chat with an admin, sign up | Chat, write to the teacher, read replies | Chats (create account from chat), inbox with email reply, mail log |
 
 ## Gamification in one paragraph
 
@@ -63,6 +70,10 @@ Open http://localhost:5174. Pick a demo account on the sign-in page (the passwor
 | น้องมิ้นท์ | mint.parent@example.com | Learner, mid-way through Set 1 |
 | Nong Pim (new) | pim.parent@example.com | Learner with nothing done yet, no parent acknowledgement |
 | น้องปุ๊กกี้ | pukkie.parent@example.com | Learner aged 4 (band 3–5): filtered programs, hidden leaderboard, 50 % pass mark |
+| น้องพลอย ม.6 | ploy@example.com | Student, 17, school track (free) |
+| คุณเจ | jay@example.com | Adult, TOEIC track, Pro requested and pending |
+| คุณแอน | ann.k@example.com | Adult, ก.พ. track, Premium active |
+| ครูเบนซ์ | benz@englishpro.example.com | Admin of English Pro Academy (approvals, chats) |
 | Teacher Ann | ann@sunshine.example.com | Admin of Sunshine Kindergarten |
 | คุณครูใหญ่ สมศรี | principal@sunshine.example.com | Owner of Sunshine Kindergarten |
 | Platform Admin | super@ellp.example.com | Super Admin (owners page, every tenant) |
@@ -97,7 +108,8 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 - The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
-- No automated UI tests yet; the backend has 58 rule and engine tests.
+- No automated UI tests yet; the backend has 72 rule and engine tests.
+- Payment is manual (transfer + admin approval); online payment, self-hosted video and the anti-cheat rules are 1.2–1.3 (roadmap).
 
 ## License
 

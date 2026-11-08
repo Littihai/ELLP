@@ -28,6 +28,8 @@ const LINKS: { to: string; key: string; icon: IconName; superOnly?: boolean; end
   { to: "/admin/lessons", key: "adm.lessons", icon: "video" },
   { to: "/admin/quests", key: "adm.quests", icon: "rocket" },
   { to: "/admin/members", key: "adm.members", icon: "people" },
+  { to: "/admin/approvals", key: "adm.approvals", icon: "checklist" },
+  { to: "/admin/chat", key: "adm.chat", icon: "comment" },
   { to: "/admin/inbox", key: "adm.inbox", icon: "inbox" },
   { to: "/admin/mail", key: "adm.mail", icon: "mail" },
   { to: "/admin/settings", key: "adm.settings", icon: "gear" },

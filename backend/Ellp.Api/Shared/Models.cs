@@ -27,7 +27,13 @@ public sealed class LearningProgram
     public string OwnerId { get; set; } = "";
     public Text2 Title { get; set; } = new("", "");
     public Text2 Description { get; set; } = new("", "");
-    public string Level { get; set; } = "beginner";
+    /// <summary>kids | school | toeic | ielts | kpo | foundation (decision 0005).</summary>
+    public string Track { get; set; } = "foundation";
+    /// <summary>pre-A1 … C1.</summary>
+    public string Cefr { get; set; } = "A1";
+    public string TargetScore { get; set; } = "";
+    /// <summary>The lowest plan that opens every lesson; the first lesson is always a free preview.</summary>
+    public string Plan { get; set; } = "free";
     /// <summary>Who the program is for ("3-5", "6-8", "9-12", "13+"); empty = every age (decision 0004).</summary>
     public List<string> AgeBands { get; set; } = new();
     public string Color { get; set; } = "#066fd1";
@@ -112,6 +118,13 @@ public sealed class UserProfile
     public List<string> EnrolledProgramIds { get; set; } = new();
     /// <summary>The birth year only (the least data that gives an age band); null = not given.</summary>
     public int? BirthYear { get; set; }
+    public string? Track { get; set; }
+    public string Plan { get; set; } = "free";
+    /// <summary>active | pending (a pro/premium request waits for an admin) | expired.</summary>
+    public string PlanStatus { get; set; } = "active";
+    public string? PlanTrack { get; set; }
+    public string PlanNote { get; set; } = "";
+    public string? PlanRequestedAt { get; set; }
     /// <summary>A teacher or parent opened every age band to this learner.</summary>
     public bool AllowAllAges { get; set; }
     public ParentConsent ParentConsent { get; set; } = new();
@@ -232,6 +245,34 @@ public sealed class OwnerSettings
     public LeaderboardSettings Leaderboard { get; set; } = new();
     /// <summary>Keyed by band ("3-5" ...); a missing band falls back to the defaults in GamificationRules.</summary>
     public Dictionary<string, AgeRule> AgeRules { get; set; } = new();
+    public string LineUrl { get; set; } = "";
+    public Text2 PaymentInstructions { get; set; } = new("", "");
+}
+
+public sealed class ChatMessage
+{
+    public string Id { get; set; } = "";
+    /// <summary>visitor | admin</summary>
+    public string From { get; set; } = "visitor";
+    public string ByName { get; set; } = "";
+    public string Text { get; set; } = "";
+    public string At { get; set; } = "";
+}
+
+/// <summary>A chat between a visitor (not signed in yet) or a learner and the tenant's admins (1.1).</summary>
+public sealed class ChatThread
+{
+    public string Id { get; set; } = "";
+    public string OwnerId { get; set; } = "";
+    public string? Uid { get; set; }
+    public string? VisitorKey { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Status { get; set; } = "open";
+    public string CreatedAt { get; set; } = "";
+    public string UpdatedAt { get; set; } = "";
+    public string? LinkedUid { get; set; }
+    public List<ChatMessage> Messages { get; set; } = new();
 }
 
 public sealed record LeaderboardRow(int Rank, string Uid, string DisplayName, string AvatarColor, int Xp, int Level, bool IsMe);

@@ -5,7 +5,9 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { Avatar, Icon, LangToggle } from "@/components/ui/kit";
 import { useViewport } from "@/hooks/useAsync";
 import { levelInfo } from "@/lib/gamification";
-import { USE_DEMO } from "@/services";
+import { api, USE_DEMO } from "@/services";
+import { useAsync } from "@/hooks/useAsync";
+import { ChatWidget } from "@/components/ChatWidget";
 import type { IconName } from "@/constants/icons";
 
 const NAV: { to: string; key: string; icon: IconName; end?: boolean }[] = [
@@ -13,6 +15,7 @@ const NAV: { to: string; key: string; icon: IconName; end?: boolean }[] = [
   { to: "/app/programs", key: "nav.programs", icon: "video" },
   { to: "/app/quests", key: "nav.quests", icon: "rocket" },
   { to: "/app/leaderboard", key: "nav.leaderboard", icon: "trophy" },
+  { to: "/app/plan", key: "nav.plan", icon: "star" },
   { to: "/app/profile", key: "nav.profile", icon: "person" },
   { to: "/app/contact", key: "nav.contact", icon: "comment" },
 ];
@@ -24,8 +27,10 @@ export function LearnerShell() {
   const { resolved, toggle } = useTheme();
   const { mobile } = useViewport();
   const nav = useNavigate();
+  const { data: owners } = useAsync(() => api.owners(), [user?.ownerId]);
   if (!user) return null;
   const lv = levelInfo(user.xp);
+  const myOwner = owners?.filter((o) => o.id === user.ownerId) ?? [];
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -56,6 +61,7 @@ export function LearnerShell() {
         ELLP {t("app.version")} {__APP_VERSION__}{USE_DEMO && <> · {t("app.demoBadge")}: {t("app.demoHint")}</>}
         {mobile && <div style={{ marginTop: 8 }}><LangToggle /></div>}
       </footer>
+      {myOwner.length > 0 && <ChatWidget owners={myOwner} />}
       {mobile && (
         <nav className="learn-bottom" aria-label="main">
           {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={18} />{t(n.key)}</NavLink>)}

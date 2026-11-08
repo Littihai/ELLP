@@ -74,8 +74,10 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
           </label>
           {error && <p className="lg-error" role="alert">{error}</p>}
           <Button type="submit" className="lg-btn" size="lg" busy={busy} variant={state === "ok" ? "success" : "primary"}>{t("login.submit")} <Icon name="arrowRight" size={16} /></Button>
-          <div style={{ textAlign: "center", fontSize: "var(--text-sm)" }}>
+          <div style={{ textAlign: "center", fontSize: "var(--text-sm)", display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+            {!admin && <Link to="/signup">{t("pub.signUp")}</Link>}
             <Link to={admin ? "/login" : "/admin/login"}>{t(admin ? "login.toLearner" : "login.toAdmin")}</Link>
+            <Link to="/">{t("pub.catalog")}</Link>
           </div>
         </form>
 

@@ -29,4 +29,5 @@ public static class ApiCodes
     public const string LessonLocked = "LESSON_LOCKED";
     public const string WatchFirst = "WATCH_FIRST";
     public const string MailFailed = "MAIL_FAILED";
+    public const string PlanRequired = "PLAN_REQUIRED";
 }

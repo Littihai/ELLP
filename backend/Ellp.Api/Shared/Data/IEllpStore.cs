@@ -54,4 +54,10 @@ public interface IEllpStore
 
     Task<OwnerSettings> SettingsAsync(string ownerId, CancellationToken ct);
     Task UpsertSettingsAsync(OwnerSettings s, CancellationToken ct);
+
+    Task<List<ChatThread>> ChatsAsync(string ownerId, CancellationToken ct);
+    Task<ChatThread?> ChatAsync(string id, CancellationToken ct);
+    /// <summary>The open thread of a learner (by uid) or a visitor (by key) with one tenant.</summary>
+    Task<ChatThread?> FindChatAsync(string ownerId, string? uid, string? visitorKey, CancellationToken ct);
+    Task UpsertChatAsync(ChatThread c, CancellationToken ct);
 }

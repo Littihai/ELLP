@@ -9,6 +9,18 @@ import type { IconName } from "@/constants/icons";
 /** The YouTube thumbnail for a lesson card. */
 export const ytThumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
+/** A lesson thumbnail: the YouTube frame, or a coloured tile when the lesson has no video yet. */
+export function Thumb({ youtubeId, color, duration, locked, done }: { youtubeId: string; color?: string; duration?: number; locked?: boolean; done?: boolean }) {
+  return (
+    <div className="thumb" style={youtubeId ? undefined : { background: `linear-gradient(135deg, ${color ?? "var(--color-neutral-300)"}, color-mix(in srgb, ${color ?? "#888"} 55%, #182433))` }}>
+      {youtubeId ? <img src={ytThumb(youtubeId)} alt="" loading="lazy" /> : <Icon name="video" size={26} color="rgba(255,255,255,0.85)" />}
+      {(locked || done) && <span className="ov"><Icon name={done ? "checkCircleFill" : "lock"} size={26} /></span>}
+      {!locked && !done && youtubeId && <span className="ov"><Icon name="play" size={26} /></span>}
+      {duration !== undefined && <span className="dur">{Math.floor(duration / 60)}:{String(duration % 60).padStart(2, "0")}</span>}
+    </div>
+  );
+}
+
 /** One unlock rule in words, with its state. */
 export function RuleRow({ rule, ok, lessons, quests, noAge = false }: { rule: UnlockRule; ok: boolean; lessons: Lesson[]; quests: Quest[]; noAge?: boolean }) {
   const { t, pick } = useI18n();

@@ -100,7 +100,7 @@ export function nextStreak(streakDays: number, lastActiveDate: string | null, to
 
 // ── age (decision 0004) ──
 
-export const AGE_BANDS: AgeBand[] = ["3-5", "6-8", "9-12", "13+"];
+export const AGE_BANDS: AgeBand[] = ["3-5", "6-8", "9-12", "13-15", "16-18", "18+"];
 
 /** Age in whole years from the birth year alone (the platform stores no birth date). */
 export function ageOf(birthYear: number | null, now = new Date()): number | null {
@@ -113,7 +113,9 @@ export function ageBandFor(age: number | null): AgeBand | null {
   if (age <= 5) return "3-5";
   if (age <= 8) return "6-8";
   if (age <= 12) return "9-12";
-  return "13+";
+  if (age <= 15) return "13-15";
+  if (age <= 18) return "16-18";
+  return "18+";
 }
 
 export function ageBandOf(user: Pick<UserProfile, "birthYear">, now = new Date()): AgeBand | null {
@@ -125,7 +127,9 @@ export const DEFAULT_AGE_RULES: Record<AgeBand, AgeRule> = {
   "3-5": { quizPassPct: 50, leaderboardVisible: false, streakFreeze: true },
   "6-8": { quizPassPct: 60, leaderboardVisible: true, streakFreeze: true },
   "9-12": { quizPassPct: 70, leaderboardVisible: true, streakFreeze: false },
-  "13+": { quizPassPct: 70, leaderboardVisible: true, streakFreeze: false },
+  "13-15": { quizPassPct: 70, leaderboardVisible: true, streakFreeze: false },
+  "16-18": { quizPassPct: 70, leaderboardVisible: true, streakFreeze: false },
+  "18+": { quizPassPct: 70, leaderboardVisible: true, streakFreeze: false },
 };
 /** When the age is unknown the standard numbers apply (no band to be gentle or strict about). */
 export const BASE_AGE_RULE: AgeRule = { quizPassPct: QUIZ_PASS_PCT, leaderboardVisible: true, streakFreeze: false };

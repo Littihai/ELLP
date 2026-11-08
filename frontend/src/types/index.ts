@@ -10,8 +10,21 @@ export type Role = "superadmin" | "owner" | "admin" | "learner";
 
 export type StatusTone = "accent" | "ok" | "warn" | "stop" | "neutral";
 
-/** Age bands (1.0.1): kindergarten, lower primary, upper primary, older. A learner's band comes from their birth year. */
-export type AgeBand = "3-5" | "6-8" | "9-12" | "13+";
+/** Age bands (1.0.1, widened in 1.1): kindergarten, lower and upper primary, lower and upper secondary, adults. From the birth year. */
+export type AgeBand = "3-5" | "6-8" | "9-12" | "13-15" | "16-18" | "18+";
+
+/** What a learner is here for (1.1, decision 0005). A program belongs to one track; a learner picks one at sign-up. */
+export type Track = "kids" | "school" | "toeic" | "ielts" | "kpo" | "foundation";
+export const TRACKS: Track[] = ["kids", "school", "toeic", "ielts", "kpo", "foundation"];
+
+/** CEFR level of a program (pre-A1 for the youngest). */
+export type Cefr = "pre-A1" | "A1" | "A2" | "B1" | "B2" | "C1";
+export const CEFR_LEVELS: Cefr[] = ["pre-A1", "A1", "A2", "B1", "B2", "C1"];
+
+/** Plans (1.1): free = catalog + the first lesson of every program; pro = every lesson of one track; premium = everything. */
+export type Plan = "free" | "pro" | "premium";
+export const PLANS: Plan[] = ["free", "pro", "premium"];
+export type PlanStatus = "active" | "pending" | "expired";
 
 /** What changes per age band (tenant settings, decision 0004). */
 export interface AgeRule {
@@ -40,7 +53,12 @@ export interface Program {
   ownerId: string;
   title: Text2;
   description: Text2;
-  level: "beginner" | "elementary" | "intermediate";
+  track: Track;
+  cefr: Cefr;
+  /** for exam tracks: the score the program aims at ("TOEIC 600", "IELTS 6.5"); empty otherwise */
+  targetScore: string;
+  /** the lowest plan that opens every lesson; the first lesson is always a free preview */
+  plan: Plan;
   /** who the program is for; empty = every age */
   ageBands: AgeBand[];
   color: string;
@@ -116,6 +134,16 @@ export interface UserProfile {
   enrolledProgramIds: string[];
   /** the year only (the minimum needed for an age band); null = not given yet */
   birthYear: number | null;
+  /** what the learner is here for; null until chosen */
+  track: Track | null;
+  plan: Plan;
+  /** pending = a pro/premium request waits for an admin (bank transfer + slip in 1.1); expired = the admin ended it */
+  planStatus: PlanStatus;
+  /** the one track a pro plan covers */
+  planTrack: Track | null;
+  /** what the learner wrote with the request (slip reference, school, phone) and what the admin noted back */
+  planNote: string;
+  planRequestedAt: string | null;
   /** a teacher or parent opened every age band to this learner (override) */
   allowAllAges: boolean;
   /** a parent or guardian acknowledged the use of the platform (a first trace for PDPA; full consent flow comes with parent accounts) */
@@ -208,6 +236,49 @@ export interface OwnerSettings {
   };
   leaderboard: { visible: boolean; size: number };
   ageRules: Record<AgeBand, AgeRule>;
+  /** the tenant's LINE Official Account link shown next to the chat (empty = no button) */
+  lineUrl: string;
+  /** what a visitor reads under "how to pay" when requesting a plan */
+  paymentInstructions: Text2;
+}
+
+/** A chat between a visitor (not signed in yet) or a learner and the tenant's admins (1.1). */
+export interface ChatMessage {
+  id: string;
+  from: "visitor" | "admin";
+  byName: string;
+  text: string;
+  at: string;
+}
+
+export interface ChatThread {
+  id: string;
+  ownerId: string;
+  /** the learner's uid once signed in, else null */
+  uid: string | null;
+  /** a random key kept in the visitor's browser, so the thread survives a reload before sign-up */
+  visitorKey: string | null;
+  name: string;
+  email: string;
+  status: "open" | "closed";
+  createdAt: string;
+  updatedAt: string;
+  /** set when an admin created an account from this chat */
+  linkedUid: string | null;
+  messages: ChatMessage[];
+}
+
+/** What a visitor fills in on the sign-up page (1.1). */
+export interface SignUpInput {
+  displayName: string;
+  email: string;
+  password: string;
+  birthYear: number | null;
+  track: Track;
+  ownerId: string;
+  plan: Plan;
+  planTrack: Track | null;
+  note: string;
 }
 
 export interface LeaderboardRow {

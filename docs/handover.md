@@ -14,7 +14,20 @@ What you are getting, what to look at first, and what we would ask you to do nex
 6. Sign in as **Platform Admin** → Owners → add an owner → switch the header scope to it → it is empty, as it should be.
 7. Sign in as **น้องปุ๊กกี้** (`pukkie.parent@example.com`, age 4): the body program is hidden, the leaderboard is off for the band,
    the quiz passes at 50 %. In Admin › Members tick "open every age band" for her and look again. Admin › Settings has the per-band table.
-8. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 58 tests on the rules and the engine.
+8. Open http://localhost:5174/ signed out: the landing page and catalog by track; open *TOEIC 600+* → the preview lesson and the
+   plan it needs. Sign up (any email, a 6-character password, birth year 1999, TOEIC, Pro) → you land on the learner home with a
+   pending Pro request; lesson 2 of TOEIC is locked behind the plan. Open the chat bubble and write to the academy.
+9. Sign in at `/admin/login` as **ครูเบนซ์** → Approvals: approve your request → the learner now opens lesson 2. Chats: reply
+   to the visitor, or "create account from chat".
+10. `dotnet test backend/Ellp.Api.Tests/Ellp.Api.Tests.csproj`: 72 tests on the rules and the engine.
+
+## A good first task (1.2)
+
+Build the self-hosted player for the exam tracks (roadmap 1.2): a `VideoPlayer` component over `<video>` with video.js or plyr,
+fed by a signed URL from a new API endpoint, reporting position every 15 s to `api.recordWatch`, with seek-forward blocked
+beyond the furthest watched second and the speed menu removed. Keep the YouTube path for the kids track. Then the first two
+player rules: in-video quiz checkpoints and the tab-switch warning. Decision record 0006 should say which streaming provider
+was picked and why.
 
 ## Read in this order
 
@@ -40,8 +53,7 @@ What you are getting, what to look at first, and what we would ask you to do nex
 - Secrets never in the repository. Test mode stays on until someone deliberately turns both switches off.
 - Commits in English, one change each; release as `vX.Y.Z` with notes.
 
-## A good first task
+## Also worth doing
 
-Replace the watch timer with the YouTube IFrame API in `LessonPage.tsx` (`Player`): load the API, create the player on the
-`<div>`, poll `getCurrentTime() / getDuration()` every few seconds while playing, call `api.recordWatch` at 25 / 50 / 80 / 100 %.
-Keep the demo button behind `USE_DEMO`. Add a Playwright test that walks step 2 above.
+Replace the watch timer with the YouTube IFrame API in `LessonPage.tsx` (`Player`) for the kids track, and add a Playwright test
+that walks steps 2 and 8 above.

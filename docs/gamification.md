@@ -66,6 +66,12 @@ The age is `now.year − birthYear`. A tenant changes the three numbers per band
 (empty = all); the learner sees only matching programs unless `allowAllAges` is set on them. Two unlock rules use the age:
 `min_age` (years) and `age_band` (bands); both fail when the age is unknown and pass when the learner has the override.
 
+## Plans (1.1, decision 0005)
+
+A free program is open to everyone signed in. The first lesson of every program is a free preview. Pro opens every lesson of the
+pro programs in the learner's chosen track; premium opens everything; pending or expired counts as free; staff see everything.
+The engine refuses a gated lesson with `PLAN_REQUIRED` (HTTP 402). Rules: `frontend/src/lib/access.ts`, `backend/.../PlanRules.cs`.
+
 ## Demo-only shortcut
 
 In demo mode the lesson page has "Mark as watched (demo)", which sends `watchedPct = 100`. A timer also credits watch time while

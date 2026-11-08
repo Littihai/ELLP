@@ -8,6 +8,8 @@ import { api, USE_DEMO, type ActivityResult } from "@/services";
 import { WATCH_COMPLETE_PCT, ageBandOf, ageRuleFor, lessonComplete, quizPassed } from "@/lib/gamification";
 import type { Lesson, LessonProgress } from "@/types";
 import { CheerModal, RuleRow, useUnlock } from "./shared";
+import { canAccessLesson } from "@/lib/access";
+import { Link as RLink } from "react-router-dom";
 
 /**
  * The lesson: the YouTube player (locked until the rules pass), the words, the quiz, and the next lesson.
@@ -21,9 +23,11 @@ export function LessonPage() {
   const { t, pick } = useI18n();
   const u = user!;
   const { data, error, loading, reload, setData } = useAsync(async () => {
-    const [lessons, progress, questRows, quests, settings] = await Promise.all([api.lessons(), api.myProgress(), api.myQuests(), u.ownerId ? api.quests(u.ownerId) : Promise.resolve([]), u.ownerId ? api.settings(u.ownerId) : Promise.resolve(null)]);
+    const [lessons, progress, questRows, quests, settings, programs] = await Promise.all([api.lessons(), api.myProgress(), api.myQuests(), u.ownerId ? api.quests(u.ownerId) : Promise.resolve([]), u.ownerId ? api.settings(u.ownerId) : Promise.resolve(null), api.programs(u.ownerId)]);
     const lesson = lessons.find((l) => l.id === lessonId) ?? null;
-    return { lesson, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests, passPct: ageRuleFor(settings, u).quizPassPct };
+    const program = programs.find((p) => p.id === lesson?.programId) ?? null;
+    const allowed = !!lesson && !!program && canAccessLesson(u, program, lesson, lessons);
+    return { lesson, program, allowed, siblings: lessons.filter((l) => l.programId === lesson?.programId && l.published).sort((a, b) => a.order - b.order), lessons, progress, questRows, quests, passPct: ageRuleFor(settings, u).quizPassPct };
   }, [lessonId, u.uid]);
   const [cheer, setCheer] = useState<ActivityResult | null>(null);
   const unlock = useUnlock(data?.lesson ?? undefined, u, data?.progress ?? [], data?.questRows ?? []);
@@ -46,6 +50,8 @@ export function LessonPage() {
   const next = data.siblings[idx + 1];
   const done = lessonComplete(lesson, progress, data.passPct);
   const noAge = ageBandOf(u) === null;
+  const paywalled = !data.allowed;
+  const open = unlock.ok && !paywalled;
 
   return (
     <>
@@ -58,8 +64,16 @@ export function LessonPage() {
       />
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 20, alignItems: "start" }} className="lesson-grid">
         <div className="stack">
-          <Player lesson={lesson} unlocked={unlock.ok} progress={progress} onResult={applyResult} />
-          {unlock.ok && (
+          {paywalled && data.program && (
+            <Card>
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <div><b><Icon name="lock" size={14} /> {t("plan.needed", { plan: t(`plan.${data.program.plan}`) })}</b><div className="small muted">{t(`plan.${data.program.plan}.desc`)}</div></div>
+                <RLink to="/app/plan" className="btn btn-primary btn-sm">{t("plan.upgrade")} <Icon name="arrowRight" size={14} /></RLink>
+              </div>
+            </Card>
+          )}
+          <Player lesson={lesson} unlocked={open} progress={progress} onResult={applyResult} />
+          {open && (
             <div className="row" style={{ justifyContent: "space-between" }}>
               <div style={{ flex: 1, minWidth: 160 }}>
                 <div className="small muted" style={{ marginBottom: 4 }}>{t("lesson.watchedPct", { pct: watched })}</div>
@@ -71,7 +85,7 @@ export function LessonPage() {
           {lesson.vocabulary.length > 0 && (
             <Card title={t("lesson.vocab")}><div className="vocab">{lesson.vocabulary.map((w) => <span key={w}>{w}</span>)}</div></Card>
           )}
-          {unlock.ok && lesson.quiz.length > 0 && <Quiz lesson={lesson} progress={progress} enabled={canQuiz} passPct={data.passPct} onResult={applyResult} />}
+          {open && lesson.quiz.length > 0 && <Quiz lesson={lesson} progress={progress} enabled={canQuiz} passPct={data.passPct} onResult={applyResult} />}
         </div>
         <div className="stack">
           {lesson.unlock.length > 0 && (
@@ -123,7 +137,9 @@ function Player({ lesson, unlocked, progress, onResult }: { lesson: Lesson; unlo
   return (
     <div className="stack" style={{ gap: 10 }}>
       <div className="player">
-        {unlocked ? (
+        {unlocked && !lesson.youtubeId ? (
+          <div className="player-locked"><div><Icon name="video" size={40} /><h2>{t("pub.noVideoYet")}</h2><p>{t("lesson.markHint")}</p></div></div>
+        ) : unlocked ? (
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${lesson.youtubeId}?rel=0&modestbranding=1`}
             title={lesson.title.en}

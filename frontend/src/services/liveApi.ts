@@ -1,9 +1,9 @@
 import type {
-  Badge, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
+  Badge, ChatThread, InboxMessage, LeaderboardRow, Lesson, LessonProgress, MailLog, MessageReply, Owner, OwnerSettings, Program, Quest, QuestProgress,
   UserProfile, XpEvent,
 } from "@/types";
-import { API_BASE, type ActivityResult, type AdminStats, type EllpApi, type LeaderboardPeriod } from "./api";
-import { firebaseSignIn, firebaseSignOut, getIdToken, onFirebaseUser } from "./firebase";
+import { API_BASE, type ActivityResult, type AdminStats, type EllpApi, type LeaderboardPeriod, type PublicProgram } from "./api";
+import { firebaseSignIn, firebaseSignOut, firebaseSignUp, getIdToken, onFirebaseUser } from "./firebase";
 
 /** The C# API's envelope (backend/Ellp.Api/Shared/Api/ApiResponse.cs). */
 interface Envelope<T> { success: boolean; message: string; data: T; code?: string }
@@ -33,9 +33,21 @@ const qs = (o: Record<string, string | null | undefined>) => {
 export const liveApi: EllpApi = {
   mode: "live",
   async signIn(email, password) { await firebaseSignIn(email, password); return post<UserProfile>("/auth/session"); },
+  /** Firebase creates the account; the API creates the profile with the details (and the pending plan request). */
+  async signUp(input) {
+    await firebaseSignUp(input.email, input.password);
+    const { password: _pw, ...details } = input;
+    return post<UserProfile>("/auth/register", details);
+  },
   async signOut() { await firebaseSignOut(); },
   async currentUser() { const t = await getIdToken(); return t ? post<UserProfile>("/auth/session") : null; },
   onAuthChange(cb) { return onFirebaseUser(async (u) => cb(u ? await post<UserProfile>("/auth/session").catch(() => null) : null)); },
+
+  publicOwners: () => get<Owner[]>("/public/owners"),
+  publicPrograms: () => get<PublicProgram[]>("/public/programs"),
+  publicProgram: (id) => get<{ program: Program; owner: Owner; lessons: Lesson[]; settings: OwnerSettings } | null>(`/public/programs/${id}`),
+  chatThread: (ownerId, visitorKey) => get<ChatThread | null>(`/public/chat${qs({ ownerId, visitorKey })}`),
+  chatSend: (ownerId, visitorKey, name, email, text) => post<ChatThread>("/public/chat", { ownerId, visitorKey, name, email, text }),
 
   owners: () => get<Owner[]>("/catalog/owners"),
   programs: (ownerId) => get<Program[]>(`/catalog/programs${qs({ ownerId })}`),
@@ -52,10 +64,15 @@ export const liveApi: EllpApi = {
   myMessages: () => get<InboxMessage[]>("/me/messages"),
   sendMessage: (subject, body) => post<InboxMessage>("/me/messages", { subject, body }),
   enroll: (programId) => post<UserProfile>("/me/enroll", { programId }),
+  requestPlan: (plan, planTrack, note) => post<UserProfile>("/me/plan", { plan, planTrack, note }),
 
   members: (ownerId) => get<UserProfile[]>(`/admin/members${qs({ ownerId })}`),
   saveMember: (u) => post<UserProfile>("/admin/members", u),
   removeMember: (uid) => del(`/admin/members/${uid}`),
+  setMemberPlan: (uid, plan, status, planTrack, note) => put<UserProfile>(`/admin/members/${uid}/plan`, { plan, status, planTrack, note }),
+  chatThreads: (ownerId) => get<ChatThread[]>(`/admin/chat${qs({ ownerId })}`),
+  chatReply: (id, text) => post<ChatThread>(`/admin/chat/${id}/reply`, { text }),
+  chatSetStatus: (id, status, linkedUid) => put<ChatThread>(`/admin/chat/${id}/status`, { status, linkedUid: linkedUid ?? null }),
   saveProgram: (p) => post<Program>("/admin/programs", p),
   removeProgram: (id) => del(`/admin/programs/${id}`),
   saveLesson: (l) => post<Lesson>("/admin/lessons", l),
