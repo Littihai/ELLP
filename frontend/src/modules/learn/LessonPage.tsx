@@ -190,7 +190,7 @@ function Player({ lesson, unlocked, progress, onResult }: { lesson: Lesson; unlo
     <div className="stack" style={{ gap: 10 }}>
       <div className="player">
         {unlocked && !lesson.youtubeId ? (
-          <div className="player-locked"><div><Icon name="video" size={40} /><h2>{t("pub.noVideoYet")}</h2><p>{t("lesson.markHint")}</p></div></div>
+          <div className="player-locked"><div><Icon name="video" size={40} /><h2>{t("pub.noVideoYet")}</h2></div></div>
         ) : unlocked ? (
           <iframe
             src={`https://www.youtube-nocookie.com/embed/${lesson.youtubeId}?rel=0&modestbranding=1`}
