@@ -8,8 +8,8 @@ import type {
 /**
  * Demo data: three owners (a kindergarten, a children's publisher and an exam-prep academy), programs across the tracks
  * (kids, school, TOEIC, IELTS, ก.พ., foundation), song lessons with quizzes and unlock rules, quests, badges, learners of
- * every age with progress, open messages and chats. Everything is fictional. The YouTube ids of the song lessons point at
- * well-known children's songs; the exam-track lessons have no video yet (an admin pastes the id, or 1.2 uploads a file).
+ * every age with progress, open messages and chats. Everything is fictional. No lesson carries a video: each tenant adds its own
+ * (a YouTube id or a file / HLS URL in Admin › Lessons) under its own licence; the demo's "mark as watched" button stands in.
  */
 
 const T0 = "2026-10-01T08:00:00.000Z";
@@ -67,7 +67,7 @@ const q = (id: string, th: string, en: string, choices: string[], answer: number
 
 export const LESSONS: Lesson[] = [
   {
-    id: "les_babyshark", programId: "prg_songs1", order: 1, published: true, skills: ["listening", "vocabulary"], youtubeId: "XqZsoesa55w", videoUrl: "", checkpoints: [], durationSec: 136, xpReward: 50,
+    id: "les_babyshark", programId: "prg_songs1", order: 1, published: true, skills: ["listening", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 136, xpReward: 50,
     title: { th: "Baby Shark", en: "Baby Shark" },
     summary: { th: "เพลงเปิดคอร์ส ร้องตามครอบครัวฉลาม แล้วตอบคำถาม 3 ข้อเพื่อปลดล็อกเพลงถัดไป", en: "The opening song. Sing along with the shark family, then answer 3 questions to unlock the next song." },
     vocabulary: ["baby", "mommy", "daddy", "grandma", "grandpa", "shark", "run away", "safe at last"],
@@ -79,7 +79,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_wheels", programId: "prg_songs1", order: 2, published: true, skills: ["listening", "vocabulary"], youtubeId: "e_04ZrNroTo", videoUrl: "", checkpoints: [], durationSec: 165, xpReward: 50,
+    id: "les_wheels", programId: "prg_songs1", order: 2, published: true, skills: ["listening", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 165, xpReward: 50,
     title: { th: "The Wheels on the Bus", en: "The Wheels on the Bus" },
     summary: { th: "เปิดเมื่อจบ Baby Shark", en: "Opens after Baby Shark is complete." },
     vocabulary: ["wheels", "bus", "round and round", "wipers", "swish", "horn", "beep", "town"],
@@ -90,7 +90,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_babyshark" }],
   },
   {
-    id: "les_abc", programId: "prg_songs1", order: 3, published: true, skills: ["listening", "reading"], youtubeId: "75p-N9YKqNo", videoUrl: "", checkpoints: [], durationSec: 120, xpReward: 60,
+    id: "les_abc", programId: "prg_songs1", order: 3, published: true, skills: ["listening", "reading"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 120, xpReward: 60,
     title: { th: "ABC Song", en: "ABC Song" },
     summary: { th: "เปิดเมื่อจบ The Wheels on the Bus และมี XP อย่างน้อย 100", en: "Opens after The Wheels on the Bus, with at least 100 XP." },
     vocabulary: ["A", "B", "C", "alphabet", "letters", "sing with me"],
@@ -102,7 +102,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_wheels" }, { type: "min_xp", xp: 100 }],
   },
   {
-    id: "les_twinkle", programId: "prg_songs1", order: 4, published: true, skills: ["listening", "speaking"], youtubeId: "yCjJyiqpAuU", videoUrl: "", checkpoints: [], durationSec: 150, xpReward: 60,
+    id: "les_twinkle", programId: "prg_songs1", order: 4, published: true, skills: ["listening", "speaking"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 150, xpReward: 60,
     title: { th: "Twinkle Twinkle Little Star", en: "Twinkle Twinkle Little Star" },
     summary: { th: "เปิดเมื่อถึงเลเวล 3 และทำเควสต์ 'ดูวิดีโอ 3 คลิป' สำเร็จ", en: "Opens at level 3 once the quest 'Watch 3 videos' is done." },
     vocabulary: ["twinkle", "little", "star", "wonder", "high", "sky", "diamond"],
@@ -113,7 +113,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "min_level", level: 3 }, { type: "quest_completed", questId: "qst_watch3" }],
   },
   {
-    id: "les_head", programId: "prg_body", order: 1, published: true, skills: ["listening", "speaking", "vocabulary"], youtubeId: "h4eueDYPTIg", videoUrl: "", checkpoints: [], durationSec: 140, xpReward: 50,
+    id: "les_head", programId: "prg_body", order: 1, published: true, skills: ["listening", "speaking", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 140, xpReward: 50,
     title: { th: "Head, Shoulders, Knees and Toes", en: "Head, Shoulders, Knees and Toes" },
     summary: { th: "โปรแกรมนี้เปิดเมื่อถึงเลเวล 2 บทแรกดูฟรี", en: "This program opens at level 2. The first lesson is a free preview." },
     vocabulary: ["head", "shoulders", "knees", "toes", "eyes", "ears", "mouth", "nose"],
@@ -124,7 +124,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "min_level", level: 2 }],
   },
   {
-    id: "les_hokey", programId: "prg_body", order: 2, published: true, skills: ["listening", "speaking"], youtubeId: "iZinb6rVozc", videoUrl: "", checkpoints: [], durationSec: 180, xpReward: 60,
+    id: "les_hokey", programId: "prg_body", order: 2, published: true, skills: ["listening", "speaking"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 180, xpReward: 60,
     title: { th: "Hokey Pokey", en: "Hokey Pokey" },
     summary: { th: "เปิดเมื่อจบ Head, Shoulders และมีสตรีค 2 วัน", en: "Opens after Head, Shoulders with a 2-day streak." },
     vocabulary: ["right hand", "left hand", "in", "out", "shake", "turn around"],
@@ -132,16 +132,16 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_head" }, { type: "streak_days", days: 2 }],
   },
   {
-    id: "les_phonicsA", programId: "prg_phonics", order: 1, published: true, skills: ["reading", "speaking"], youtubeId: "BELlZKpi1Zs", videoUrl: "", checkpoints: [], durationSec: 200, xpReward: 50,
+    id: "les_phonicsA", programId: "prg_phonics", order: 1, published: true, skills: ["reading", "speaking"], youtubeId: "", videoUrl: "", checkpoints: [], durationSec: 200, xpReward: 50,
     title: { th: "Phonics Song A–Z", en: "Phonics Song A to Z" },
     summary: { th: "เสียงของตัวอักษรแต่ละตัว สำหรับอายุ 5 ขวบขึ้นไป", en: "The sound of each letter, for ages 5 and up." },
     vocabulary: ["apple", "ball", "cat", "dog", "elephant", "fish"],
     quiz: [q("q1", "'A' is for …", "'A' is for …", ["apple", "ball", "cat"], 0), q("q2", "'C' is for …", "'C' is for …", ["dog", "cat", "fish"], 1)],
     unlock: [{ type: "min_age", years: 5 }],
   },
-  // ── exam tracks (no video yet: the admin pastes a YouTube id, or 1.2 uploads a file) ──
+  // ── exam tracks: the checkpoints apply once a tenant sets a video URL ──
   {
-    id: "les_tgat1", programId: "prg_tgat", order: 1, published: true, skills: ["reading"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 900, xpReward: 80,
+    id: "les_tgat1", programId: "prg_tgat", order: 1, published: true, skills: ["reading"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 900, xpReward: 80,
     title: { th: "Reading: หาใจความสำคัญใน 90 วินาที", en: "Reading: the main idea in 90 seconds" },
     summary: { th: "บทแรกดูฟรี เทคนิค skim และ scan กับข้อสอบจริง 3 ข้อ", en: "Free preview. Skim and scan with three past-paper items." },
     vocabulary: ["main idea", "skim", "scan", "inference", "tone"],
@@ -149,7 +149,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_tgat2", programId: "prg_tgat", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1200, xpReward: 80,
+    id: "les_tgat2", programId: "prg_tgat", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1200, xpReward: 80,
     title: { th: "Error Identification: 10 จุดที่ออกบ่อย", en: "Error identification: the ten usual suspects" },
     summary: { th: "Subject-verb agreement, tense, parallel structure (แพ็กเกจ Pro)", en: "Subject-verb agreement, tense, parallel structure (Pro plan)." },
     vocabulary: ["agreement", "parallel", "modifier", "pronoun reference"],
@@ -157,7 +157,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_tgat1" }],
   },
   {
-    id: "les_toeic1", programId: "prg_toeic", order: 1, published: true, skills: ["listening"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1100, xpReward: 80,
+    id: "les_toeic1", programId: "prg_toeic", order: 1, published: true, skills: ["listening"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1100, xpReward: 80,
     title: { th: "Part 1–2: Photographs & Question-Response", en: "Parts 1–2: photographs and question-response" },
     summary: { th: "บทแรกดูฟรี ฟังจับคำสำคัญและตัดตัวเลือกลวง", en: "Free preview. Catch the key word, drop the distractors." },
     vocabulary: ["distractor", "similar sound", "wh-question", "yes/no"],
@@ -165,7 +165,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_toeic2", programId: "prg_toeic", order: 2, published: true, skills: ["grammar", "vocabulary"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1300, xpReward: 90,
+    id: "les_toeic2", programId: "prg_toeic", order: 2, published: true, skills: ["grammar", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1300, xpReward: 90,
     title: { th: "Part 5: Incomplete Sentences ทำให้ทันใน 20 วินาที", en: "Part 5: incomplete sentences in 20 seconds each" },
     summary: { th: "Word form, preposition, conjunction (แพ็กเกจ Pro)", en: "Word form, preposition, conjunction (Pro plan)." },
     vocabulary: ["word form", "preposition", "conjunction", "collocation"],
@@ -173,7 +173,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_toeic1" }],
   },
   {
-    id: "les_ielts1", programId: "prg_ielts", order: 1, published: true, skills: ["writing", "reading"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1500, xpReward: 100,
+    id: "les_ielts1", programId: "prg_ielts", order: 1, published: true, skills: ["writing", "reading"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1500, xpReward: 100,
     title: { th: "Task 2: อ่านโจทย์ให้ออกใน 2 นาที", en: "Task 2: decode the question in two minutes" },
     summary: { th: "บทแรกดูฟรี แยก opinion / discussion / problem-solution", en: "Free preview. Opinion, discussion and problem-solution questions." },
     vocabulary: ["thesis", "cohesion", "band descriptor", "task response"],
@@ -181,7 +181,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_ielts2", programId: "prg_ielts", order: 2, published: true, skills: ["writing", "grammar"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1800, xpReward: 100,
+    id: "les_ielts2", programId: "prg_ielts", order: 2, published: true, skills: ["writing", "grammar"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1800, xpReward: 100,
     title: { th: "โครงสร้าง 4 ย่อหน้าและคำเชื่อมระดับ Band 7", en: "The four-paragraph structure and Band 7 linking" },
     summary: { th: "แพ็กเกจ Premium", en: "Premium plan." },
     vocabulary: ["furthermore", "nevertheless", "consequently", "whereas"],
@@ -189,7 +189,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_ielts1" }],
   },
   {
-    id: "les_kpo1", programId: "prg_kpo", order: 1, published: true, skills: ["speaking", "vocabulary"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1000, xpReward: 80,
+    id: "les_kpo1", programId: "prg_kpo", order: 1, published: true, skills: ["speaking", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 1000, xpReward: 80,
     title: { th: "Conversation: สำนวนที่ออกสอบทุกปี", en: "Conversation: the expressions that appear every year" },
     summary: { th: "บทแรกดูฟรี", en: "Free preview." },
     vocabulary: ["How about…?", "I'd rather", "Would you mind…?", "No problem"],
@@ -197,7 +197,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_kpo2", programId: "prg_kpo", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1200, xpReward: 80,
+    id: "les_kpo2", programId: "prg_kpo", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 1200, xpReward: 80,
     title: { th: "Structure: Tense และ Passive ที่ต้องแม่น", en: "Structure: the tenses and passives you must know" },
     summary: { th: "แพ็กเกจ Pro", en: "Pro plan." },
     vocabulary: ["present perfect", "passive voice", "conditional"],
@@ -205,7 +205,7 @@ export const LESSONS: Lesson[] = [
     unlock: [{ type: "lesson_completed", lessonId: "les_kpo1" }],
   },
   {
-    id: "les_found1", programId: "prg_found", order: 1, published: true, skills: ["grammar", "vocabulary"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 800, xpReward: 50,
+    id: "les_found1", programId: "prg_found", order: 1, published: true, skills: ["grammar", "vocabulary"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 2, prompt: { th: "คำถามกลางคลิป: วิดีโอนี้กำลังพูดถึงอะไร", en: "Checkpoint: what is this clip about?" }, choices: ["ดอกไม้ / a flower", "รถบัส / a bus", "ฉลาม / a shark"], answer: 0 }, { id: "cp2", atSec: 4, prompt: { th: "คำถามกลางคลิป: “bloom” แปลว่าอะไร", en: "Checkpoint: “bloom” means …" }, choices: ["เหี่ยว", "บาน", "ปลูก"], answer: 1 }], durationSec: 800, xpReward: 50,
     title: { th: "Parts of speech ใน 10 นาที", en: "Parts of speech in ten minutes" },
     summary: { th: "ฟรี", en: "Free." },
     vocabulary: ["noun", "verb", "adjective", "adverb"],
@@ -213,7 +213,7 @@ export const LESSONS: Lesson[] = [
     unlock: [],
   },
   {
-    id: "les_found2", programId: "prg_found", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 900, xpReward: 50,
+    id: "les_found2", programId: "prg_found", order: 2, published: true, skills: ["grammar"], youtubeId: "", videoUrl: "", checkpoints: [{ id: "cp1", atSec: 3, prompt: { th: "คำถามกลางคลิป: ตอบเพื่อดูต่อ", en: "Checkpoint: answer to continue" }, choices: ["A", "B", "C"], answer: 0 }], durationSec: 900, xpReward: 50,
     title: { th: "Present Simple กับชีวิตประจำวัน", en: "Present simple and daily life" },
     summary: { th: "ฟรี เปิดเมื่อจบบทแรก", en: "Free. Opens after the first lesson." },
     vocabulary: ["every day", "usually", "always", "never"],
@@ -269,8 +269,8 @@ export const USERS: UserProfile[] = [
   { uid: "u_new", displayName: "Nong Pim (new)", email: "pim.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2020, track: "kids", allowAllAges: false, parentConsent: NO_CONSENT, ...NO_14, ...NO_PLAN, xp: 0, streakDays: 0, lastActiveDate: null, badgeIds: [], avatarColor: "#0b78a8", active: true, createdAt: T0 },
   { uid: "u_pukkie", displayName: "น้องปุ๊กกี้", email: "pukkie.parent@example.com", role: "learner", ownerId: "own_sunshine", enrolledProgramIds: ["prg_songs1"], birthYear: 2022, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_14, ...NO_PLAN, xp: 40, streakDays: 1, lastActiveDate: null, badgeIds: [], avatarColor: "#b0566f", active: true, createdAt: T0 },
   // parents (1.4): a parent account reads its children's progress and gets the weekly report
-  { ...staff("u_parent_mint", "คุณพ่อสมชาย (ผู้ปกครองน้องมิ้นท์)", "somchai@example.com", "parent", "own_sunshine", "#2f7f86"), allowAllAges: false, childUids: ["u_mint", "u_pukkie"] },
-  { ...staff("u_parent_ploy", "คุณแม่วรรณา (ผู้ปกครองน้องพลอย)", "wanna@example.com", "parent", "own_pro", "#6b5fb0"), allowAllAges: false, childUids: ["u_ploy"] },
+  { ...staff("u_parent_mint", "คุณพ่อสมชาย", "somchai@example.com", "parent", "own_sunshine", "#2f7f86"), allowAllAges: false, childUids: ["u_mint", "u_pukkie"] },
+  { ...staff("u_parent_ploy", "คุณแม่วรรณา", "wanna@example.com", "parent", "own_pro", "#6b5fb0"), allowAllAges: false, childUids: ["u_ploy"] },
   // Bright Kids
   { uid: "u_kao", displayName: "น้องข้าว", email: "kao.parent@example.com", role: "learner", ownerId: "own_bright", enrolledProgramIds: ["prg_phonics"], birthYear: 2021, track: "kids", allowAllAges: false, parentConsent: ACK, ...NO_14, ...NO_PLAN, xp: 80, streakDays: 1, lastActiveDate: null, badgeIds: ["bdg_first"], avatarColor: "#6b5fb0", active: true, createdAt: T0 },
   // English Pro Academy (teens and adults)
