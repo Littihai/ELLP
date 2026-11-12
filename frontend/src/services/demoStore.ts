@@ -53,8 +53,8 @@ interface State {
   sessionUid: string | null;
 }
 
-// v7: 1.4 added skills, placement tests and parent accounts; an older saved state is replaced by a fresh seed
-const KEY = "ellp.demo.v7";
+// v8: the seed carries no videos and shorter parent names; an older saved state is replaced by a fresh seed
+const KEY = "ellp.demo.v8";
 
 function seed(): State {
   const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));

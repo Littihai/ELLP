@@ -138,13 +138,15 @@ Going live with Firebase: [firebase/README.md](firebase/README.md) and [docs/dev
 ## Honest limits of 1.0.0
 
 - The demo's watch progress is a timer plus a "mark as watched" button; live mode should use the YouTube IFrame API's real position.
-- The YouTube ids in the seed point at well-known children's songs; verify each before a release and respect the owner's licences.
+- The seed carries no videos: every lesson shows "no video yet" until a tenant adds its own YouTube id or file / HLS URL in
+  Admin › Lessons, under its own licence. The demo's "mark as watched" button lets every flow be clicked through without one.
 - The Firestore store and Firebase sign-in are implemented but were not exercised against a real project in this version.
 - Email goes through a log-only sender until SMTP is configured; test mode stays on by default.
 - No automated UI tests yet; the backend has 109 rule and engine tests.
 - The Omise gateway is implemented but not yet exercised against a live account; the demo gateway moves no money.
 - TOEIC and IELTS mock scores are practice estimates, not official conversions.
-- The seeded exam lessons play a 5-second CC0 sample clip so the player rules can be seen; real courses replace the URL.
+- The platform's own player and its integrity rules (seek lock, in-video questions, attention ladder) can only be seen once a
+  lesson has a video URL; the seeded exam lessons keep their checkpoints ready for it.
 - The weekly report to parents is written by rules from the numbers, and is sent by a button (a scheduled job is on the roadmap).
 
 ## License

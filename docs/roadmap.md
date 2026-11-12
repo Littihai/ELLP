@@ -75,7 +75,7 @@ parent accounts with a family page, the rule-based weekly report by email, conse
 ## 1.0.x — make the demo trustworthy
 
 - Real watch progress with the **YouTube IFrame API** (position, play/pause, replay) instead of the timer and the demo button.
-- Verify every seeded YouTube id and let an admin preview the video in the lesson form.
+- Let an admin preview the video in the lesson form (the seed ships without videos; each tenant adds its own).
 - Firebase: run the live path end to end against a test project (Auth + Firestore + API) and the emulators; write the first
   integration test.
 - UI tests (Playwright) for the two sign-in doors, the Baby Shark → Wheels unlock, and an admin reply.

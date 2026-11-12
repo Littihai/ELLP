@@ -19,9 +19,10 @@ What you are getting, what to look at first, and what we would ask you to do nex
    pending Pro request; lesson 2 of TOEIC is locked behind the plan. Open the chat bubble and write to the academy.
 9. Sign in at `/admin/login` as **ครูเบนซ์** → Approvals: approve your request → the learner now opens lesson 2. Chats: reply
    to the visitor, or "create account from chat".
-10. Sign in as **คุณแอน** (`ann.k@example.com`, Premium) → *IELTS Writing Task 2* lesson 1: the platform's player with the
-    strict rules listed beside it. Press play: at 2 s the video stops for an in-video question with a countdown; try to drag the
-    bar ahead (it snaps back); switch tabs three times (warning, warning, pause). As **ครูเบนซ์** open Admin › Learning integrity:
+10. As **ครูเบนซ์**, Admin › Lessons → *IELTS Writing Task 2* lesson 1 → paste any short mp4 or HLS URL you have the right to
+    use into "video file" (the seed ships without videos) → save. Sign in as **คุณแอน** (`ann.k@example.com`, Premium) → that
+    lesson: the platform's player with the strict rules listed beside it. Press play: at 2 s the video stops for an in-video
+    question with a countdown; try to drag the bar ahead (it snaps back); switch tabs three times (warning, warning, pause). As **ครูเบนซ์** open Admin › Learning integrity:
     the events, the live sessions, and the pause to lift. Open the same learner in a second tab to see the session ladder.
 11. Sign in as **คุณเจ** → Plan: pick Premium → PromptPay → a demo QR appears → "simulate" → Premium is active with an end date and a
     receipt (EPA-2026-000x, printable). Mock tests → TOEIC Mini → answer → submit → a 10–990 estimate. Certificates: **คุณแอน**

@@ -115,7 +115,7 @@ export function LessonPage() {
                 <div className="small muted" style={{ marginBottom: 4 }}>{t("lesson.watchedPct", { pct: watched })}{progress && progress.watchedSec > 0 && <> · {t("integ.watched", { m: Math.max(1, Math.round(progress.watchedSec / 60)), p: `${Math.floor(progress.lastPositionSec / 60)}:${String(Math.round(progress.lastPositionSec % 60)).padStart(2, "0")}` })}</>}</div>
                 <Bar pct={watched} tone={canQuiz ? "ok" : undefined} />
               </div>
-              <span className="small muted">{t("lesson.ytHint", { id: lesson.youtubeId })}</span>
+              {lesson.youtubeId && <span className="small muted">{t("lesson.ytHint", { id: lesson.youtubeId })}</span>}
             </div>
           )}
           {lesson.vocabulary.length > 0 && (
